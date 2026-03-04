@@ -1,6 +1,6 @@
 # Ignite — Build a Phoenix-like Web Framework from Scratch
 
-A step-by-step tutorial that teaches Elixir by building **Ignite**, a real web framework inspired by [Phoenix](https://www.phoenixframework.org/). You'll go from a raw TCP socket to a full-stack framework with LiveView, WebSockets, PubSub, Presence, and DOM diffing — all in 37 incremental commits.
+A step-by-step tutorial that teaches Elixir by building **Ignite**, a real web framework inspired by [Phoenix](https://www.phoenixframework.org/). You'll go from a raw TCP socket to a full-stack framework with LiveView, WebSockets, PubSub, Presence, and DOM diffing — all in 38 incremental commits.
 
 By the end, you'll understand every layer that powers production Elixir web applications: the conn pipeline, macro-based routing, OTP supervision, EEx templates, middleware plugs, real-time LiveView with efficient DOM patching, PubSub for cross-process broadcasting, signed sessions, presence tracking, CSRF protection, Content Security Policy, custom Mix tasks, and structured request logging with correlation IDs.
 
@@ -29,6 +29,7 @@ By the end, you'll understand every layer that powers production Elixir web appl
 - **Logger Metadata** — per-request ID for log correlation, response timing, `x-request-id` header
 - **Health Check** — `GET /health` returns JSON with uptime, memory, process count, scheduler info
 - **Static Asset Pipeline** — content-hashed URLs (`?v=abc123`) for cache busting, ETS manifest, reloader integration
+- **Test Helpers (ConnTest)** — `build_conn`, `get/post/put/patch/delete`, `html_response`, `json_response`, CSRF helpers for form tests
 - **Error Handling** — `try/rescue` boundary catches crashes and renders 500 pages
 
 ### Real-time (LiveView)
@@ -158,6 +159,7 @@ Each step is tagged in git. Jump to any step with `git checkout step-01`, or fol
 - [x] Step 34 — [Debug Error Page](tutorial/34-debug-error-page.md) — Rich dev error page, stacktrace formatting, dev/prod branching
 - [x] Step 35 — [Logger Metadata](tutorial/35-logger-metadata.md) — Request ID, response timing, `Logger.metadata`, `x-request-id` header
 - [x] Step 37 — [Static Asset Pipeline](tutorial/37-static-asset-pipeline.md) — Content-hashed URLs, ETS manifest, `static_path/1` helper
+- [x] Step 38 — [Test Helpers](tutorial/38-test-helpers.md) — ConnTest module, response assertions, CSRF helpers, plug execution fix
 
 ### Production
 
@@ -313,7 +315,7 @@ Features that would bring Ignite closer to Phoenix for production use:
 - [x] ~~Debug error page with stacktrace (like Phoenix's dev error page)~~ (Step 34)
 - [x] ~~Logger metadata (request ID, timing)~~ (Step 35)
 - [x] ~~Static asset pipeline (CSS/JS bundling, fingerprinting)~~ (Step 37)
-- [ ] Test helpers (`ConnTest` for controller testing)
+- [x] Test helpers (`ConnTest` for controller testing)
 
 ### Production
 - [ ] SSL/TLS configuration

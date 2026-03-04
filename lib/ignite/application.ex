@@ -10,7 +10,7 @@ defmodule Ignite.Application do
 
   @impl true
   def start(_type, _args) do
-    port = 4000
+    port = Application.get_env(:ignite, :port, 4000)
 
     # Build static asset manifest (file hashes for cache-busting URLs).
     # Must run before Cowboy starts accepting requests.

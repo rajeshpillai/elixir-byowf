@@ -38,25 +38,10 @@ defmodule Ignite.Router do
       # Each route definition adds {method, path, controller, action}.
       Module.register_attribute(__MODULE__, :route_info, accumulate: true)
 
-      # Generate the Helpers submodule after all routes are defined.
+      # Generate call/1, Helpers submodule, and __routes__/0 after all
+      # plugs and routes are defined. This ensures @plugs is fully
+      # accumulated when call/1 is compiled.
       @before_compile Ignite.Router
-
-      # Entry point: run plugs first, then dispatch if not halted
-      def call(conn) do
-        # Run through plugs in order (reversed because accumulate prepends)
-        conn =
-          Enum.reduce(Enum.reverse(@plugs), conn, fn plug_func, acc ->
-            if acc.halted, do: acc, else: apply(__MODULE__, plug_func, [acc])
-          end)
-
-        # Only dispatch to routes if no plug halted the pipeline
-        if conn.halted do
-          conn
-        else
-          segments = String.split(conn.path, "/", trim: true)
-          dispatch(conn, segments)
-        end
-      end
     end
   end
 
@@ -341,6 +326,7 @@ defmodule Ignite.Router do
 
   @doc false
   defmacro __before_compile__(env) do
+    plugs = Module.get_attribute(env.module, :plugs) |> Enum.reverse()
     route_info = Module.get_attribute(env.module, :route_info) |> Enum.reverse()
     helpers_module = Module.concat(env.module, Helpers)
     helper_functions = Ignite.Router.Helpers.build_helper_functions(route_info)
@@ -354,6 +340,22 @@ defmodule Ignite.Router do
     escaped_routes = Macro.escape(routes_list)
 
     quote do
+      # Entry point: run plugs first, then dispatch if not halted.
+      # Defined in @before_compile so that @plugs is fully accumulated.
+      def call(conn) do
+        conn =
+          Enum.reduce(unquote(plugs), conn, fn plug_func, acc ->
+            if acc.halted, do: acc, else: apply(__MODULE__, plug_func, [acc])
+          end)
+
+        if conn.halted do
+          conn
+        else
+          segments = String.split(conn.path, "/", trim: true)
+          dispatch(conn, segments)
+        end
+      end
+
       defmodule unquote(helpers_module) do
         @moduledoc """
         Auto-generated path helpers for `#{inspect(unquote(env.module))}`.

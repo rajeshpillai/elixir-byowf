@@ -15,4 +15,10 @@ config :ignite, MyApp.Repo,
   pool_size: 5
 
 config :ignite,
-  ecto_repos: [MyApp.Repo]
+  ecto_repos: [MyApp.Repo],
+  port: 4000
+
+# Import environment-specific config (config/dev.exs, config/test.exs, etc.)
+if File.exists?("config/#{config_env()}.exs") do
+  import_config "#{config_env()}.exs"
+end
