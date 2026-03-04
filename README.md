@@ -4,7 +4,60 @@ A step-by-step tutorial that teaches Elixir by building **Ignite**, a real web f
 
 By the end, you'll understand every layer that powers production Elixir web applications: the conn pipeline, macro-based routing, OTP supervision, EEx templates, middleware plugs, and real-time LiveView with efficient DOM patching.
 
-## What You'll Build
+## Features
+
+### Framework Core
+- **Macro-based Router DSL** — `get "/users/:id", to: Controller, action: :show` with dynamic path params
+- **Conn Pipeline** — immutable request/response struct flows through the system, just like Phoenix
+- **Controller Helpers** — `text/3`, `html/3`, `render/3` for clean response building
+- **Middleware (Plugs)** — composable `plug :log_request` pipeline with halting support
+- **EEx Templates** — server-side rendering with `<%= @name %>` assigns
+- **POST Body Parsing** — form-urlencoded body parsing with `URI.decode_query/1`
+- **Error Handling** — `try/rescue` boundary catches crashes and renders 500 pages
+
+### Real-time (LiveView)
+- **WebSocket Server** — persistent stateful connections via `:cowboy_websocket`
+- **LiveView Behaviour** — `mount/2`, `handle_event/3`, `render/1` callbacks
+- **Server Push** — `handle_info/2` for server-initiated updates (timers, external events)
+- **Statics/Dynamics Diffing** — sends only changed data over the wire
+- **Morphdom DOM Patching** — efficient client-side updates that preserve input focus and animations
+
+### Frontend Events
+- **`ignite-click`** — click events with optional `ignite-value`
+- **`ignite-change`** — real-time input validation (sends field name + value on every keystroke)
+- **`ignite-submit`** — form submission with all fields collected via `FormData`
+
+### Infrastructure
+- **OTP Supervision** — self-healing server with `one_for_one` strategy
+- **Cowboy Adapter** — production-grade HTTP server (HTTP/1.1, connection pooling, SSL-ready)
+- **Hot Code Reloader** — edit code, see changes without restarting the server
+- **Multiple LiveViews** — configurable WebSocket paths via `data-live-path` attribute
+
+## Demo Applications Included
+
+| Route | Demo | What It Shows |
+|-------|------|---------------|
+| `/` | Landing page | Controller + HTML response |
+| `/hello` | Text response | Plain text controller |
+| `/users/42` | User profile | EEx templates + dynamic route params |
+| `/counter` | Live counter | LiveView + click events |
+| `/register` | Registration form | Real-time validation + form submit |
+| `/dashboard` | BEAM dashboard | Server-push with auto-refreshing stats |
+| `/crash` | Error page | Error handler + 500 page |
+| `POST /users` | Create user | POST body parsing |
+
+## What You Can Build With Ignite
+
+Ignite is a real framework. You can use it to build:
+
+- **Admin dashboards** — real-time metrics, live charts, system monitoring
+- **Chat applications** — WebSocket-based messaging with server state
+- **Form-heavy apps** — multi-step forms with live validation
+- **Internal tools** — CRUD interfaces with server-side rendering
+- **IoT control panels** — live device status with server-push updates
+- **Prototypes** — quickly test ideas with minimal dependencies
+
+## What You'll Build (Tutorial Steps)
 
 | Layer | Component | Step |
 |-------|-----------|------|
@@ -78,11 +131,12 @@ mix deps.get
 iex -S mix
 
 # Try these routes:
-# http://localhost:4000            → Welcome text
+# http://localhost:4000            → Landing page with all demo links
 # http://localhost:4000/hello      → Controller response
 # http://localhost:4000/users/42   → EEx template with dynamic params
 # http://localhost:4000/counter    → LiveView (real-time counter)
 # http://localhost:4000/register   → LiveView form with real-time validation
+# http://localhost:4000/dashboard  → Live BEAM dashboard (auto-refresh)
 # http://localhost:4000/crash      → Error handler (500 page)
 # curl -X POST -d "username=Jose" http://localhost:4000/users  → POST parsing
 ```
@@ -127,7 +181,52 @@ ignite/
 | `plug_cowboy` | Step 10 | Production HTTP server |
 | `jason` | Step 12 | JSON for LiveView diffs |
 
-Steps 1–9 use **zero external dependencies** — only Elixir's standard library and Erlang's `:gen_tcp`.
+Steps 1-9 use **zero external dependencies** — only Elixir's standard library and Erlang's `:gen_tcp`.
+
+## Roadmap: Nice-to-Have (Compared to Phoenix/LiveView)
+
+Features that would bring Ignite closer to Phoenix for production use:
+
+### Routing & Controllers
+- [ ] Scoped routes (`scope "/api" do ... end`)
+- [ ] Path helpers (`user_path(conn, :show, 42)` generating `/users/42`)
+- [ ] Resource routes (`resources "/posts", PostController`)
+- [ ] PUT/PATCH/DELETE HTTP methods
+- [ ] JSON response helper (`json(conn, %{ok: true})`)
+
+### LiveView
+- [ ] Fine-grained diffing (track individual dynamic expressions, not whole HTML)
+- [ ] LiveView navigation (`live_redirect`, `push_patch` without full page reload)
+- [ ] LiveComponents (reusable stateful components within a LiveView)
+- [ ] Streams for large collections (append/prepend without re-rendering lists)
+- [ ] File uploads via LiveView
+- [ ] JS hooks (`phx-hook` equivalent for interop with JS libraries)
+
+### Security
+- [ ] CSRF token generation and validation on forms
+- [ ] Signed/encrypted session cookies
+- [ ] Content Security Policy headers
+- [ ] Rate limiting middleware
+
+### Data & State
+- [ ] Ecto integration for database access
+- [ ] PubSub for broadcasting between LiveView processes
+- [ ] Presence tracking (who's online)
+- [ ] Flash messages (`put_flash(conn, :info, "Saved!")`)
+
+### Developer Experience
+- [ ] Mix tasks (`mix ignite.routes` to list all routes)
+- [ ] Debug error page with stacktrace (like Phoenix's dev error page)
+- [ ] Logger metadata (request ID, timing)
+- [ ] Static asset pipeline (CSS/JS bundling, fingerprinting)
+- [ ] Test helpers (`ConnTest` for controller testing)
+
+### Production
+- [ ] SSL/TLS configuration
+- [ ] Clustering (distributed Erlang nodes)
+- [ ] Telemetry integration for metrics
+- [ ] Deployment with `mix release`
+- [ ] Health check endpoint
 
 ## License
 
