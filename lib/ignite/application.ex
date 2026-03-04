@@ -23,23 +23,33 @@ defmodule Ignite.Application do
          ]}
       ])
 
-    children = [
-      # Start Cowboy under our supervision tree
-      %{
-        id: :cowboy_listener,
-        start:
-          {:cowboy, :start_clear,
-           [
-             :ignite_http,
-             [port: port],
-             %{env: %{dispatch: dispatch}}
-           ]}
-      }
-    ]
+    children =
+      [
+        # Start Cowboy under our supervision tree
+        %{
+          id: :cowboy_listener,
+          start:
+            {:cowboy, :start_clear,
+             [
+               :ignite_http,
+               [port: port],
+               %{env: %{dispatch: dispatch}}
+             ]}
+        }
+      ] ++ dev_children()
 
     Logger.info("Ignite is heating up on http://localhost:#{port}")
 
     opts = [strategy: :one_for_one, name: Ignite.Supervisor]
     Supervisor.start_link(children, opts)
+  end
+
+  # Only start the reloader in dev mode
+  defp dev_children do
+    if Mix.env() == :dev do
+      [{Ignite.Reloader, [path: "lib"]}]
+    else
+      []
+    end
   end
 end
