@@ -1,10 +1,14 @@
 /**
  * Ignite.js — Frontend glue for Ignite LiveView.
  *
- * Handles the statics/dynamics diffing protocol:
+ * Uses morphdom for efficient DOM patching:
+ * - Instead of replacing innerHTML (which destroys focus, animations, etc.),
+ *   morphdom compares the old and new HTML and only updates what changed.
+ *
+ * Protocol:
  * - On mount: server sends {s: [...statics], d: [...dynamics]}
  * - On update: server sends {d: [...dynamics]}
- * - JS zips statics + dynamics to reconstruct full HTML
+ * - JS zips statics + dynamics, then morphdom patches the DOM
  */
 
 (function () {
@@ -22,9 +26,6 @@
   var socket = new WebSocket(protocol + "//" + window.location.host + LIVE_PATH);
 
   // --- Reconstruct HTML from statics + dynamics ---
-  // Statics: ["<h1>Count: ", "</h1>"]
-  // Dynamics: ["42"]
-  // Result:  "<h1>Count: 42</h1>"
   function buildHtml(statics, dynamics) {
     var html = "";
     for (var i = 0; i < statics.length; i++) {
@@ -34,6 +35,31 @@
       }
     }
     return html;
+  }
+
+  // --- Apply update to DOM ---
+  // Uses morphdom if available, falls back to innerHTML
+  function applyUpdate(container, newHtml) {
+    if (typeof morphdom === "function") {
+      // Create a temporary wrapper to morph into
+      var wrapper = document.createElement("div");
+      wrapper.id = APP_CONTAINER_ID;
+      wrapper.innerHTML = newHtml;
+
+      morphdom(container, wrapper, {
+        // Preserve focused input elements
+        onBeforeElUpdated: function (fromEl, toEl) {
+          // Don't update the element if the user is actively typing in it
+          if (fromEl === document.activeElement && fromEl.tagName === "INPUT") {
+            toEl.value = fromEl.value;
+          }
+          return true;
+        },
+      });
+    } else {
+      // Fallback: replace entire content
+      container.innerHTML = newHtml;
+    }
   }
 
   // --- Receive updates from server ---
@@ -47,9 +73,10 @@
       statics = data.s;
     }
 
-    // Reconstruct HTML from statics + dynamics
+    // Reconstruct HTML and patch the DOM
     if (statics && data.d) {
-      container.innerHTML = buildHtml(statics, data.d);
+      var newHtml = buildHtml(statics, data.d);
+      applyUpdate(container, newHtml);
     }
   };
 
@@ -82,7 +109,7 @@
 
   // --- Connection lifecycle ---
   socket.onopen = function () {
-    console.log("[Ignite] LiveView connected");
+    console.log("[Ignite] LiveView connected (morphdom: " + (typeof morphdom === "function") + ")");
   };
 
   socket.onclose = function () {

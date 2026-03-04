@@ -17,6 +17,7 @@
   <div id="ignite-app">Connecting...</div>
   <hr>
   <p><small>Powered by <a href="/">Ignite</a></small></p>
+  <script src="/assets/morphdom.min.js"></script>
   <script src="/assets/ignite.js"></script>
 </body>
 </html>
