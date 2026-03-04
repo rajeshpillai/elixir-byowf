@@ -12,12 +12,13 @@ defmodule Ignite.Application do
   def start(_type, _args) do
     port = 4000
 
-    # Cowboy routing: WebSocket for /live, HTTP for everything else
+    # Cowboy routing: WebSocket, static files, and HTTP
     dispatch =
       :cowboy_router.compile([
         {:_,
          [
            {"/live", Ignite.LiveView.Handler, %{view: MyApp.CounterLive}},
+           {"/assets/[...]", :cowboy_static, {:dir, "assets"}},
            {"/[...]", Ignite.Adapters.Cowboy, []}
          ]}
       ])
