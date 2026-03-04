@@ -10,6 +10,7 @@ defmodule MyApp.Router do
   # Note: request logging (with request_id + timing) is now handled by the
   # Cowboy adapter, so we no longer need a log_request plug here.
   plug :add_server_header
+  plug :set_hsts_header
   plug :set_csp_headers
   plug :verify_csrf_token
 
@@ -47,6 +48,16 @@ defmodule MyApp.Router do
   def add_server_header(conn) do
     new_headers = Map.put(conn.resp_headers, "x-powered-by", "Ignite")
     %Ignite.Conn{conn | resp_headers: new_headers}
+  end
+
+  @doc """
+  HSTS plug — adds `strict-transport-security` header when enabled.
+
+  Only active when `config :ignite, hsts: true` (typically in prod).
+  No-op in dev/test.
+  """
+  def set_hsts_header(conn) do
+    Ignite.HSTS.put_hsts_header(conn)
   end
 
   @doc """

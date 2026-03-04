@@ -1,6 +1,6 @@
 # Ignite — Build a Phoenix-like Web Framework from Scratch
 
-A step-by-step tutorial that teaches Elixir by building **Ignite**, a real web framework inspired by [Phoenix](https://www.phoenixframework.org/). You'll go from a raw TCP socket to a full-stack framework with LiveView, WebSockets, PubSub, Presence, and DOM diffing — all in 38 incremental commits.
+A step-by-step tutorial that teaches Elixir by building **Ignite**, a real web framework inspired by [Phoenix](https://www.phoenixframework.org/). You'll go from a raw TCP socket to a full-stack framework with LiveView, WebSockets, PubSub, Presence, and DOM diffing — all in 39 incremental commits.
 
 By the end, you'll understand every layer that powers production Elixir web applications: the conn pipeline, macro-based routing, OTP supervision, EEx templates, middleware plugs, real-time LiveView with efficient DOM patching, PubSub for cross-process broadcasting, signed sessions, presence tracking, CSRF protection, Content Security Policy, custom Mix tasks, and structured request logging with correlation IDs.
 
@@ -30,6 +30,7 @@ By the end, you'll understand every layer that powers production Elixir web appl
 - **Health Check** — `GET /health` returns JSON with uptime, memory, process count, scheduler info
 - **Static Asset Pipeline** — content-hashed URLs (`?v=abc123`) for cache busting, ETS manifest, reloader integration
 - **Test Helpers (ConnTest)** — `build_conn`, `get/post/put/patch/delete`, `html_response`, `json_response`, CSRF helpers for form tests
+- **SSL/TLS Support** — config-driven HTTPS via Cowboy `:start_tls`, HTTP→HTTPS redirect, HSTS headers, `mix ignite.gen.cert`
 - **Error Handling** — `try/rescue` boundary catches crashes and renders 500 pages
 
 ### Real-time (LiveView)
@@ -164,6 +165,7 @@ Each step is tagged in git. Jump to any step with `git checkout step-01`, or fol
 ### Production
 
 - [x] Step 36 — [Health Check](tutorial/36-health-check.md) — `/health` endpoint with BEAM runtime metrics
+- [x] Step 39 — [SSL/TLS Support](tutorial/39-ssl-tls.md) — Config-driven HTTPS, HTTP→HTTPS redirect, HSTS, `mix ignite.gen.cert`
 
 ## Quick Start
 
@@ -242,11 +244,16 @@ ignite/
 │   │   │   └── upload.ex      # LiveView upload helpers
 │   │   ├── upload.ex          # %Ignite.Upload{} struct + temp file utils
 │   │   ├── reloader.ex        # Hot code reloader
+│   │   ├── ssl.ex             # SSL/TLS config + Cowboy child spec
+│   │   ├── ssl/
+│   │   │   └── redirect_handler.ex  # HTTP→HTTPS 301 redirect
+│   │   ├── hsts.ex            # HSTS header plug
 │   │   └── adapters/
 │   │       └── cowboy.ex      # Cowboy HTTP adapter
 │   ├── mix/
 │   │   └── tasks/
-│   │       └── ignite.routes.ex  # mix ignite.routes task
+│   │       ├── ignite.routes.ex    # mix ignite.routes task
+│   │       └── ignite.gen.cert.ex  # mix ignite.gen.cert task
 │   └── my_app/                # Sample application
 │       ├── repo.ex            # Ecto Repo (database connection)
 │       ├── router.ex
@@ -255,7 +262,9 @@ ignite/
 │       ├── controllers/
 │       └── live/
 ├── config/
-│   └── config.exs             # Application config (database, etc.)
+│   ├── config.exs             # Application config (database, etc.)
+│   ├── test.exs               # Test config (port 4002, test DB)
+│   └── prod.exs               # Production config (SSL, HSTS)
 ├── priv/
 │   └── repo/
 │       └── migrations/        # Ecto database migrations
@@ -318,7 +327,7 @@ Features that would bring Ignite closer to Phoenix for production use:
 - [x] Test helpers (`ConnTest` for controller testing)
 
 ### Production
-- [ ] SSL/TLS configuration
+- [x] ~~SSL/TLS configuration~~ (Step 39)
 - [ ] Clustering (distributed Erlang nodes)
 - [ ] Telemetry integration for metrics
 - [ ] Deployment with `mix release`

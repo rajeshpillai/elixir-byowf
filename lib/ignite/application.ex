@@ -2,7 +2,8 @@ defmodule Ignite.Application do
   @moduledoc """
   The OTP Application for Ignite.
 
-  Starts Cowboy as the HTTP server with our custom handler.
+  Starts Cowboy as the HTTP server (or HTTPS when SSL is configured)
+  with our custom handler.
   """
 
   use Application
@@ -45,23 +46,28 @@ defmodule Ignite.Application do
         # Start Presence after PubSub (it broadcasts diffs via PubSub)
         Ignite.Presence,
 
-        # Start Cowboy under our supervision tree
-        %{
-          id: :cowboy_listener,
-          start:
-            {:cowboy, :start_clear,
-             [
-               :ignite_http,
-               [port: port],
-               %{env: %{dispatch: dispatch}}
-             ]}
-        }
-      ] ++ dev_children()
+        # Start Cowboy — HTTP or HTTPS depending on :ssl config
+        Ignite.SSL.child_spec(port, dispatch)
+      ] ++ redirect_children(port) ++ dev_children()
 
-    Logger.info("Ignite is heating up on http://localhost:#{port}")
+    scheme = if Ignite.SSL.ssl_configured?(), do: "https", else: "http"
+    Logger.info("Ignite is heating up on #{scheme}://localhost:#{port}")
 
     opts = [strategy: :one_for_one, name: Ignite.Supervisor]
     Supervisor.start_link(children, opts)
+  end
+
+  # Optional HTTP→HTTPS redirect listener (only when SSL is configured).
+  # Set `config :ignite, http_redirect_port: 4080` to enable.
+  defp redirect_children(https_port) do
+    http_port = Application.get_env(:ignite, :http_redirect_port)
+
+    if http_port && Ignite.SSL.ssl_configured?() do
+      Logger.info("HTTP→HTTPS redirect on port #{http_port}")
+      [Ignite.SSL.redirect_child_spec(http_port, https_port)]
+    else
+      []
+    end
   end
 
   # Only start the reloader in dev mode
