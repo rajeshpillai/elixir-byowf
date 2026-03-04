@@ -9,6 +9,8 @@ defmodule MyApp.DashboardLive do
   use Ignite.LiveView
 
   def mount(_params, _session) do
+    # Schedule the first tick — subsequent ticks are scheduled in handle_info
+    Process.send_after(self(), :tick, 1000)
     {:ok, gather_stats()}
   end
 

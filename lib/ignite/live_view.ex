@@ -42,6 +42,11 @@ defmodule Ignite.LiveView do
   @doc "Returns the HTML string for the current assigns."
   @callback render(assigns :: map()) :: String.t()
 
+  @doc "Called when the process receives a message (e.g. PubSub broadcast, timer tick)."
+  @callback handle_info(msg :: term(), assigns :: map()) :: {:noreply, map()}
+
+  @optional_callbacks [handle_info: 2]
+
   defmacro __using__(_opts) do
     quote do
       @behaviour Ignite.LiveView

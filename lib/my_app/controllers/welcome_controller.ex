@@ -16,6 +16,7 @@ defmodule MyApp.WelcomeController do
       <li><a href="/counter">/counter</a> — LiveView (real-time counter)</li>
       <li><a href="/register">/register</a> — LiveView form with real-time validation</li>
       <li><a href="/dashboard">/dashboard</a> — Live BEAM dashboard (auto-refresh)</li>
+      <li><a href="/shared-counter">/shared-counter</a> — PubSub shared counter (open in multiple tabs)</li>
       <li><a href="/crash">/crash</a> — Error handler (500 page)</li>
     </ul>
     <p><small>POST example: <code>curl -X POST -d "username=Jose" http://localhost:4000/users</code></small></p>
@@ -40,5 +41,9 @@ defmodule MyApp.WelcomeController do
 
   def dashboard(conn) do
     render(conn, "live", title: "Dashboard — Ignite", live_path: "/live/dashboard")
+  end
+
+  def shared_counter(conn) do
+    render(conn, "live", title: "Shared Counter — Ignite", live_path: "/live/shared-counter")
   end
 end

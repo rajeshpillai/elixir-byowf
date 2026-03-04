@@ -20,6 +20,7 @@ defmodule Ignite.Application do
            {"/live", Ignite.LiveView.Handler, %{view: MyApp.CounterLive}},
            {"/live/register", Ignite.LiveView.Handler, %{view: MyApp.RegistrationLive}},
            {"/live/dashboard", Ignite.LiveView.Handler, %{view: MyApp.DashboardLive}},
+           {"/live/shared-counter", Ignite.LiveView.Handler, %{view: MyApp.SharedCounterLive}},
            {"/assets/[...]", :cowboy_static, {:dir, "assets"}},
            {"/[...]", Ignite.Adapters.Cowboy, []}
          ]}
@@ -27,6 +28,9 @@ defmodule Ignite.Application do
 
     children =
       [
+        # Start PubSub before Cowboy so it's available when LiveViews mount
+        Ignite.PubSub,
+
         # Start Cowboy under our supervision tree
         %{
           id: :cowboy_listener,

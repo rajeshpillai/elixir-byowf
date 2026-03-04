@@ -1,8 +1,8 @@
 # Ignite — Build a Phoenix-like Web Framework from Scratch
 
-A step-by-step tutorial that teaches Elixir by building **Ignite**, a real web framework inspired by [Phoenix](https://www.phoenixframework.org/). You'll go from a raw TCP socket to a full-stack framework with LiveView, WebSockets, and DOM diffing — all in 16 incremental commits.
+A step-by-step tutorial that teaches Elixir by building **Ignite**, a real web framework inspired by [Phoenix](https://www.phoenixframework.org/). You'll go from a raw TCP socket to a full-stack framework with LiveView, WebSockets, PubSub, and DOM diffing — all in 17 incremental commits.
 
-By the end, you'll understand every layer that powers production Elixir web applications: the conn pipeline, macro-based routing, OTP supervision, EEx templates, middleware plugs, and real-time LiveView with efficient DOM patching.
+By the end, you'll understand every layer that powers production Elixir web applications: the conn pipeline, macro-based routing, OTP supervision, EEx templates, middleware plugs, real-time LiveView with efficient DOM patching, and PubSub for cross-process broadcasting.
 
 ## Features
 
@@ -27,6 +27,11 @@ By the end, you'll understand every layer that powers production Elixir web appl
 - **`ignite-change`** — real-time input validation (sends field name + value on every keystroke)
 - **`ignite-submit`** — form submission with all fields collected via `FormData`
 
+### PubSub
+- **Process Group Broadcasting** — built on Erlang's `:pg` with zero external dependencies
+- **Topic-based Subscribe/Broadcast** — LiveViews subscribe to topics and receive broadcasts via `handle_info/2`
+- **Auto-cleanup** — dead processes are automatically removed from groups
+
 ### Infrastructure
 - **OTP Supervision** — self-healing server with `one_for_one` strategy
 - **Cowboy Adapter** — production-grade HTTP server (HTTP/1.1, connection pooling, SSL-ready)
@@ -43,6 +48,7 @@ By the end, you'll understand every layer that powers production Elixir web appl
 | `/counter` | Live counter | LiveView + click events |
 | `/register` | Registration form | Real-time validation + form submit |
 | `/dashboard` | BEAM dashboard | Server-push with auto-refreshing stats |
+| `/shared-counter` | Shared counter | PubSub broadcasting across tabs |
 | `/crash` | Error page | Error handler + 500 page |
 | `POST /users` | Create user | POST body parsing |
 
@@ -51,7 +57,7 @@ By the end, you'll understand every layer that powers production Elixir web appl
 Ignite is a real framework. You can use it to build:
 
 - **Admin dashboards** — real-time metrics, live charts, system monitoring
-- **Chat applications** — WebSocket-based messaging with server state
+- **Chat applications** — WebSocket-based messaging with PubSub broadcasting
 - **Form-heavy apps** — multi-step forms with live validation
 - **Internal tools** — CRUD interfaces with server-side rendering
 - **IoT control panels** — live device status with server-push updates
@@ -73,6 +79,7 @@ Ignite is a real framework. You can use it to build:
 | Optimization | Diffing Engine | 14 |
 | Dev Tools | Hot Code Reloader | 15 |
 | UI Performance | Morphdom DOM diffing | 16 |
+| Broadcasting | PubSub | 17 |
 
 ## Prerequisites
 
@@ -116,6 +123,7 @@ Or follow along commit-by-commit and build everything yourself.
 | 14 | [Diffing Engine](tutorial/14-diffing.md) | Statics + dynamics | Bandwidth optimization |
 | 15 | [Hot Code Reloader](tutorial/15-hot-reloader.md) | Dev reloader | BEAM hot swapping |
 | 16 | [Morphdom](tutorial/16-morphdom.md) | DOM diffing | Efficient UI updates |
+| 17 | [PubSub](tutorial/17-pubsub.md) | Cross-process broadcasting | `:pg` process groups, subscribe/broadcast |
 
 ## Quick Start
 
@@ -137,6 +145,7 @@ iex -S mix
 # http://localhost:4000/counter    → LiveView (real-time counter)
 # http://localhost:4000/register   → LiveView form with real-time validation
 # http://localhost:4000/dashboard  → Live BEAM dashboard (auto-refresh)
+# http://localhost:4000/shared-counter → PubSub shared counter (open in 2 tabs!)
 # http://localhost:4000/crash      → Error handler (500 page)
 # curl -X POST -d "username=Jose" http://localhost:4000/users  → POST parsing
 ```
@@ -155,6 +164,7 @@ ignite/
 │   │   ├── controller.ex      # Response helpers (text, html, render)
 │   │   ├── router.ex          # Router DSL macros
 │   │   ├── live_view.ex       # LiveView behaviour
+│   │   ├── pub_sub.ex         # PubSub (Erlang :pg wrapper)
 │   │   ├── live_view/
 │   │   │   ├── handler.ex     # WebSocket handler
 │   │   │   └── engine.ex      # Diffing engine
@@ -210,7 +220,7 @@ Features that would bring Ignite closer to Phoenix for production use:
 
 ### Data & State
 - [ ] Ecto integration for database access
-- [ ] PubSub for broadcasting between LiveView processes
+- [x] ~~PubSub for broadcasting between LiveView processes~~ (Step 17)
 - [ ] Presence tracking (who's online)
 - [ ] Flash messages (`put_flash(conn, :info, "Saved!")`)
 

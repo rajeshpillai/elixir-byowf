@@ -28,11 +28,6 @@ defmodule Ignite.LiveView.Handler do
 
         Logger.info("[LiveView] Mounted #{inspect(view_module)}")
 
-        # If the view defines handle_info, send an initial :tick to start the loop
-        if function_exported?(view_module, :handle_info, 2) do
-          Process.send_after(self(), :tick, 1000)
-        end
-
         new_state = %{view: view_module, assigns: assigns}
         payload = Jason.encode!(%{s: statics, d: dynamics})
         {:reply, {:text, payload}, new_state}
