@@ -20,6 +20,8 @@
  * - ignite-value="val"      — optional static value sent with click events
  * - ignite-navigate="/path" — client-side LiveView navigation (no full page reload)
  * - ignite-hook="HookName"  — attach a JS Hook for client-side interop
+ * - ignite-upload="name"   — file input connected to LiveView upload
+ * - ignite-drop-target="name" — drag-and-drop zone for LiveView upload
  */
 
 (function () {
@@ -142,6 +144,178 @@
     mountedHooks = {};
   }
 
+  // --- Upload System ---
+  // Tracks pending file uploads: ref → { file, uploadName }
+  var pendingUploads = {};
+
+  // Initialize a file input with [ignite-upload] to handle file selection
+  function initUploadInput(input) {
+    if (input._igniteUploadInit) return;
+    input._igniteUploadInit = true;
+
+    var uploadName = input.getAttribute("ignite-upload");
+    if (!uploadName) return;
+
+    input.addEventListener("change", function () {
+      var files = Array.from(input.files);
+      if (files.length === 0) return;
+
+      // Clear previous pending uploads for this upload name
+      for (var ref in pendingUploads) {
+        if (pendingUploads[ref].uploadName === uploadName) {
+          delete pendingUploads[ref];
+        }
+      }
+
+      var entries = [];
+      for (var i = 0; i < files.length; i++) {
+        var ref = String(i);
+        pendingUploads[ref] = { file: files[i], uploadName: uploadName };
+        entries.push({
+          ref: ref,
+          name: files[i].name,
+          type: files[i].type,
+          size: files[i].size,
+        });
+      }
+
+      // Send validation event to server
+      sendEvent("__upload_validate__", {
+        name: uploadName,
+        entries: entries,
+      });
+    });
+  }
+
+  // Chunk a file and send binary frames over WebSocket
+  function startChunkedUpload(ref, chunkSize) {
+    var pending = pendingUploads[ref];
+    if (!pending) return;
+
+    var file = pending.file;
+    var offset = 0;
+
+    function sendNextChunk() {
+      if (offset >= file.size) {
+        // All chunks sent — signal completion
+        sendEvent("__upload_complete__", {
+          name: pending.uploadName,
+          ref: ref,
+        });
+        delete pendingUploads[ref];
+        return;
+      }
+
+      var end = Math.min(offset + chunkSize, file.size);
+      var slice = file.slice(offset, end);
+      var reader = new FileReader();
+
+      reader.onload = function () {
+        var chunkData = new Uint8Array(reader.result);
+        var refBytes = new TextEncoder().encode(ref);
+        var refLen = refBytes.length;
+
+        // Build binary frame: [2 bytes refLen][refLen bytes ref][chunk data]
+        var frame = new Uint8Array(2 + refLen + chunkData.length);
+        frame[0] = (refLen >> 8) & 0xff;
+        frame[1] = refLen & 0xff;
+        frame.set(refBytes, 2);
+        frame.set(chunkData, 2 + refLen);
+
+        if (socket && socket.readyState === WebSocket.OPEN) {
+          socket.send(frame.buffer);
+        }
+
+        offset = end;
+        // Small delay to avoid flooding the WebSocket
+        setTimeout(sendNextChunk, 10);
+      };
+
+      reader.readAsArrayBuffer(slice);
+    }
+
+    sendNextChunk();
+  }
+
+  // Scan for upload inputs after DOM updates and initialize them
+  function initUploadInputs(container) {
+    var inputs = container.querySelectorAll("[ignite-upload]");
+    for (var i = 0; i < inputs.length; i++) {
+      initUploadInput(inputs[i]);
+    }
+  }
+
+  // --- Drag and Drop Upload ---
+  document.addEventListener("dragover", function (e) {
+    var target = e.target;
+    while (target && target !== document) {
+      if (target.getAttribute && target.getAttribute("ignite-drop-target")) {
+        e.preventDefault();
+        e.stopPropagation();
+        target.style.outline = "2px dashed #3498db";
+        target.style.outlineOffset = "-2px";
+        return;
+      }
+      target = target.parentElement;
+    }
+  });
+
+  document.addEventListener("dragleave", function (e) {
+    var target = e.target;
+    while (target && target !== document) {
+      if (target.getAttribute && target.getAttribute("ignite-drop-target")) {
+        target.style.outline = "";
+        target.style.outlineOffset = "";
+        return;
+      }
+      target = target.parentElement;
+    }
+  });
+
+  document.addEventListener("drop", function (e) {
+    var target = e.target;
+    while (target && target !== document) {
+      var uploadName = target.getAttribute
+        ? target.getAttribute("ignite-drop-target")
+        : null;
+      if (uploadName) {
+        e.preventDefault();
+        e.stopPropagation();
+        target.style.outline = "";
+        target.style.outlineOffset = "";
+
+        var files = Array.from(e.dataTransfer.files);
+        if (files.length === 0) return;
+
+        // Clear previous pending uploads for this upload name
+        for (var ref in pendingUploads) {
+          if (pendingUploads[ref].uploadName === uploadName) {
+            delete pendingUploads[ref];
+          }
+        }
+
+        var entries = [];
+        for (var i = 0; i < files.length; i++) {
+          var ref = String(i);
+          pendingUploads[ref] = { file: files[i], uploadName: uploadName };
+          entries.push({
+            ref: ref,
+            name: files[i].name,
+            type: files[i].type,
+            size: files[i].size,
+          });
+        }
+
+        sendEvent("__upload_validate__", {
+          name: uploadName,
+          entries: entries,
+        });
+        return;
+      }
+      target = target.parentElement;
+    }
+  });
+
   // --- Initialize ---
   var appContainer = document.getElementById(APP_CONTAINER_ID);
   if (!appContainer) return;
@@ -194,6 +368,10 @@
       morphdom(container, wrapper, {
         // Preserve focused input elements
         onBeforeElUpdated: function (fromEl, toEl) {
+          // Skip file inputs — browsers don't allow setting their value
+          if (fromEl.type === "file") {
+            return false;
+          }
           // Don't overwrite value if user is actively typing
           if (fromEl === document.activeElement) {
             if (fromEl.tagName === "INPUT" || fromEl.tagName === "TEXTAREA") {
@@ -267,7 +445,12 @@
           var existing = document.getElementById(entry.id);
           if (existing) {
             if (typeof morphdom === "function") {
-              morphdom(existing, newEl);
+              morphdom(existing, newEl, {
+                onBeforeElUpdated: function (fromEl) {
+                  if (fromEl.type === "file") return false;
+                  return true;
+                },
+              });
             } else {
               existing.parentNode.replaceChild(newEl, existing);
             }
@@ -348,6 +531,23 @@
 
       // Apply stream operations (after DOM is updated so containers exist)
       applyStreamOps(data);
+
+      // Initialize upload inputs (after DOM is updated so inputs exist)
+      initUploadInputs(el);
+
+      // Handle upload config response (after validation)
+      if (data.upload) {
+        var uploadConfig = data.upload;
+        var validEntries = uploadConfig.entries.filter(function (e) {
+          return e.valid;
+        });
+
+        if (uploadConfig.auto_upload && validEntries.length > 0) {
+          validEntries.forEach(function (entry) {
+            startChunkedUpload(entry.ref, uploadConfig.chunk_size);
+          });
+        }
+      }
     };
 
     socket.onopen = function () {
@@ -487,11 +687,13 @@
     if (eventName) {
       e.preventDefault();
 
-      // Collect all form fields
+      // Collect all form fields (skip file inputs — they're uploaded via WebSocket)
       var params = {};
       var formData = new FormData(form);
       formData.forEach(function (value, key) {
-        params[key] = value;
+        if (!(value instanceof File)) {
+          params[key] = value;
+        }
       });
 
       // Namespace the event if inside a component

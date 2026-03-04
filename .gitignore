@@ -27,3 +27,5 @@ ignite-*.tar
 
 # IDE / Editor
 /.elixir_ls/
+uploads/*
+!uploads/.gitkeep

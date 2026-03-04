@@ -113,6 +113,7 @@ defmodule MyApp.HooksDemoLive do
 
       <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid #eee; text-align: center;">
         <p style="color: #888; font-size: 14px;">Navigate without page reload:</p>
+        <a href="/" style="margin: 0 8px;">Home</a>
         <a href="/counter" ignite-navigate="/counter" style="margin: 0 8px;">Counter</a>
         <a href="/components" ignite-navigate="/components" style="margin: 0 8px;">Components</a>
         <a href="/dashboard" ignite-navigate="/dashboard" style="margin: 0 8px;">Dashboard</a>

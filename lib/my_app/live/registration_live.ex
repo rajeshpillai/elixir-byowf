@@ -59,6 +59,10 @@ defmodule MyApp.RegistrationLive do
           <p style="color: #155724;">Your account has been created successfully.</p>
         </div>
         <button ignite-click="reset">Register another</button>
+        <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid #eee; text-align: center;">
+          <a href="/" style="margin: 0 8px;">Home</a>
+          <a href="/counter" ignite-navigate="/counter" style="margin: 0 8px;">Counter</a>
+        </div>
       </div>
       """
     else
@@ -94,6 +98,11 @@ defmodule MyApp.RegistrationLive do
             Register
           </button>
         </form>
+        <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid #eee; text-align: center;">
+          <a href="/" style="margin: 0 8px;">Home</a>
+          <a href="/counter" ignite-navigate="/counter" style="margin: 0 8px;">Counter</a>
+          <a href="/dashboard" ignite-navigate="/dashboard" style="margin: 0 8px;">Dashboard</a>
+        </div>
       </div>
       """
     end

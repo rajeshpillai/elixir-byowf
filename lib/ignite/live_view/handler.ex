@@ -54,6 +54,32 @@ defmodule Ignite.LiveView.Handler do
   @impl true
   def websocket_handle({:text, json}, state) do
     case Jason.decode(json) do
+      # --- Upload protocol events ---
+
+      {:ok, %{"event" => "__upload_validate__", "params" => %{"name" => name, "entries" => entries}}} ->
+        upload_name = String.to_atom(name)
+        new_assigns = Ignite.LiveView.UploadHelpers.validate_entries(state.assigns, upload_name, entries)
+
+        # Let the view handle validation if it defines handle_event("validate", ...)
+        new_assigns =
+          if function_exported?(state.view, :handle_event, 3) do
+            case apply(state.view, :handle_event, ["validate", %{"name" => name}, new_assigns]) do
+              {:noreply, a} -> a
+              _ -> new_assigns
+            end
+          else
+            new_assigns
+          end
+
+        send_render_update_with_upload_config(state, new_assigns, upload_name)
+
+      {:ok, %{"event" => "__upload_complete__", "params" => %{"name" => name, "ref" => ref}}} ->
+        upload_name = String.to_atom(name)
+        new_assigns = Ignite.LiveView.UploadHelpers.mark_complete(state.assigns, upload_name, ref)
+        send_render_update(state, new_assigns)
+
+      # --- Generic events ---
+
       {:ok, %{"event" => event, "params" => params}} ->
         # Route component events (format: "component_id:event_name")
         {new_assigns, is_component_event} =
@@ -82,6 +108,21 @@ defmodule Ignite.LiveView.Handler do
         end
 
       _ ->
+        {:ok, state}
+    end
+  end
+
+  # Binary frames carry file upload chunks
+  # Protocol: [2 bytes: ref_len][ref_len bytes: ref_string][rest: chunk_data]
+  @impl true
+  def websocket_handle({:binary, data}, state) do
+    case data do
+      <<ref_len::16, ref::binary-size(ref_len), chunk_data::binary>> ->
+        new_assigns = Ignite.LiveView.UploadHelpers.receive_chunk(state.assigns, ref, chunk_data)
+        send_render_update(state, new_assigns)
+
+      _ ->
+        Logger.warning("[LiveView] Malformed binary upload frame")
         {:ok, state}
     end
   end
@@ -130,6 +171,30 @@ defmodule Ignite.LiveView.Handler do
     # Include streams in payload if present
     payload_map = %{d: diff_payload}
     payload_map = if streams_payload, do: Map.put(payload_map, :streams, streams_payload), else: payload_map
+
+    payload = Jason.encode!(payload_map)
+    {:reply, {:text, payload}, new_state}
+  end
+
+  # Like send_render_update but also includes upload config for the JS client
+  defp send_render_update_with_upload_config(state, assigns, upload_name) do
+    {_statics, new_dynamics} = Engine.render(state.view, assigns)
+    assigns = Ignite.LiveView.collect_components(assigns)
+
+    diff_payload =
+      case Map.get(state, :prev_dynamics) do
+        nil -> new_dynamics
+        prev -> Engine.diff(prev, new_dynamics)
+      end
+
+    {streams_payload, assigns} = Ignite.LiveView.Stream.extract_stream_ops(assigns)
+    upload_config = Ignite.LiveView.UploadHelpers.build_upload_config(assigns, upload_name)
+
+    new_state = %{state | assigns: assigns, prev_dynamics: new_dynamics}
+
+    payload_map = %{d: diff_payload}
+    payload_map = if streams_payload, do: Map.put(payload_map, :streams, streams_payload), else: payload_map
+    payload_map = if upload_config, do: Map.put(payload_map, :upload, upload_config), else: payload_map
 
     payload = Jason.encode!(payload_map)
     {:reply, {:text, payload}, new_state}

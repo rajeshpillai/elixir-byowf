@@ -69,6 +69,12 @@ defmodule MyApp.SharedCounterLive do
           <li>Built on Erlang's <code>:pg</code> process groups — zero external dependencies</li>
         </ul>
       </div>
+
+      <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid #eee; text-align: center;">
+        <a href="/" style="margin: 0 8px;">Home</a>
+        <a href="/counter" ignite-navigate="/counter" style="margin: 0 8px;">Counter</a>
+        <a href="/dashboard" ignite-navigate="/dashboard" style="margin: 0 8px;">Dashboard</a>
+      </div>
     </div>
     """
   end

@@ -87,13 +87,101 @@ defmodule Ignite.Adapters.Cowboy do
   defp read_cowboy_body(req) do
     case :cowboy_req.has_body(req) do
       true ->
-        {:ok, body, req} = :cowboy_req.read_body(req)
         content_type = :cowboy_req.header("content-type", req, "")
-        {parse_body(body, content_type), req}
+
+        if String.starts_with?(content_type, "multipart/form-data") do
+          read_multipart(req, %{})
+        else
+          {:ok, body, req} = :cowboy_req.read_body(req)
+          {parse_body(body, content_type), req}
+        end
 
       false ->
         {%{}, req}
     end
+  end
+
+  # --- Multipart parsing ---
+
+  # Loops through all parts of a multipart/form-data request.
+  # File parts are streamed to disk as %Ignite.Upload{} structs.
+  # Regular fields are stored as strings.
+  defp read_multipart(req, params) do
+    case :cowboy_req.read_part(req) do
+      {:ok, headers, req} ->
+        {name, filename} = parse_disposition(headers)
+
+        if filename do
+          # File part — stream to temp file
+          {:ok, tmp_path} = Ignite.Upload.random_file("multipart")
+          Ignite.Upload.schedule_cleanup(tmp_path)
+          {:ok, file} = File.open(tmp_path, [:write, :binary, :raw])
+          {:ok, req} = read_part_body_to_file(req, file)
+          File.close(file)
+
+          upload_content_type =
+            case Map.get(headers, "content-type") do
+              nil -> "application/octet-stream"
+              ct -> ct
+            end
+
+          upload = %Ignite.Upload{
+            path: tmp_path,
+            filename: filename,
+            content_type: upload_content_type
+          }
+
+          read_multipart(req, Map.put(params, name, upload))
+        else
+          # Regular field — read body as string
+          {:ok, body, req} = :cowboy_req.read_part_body(req)
+          read_multipart(req, Map.put(params, name, body))
+        end
+
+      {:done, req} ->
+        {params, req}
+    end
+  end
+
+  # Streams part body chunks to a file handle.
+  # Cowboy returns {:more, data, req} for large bodies.
+  defp read_part_body_to_file(req, file) do
+    case :cowboy_req.read_part_body(req) do
+      {:ok, data, req} ->
+        IO.binwrite(file, data)
+        {:ok, req}
+
+      {:more, data, req} ->
+        IO.binwrite(file, data)
+        read_part_body_to_file(req, file)
+    end
+  end
+
+  # Extracts "name" and "filename" from the content-disposition header.
+  # Example: "form-data; name=\"file\"; filename=\"photo.jpg\""
+  defp parse_disposition(headers) do
+    case Map.get(headers, "content-disposition") do
+      nil ->
+        {nil, nil}
+
+      disposition ->
+        name = extract_header_param(disposition, "name")
+        filename = extract_header_param(disposition, "filename")
+        {name, filename}
+    end
+  end
+
+  defp extract_header_param(header, param_name) do
+    header
+    |> String.split(";")
+    |> Enum.find_value(fn part ->
+      trimmed = String.trim(part)
+
+      case String.split(trimmed, "=", parts: 2) do
+        [^param_name, value] -> String.trim(value, "\"")
+        _ -> nil
+      end
+    end)
   end
 
   defp parse_body(body, "application/x-www-form-urlencoded" <> _) do

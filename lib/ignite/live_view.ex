@@ -184,6 +184,14 @@ defmodule Ignite.LiveView do
         stream_insert: 4,
         stream_delete: 3
       ]
+      import Ignite.LiveView.UploadHelpers, only: [
+        allow_upload: 2,
+        allow_upload: 3,
+        uploaded_entries: 2,
+        consume_uploaded_entries: 3,
+        cancel_upload: 3,
+        live_file_input: 2
+      ]
     end
   end
 end

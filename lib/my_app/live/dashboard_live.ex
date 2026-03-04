@@ -79,6 +79,7 @@ defmodule MyApp.DashboardLive do
 
       <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid #eee; text-align: center;">
         <p style="color: #888; font-size: 14px;">Navigate without page reload:</p>
+        <a href="/" style="margin: 0 8px;">Home</a>
         <a href="/counter" ignite-navigate="/counter" style="margin: 0 8px;">Counter</a>
         <a href="/shared-counter" ignite-navigate="/shared-counter" style="margin: 0 8px;">Shared Counter</a>
       </div>

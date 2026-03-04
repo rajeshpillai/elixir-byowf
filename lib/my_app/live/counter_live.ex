@@ -31,6 +31,7 @@ defmodule MyApp.CounterLive do
 
       <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
         <p style="color: #888; font-size: 14px;">Navigate without page reload:</p>
+        <a href="/" style="margin: 0 8px;">Home</a>
         <a href="/dashboard" ignite-navigate="/dashboard" style="margin: 0 8px;">Dashboard</a>
         <a href="/shared-counter" ignite-navigate="/shared-counter" style="margin: 0 8px;">Shared Counter</a>
       </div>

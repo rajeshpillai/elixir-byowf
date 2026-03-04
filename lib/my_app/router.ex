@@ -22,6 +22,9 @@ defmodule MyApp.Router do
   get "/components", to: MyApp.WelcomeController, action: :components
   get "/hooks", to: MyApp.WelcomeController, action: :hooks
   get "/streams", to: MyApp.WelcomeController, action: :streams
+  get "/upload", to: MyApp.UploadController, action: :upload_form
+  post "/upload", to: MyApp.UploadController, action: :upload
+  get "/upload-demo", to: MyApp.WelcomeController, action: :upload_demo
   post "/users", to: MyApp.UserController, action: :create
   put "/users/:id", to: MyApp.UserController, action: :update
   patch "/users/:id", to: MyApp.UserController, action: :update

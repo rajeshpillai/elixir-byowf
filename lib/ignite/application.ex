@@ -24,7 +24,9 @@ defmodule Ignite.Application do
            {"/live/components", Ignite.LiveView.Handler, %{view: MyApp.ComponentsDemoLive}},
            {"/live/hooks", Ignite.LiveView.Handler, %{view: MyApp.HooksDemoLive}},
            {"/live/streams", Ignite.LiveView.Handler, %{view: MyApp.StreamDemoLive}},
+           {"/live/upload-demo", Ignite.LiveView.Handler, %{view: MyApp.UploadDemoLive}},
            {"/assets/[...]", :cowboy_static, {:dir, "assets"}},
+           {"/uploads/[...]", :cowboy_static, {:dir, "uploads"}},
            {"/[...]", Ignite.Adapters.Cowboy, []}
          ]}
       ])

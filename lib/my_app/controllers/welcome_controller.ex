@@ -14,7 +14,8 @@ defmodule MyApp.WelcomeController do
                  "/shared-counter" => "/live/shared-counter",
                  "/components" => "/live/components",
                  "/hooks" => "/live/hooks",
-                 "/streams" => "/live/streams"
+                 "/streams" => "/live/streams",
+                 "/upload-demo" => "/live/upload-demo"
                })
 
   def index(conn) do
@@ -32,6 +33,8 @@ defmodule MyApp.WelcomeController do
       <li><a href="/components">/components</a> — LiveComponents (reusable stateful widgets)</li>
       <li><a href="/hooks">/hooks</a> — JS Hooks (client-side interop)</li>
       <li><a href="/streams">/streams</a> — LiveView Streams (efficient list updates)</li>
+      <li><a href="/upload">/upload</a> — File upload (multipart HTTP POST)</li>
+      <li><a href="/upload-demo">/upload-demo</a> — LiveView uploads (chunked WebSocket)</li>
       <li><a href="/crash">/crash</a> — Error handler (500 page)</li>
     </ul>
     <p><small>POST example: <code>curl -X POST -d "username=Jose" http://localhost:4000/users</code></small></p>
@@ -120,6 +123,14 @@ defmodule MyApp.WelcomeController do
     render(conn, "live",
       title: "LiveView Streams — Ignite",
       live_path: "/live/streams",
+      live_routes: @live_routes
+    )
+  end
+
+  def upload_demo(conn) do
+    render(conn, "live",
+      title: "LiveView Uploads — Ignite",
+      live_path: "/live/upload-demo",
       live_routes: @live_routes
     )
   end
