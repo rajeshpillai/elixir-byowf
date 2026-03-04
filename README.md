@@ -88,91 +88,55 @@ Ignite is a real framework. You can use it to build:
 - **IoT control panels** — live device status with server-push updates
 - **Prototypes** — quickly test ideas with minimal dependencies
 
-## What You'll Build (Tutorial Steps)
-
-| Layer | Component | Step |
-|-------|-----------|------|
-| Networking | TCP Socket → Cowboy | 1, 10 |
-| Parsing | HTTP Parser | 2, 9 |
-| Routing | Macro-based DSL | 3, 5 |
-| Controllers | Response helpers | 4 |
-| Reliability | OTP Supervision | 6 |
-| Templates | EEx Engine | 7 |
-| Middleware | Plug pipeline | 8 |
-| Error Handling | try/rescue boundary | 11 |
-| Real-time | LiveView + WebSocket | 12, 13 |
-| Optimization | Diffing Engine | 14 |
-| Dev Tools | Hot Code Reloader | 15 |
-| UI Performance | Morphdom DOM diffing | 16 |
-| Broadcasting | PubSub | 17 |
-| Navigation | LiveView Navigation | 18 |
-| Components | LiveComponents | 19 |
-| JS Interop | JS Hooks | 20 |
-| API | JSON helpers | 21 |
-| REST | PUT/PATCH/DELETE | 22 |
-| Organization | Scoped routes | 23 |
-| Optimization | Fine-grained diffing | 24 |
-| Collections | LiveView Streams | 25 |
-| File Uploads | Multipart + LiveView uploads | 26 |
-| Routing | Path helpers + resource routes | 27 |
-| Data & State | Flash messages + sessions | 28 |
-| Real-time | Presence tracking | 29 |
-
-## Prerequisites
-
-- Elixir >= 1.14 installed (`elixir --version`)
-- Basic terminal/command line skills
-- A text editor or IDE
-- A web browser and `curl` for testing
-
-No prior Elixir experience required — each step explains the language concepts as they come up.
-
-## How to Follow Along
-
-Each step is tagged in git. To jump to any step:
-
-```bash
-git checkout step-01   # TCP Socket Foundation
-git checkout step-02   # Conn Struct & Parser
-# ... etc
-```
-
-Or follow along commit-by-commit and build everything yourself.
-
 ## Tutorial Steps
 
-| Step | Topic | Tutorial | Key Concepts |
-|------|-------|----------|-------------|
-| 0 | Project Setup | You are here | Mix, project structure |
-| 1 | [TCP Socket Foundation](tutorial/01-tcp-socket.md) | `lib/ignite/server.ex` | Modules, functions, `:gen_tcp`, processes |
-| 2 | [Conn Struct & Parser](tutorial/02-conn-struct.md) | `lib/ignite/conn.ex`, `parser.ex` | Structs, pattern matching, HTTP parsing |
-| 3 | [Router DSL](tutorial/03-router-dsl.md) | `lib/ignite/router.ex` | Macros, `quote`/`unquote`, metaprogramming |
-| 4 | [Response Helpers](tutorial/04-response-helpers.md) | `lib/ignite/controller.ex` | Functional transforms, immutability |
-| 5 | [Dynamic Routes](tutorial/05-dynamic-routes.md) | Router `:params` | List matching, URL segments |
-| 6 | [OTP Supervision](tutorial/06-otp-supervision.md) | GenServer + Supervisor | OTP, fault tolerance, "let it crash" |
-| 7 | [EEx Templates](tutorial/07-templates.md) | `templates/*.html.eex` | EEx, server-side rendering, assigns |
-| 8 | [Middleware Pipeline](tutorial/08-middleware.md) | Plugs system | Module attributes, pipelines |
-| 9 | [POST Body Parser](tutorial/09-post-parser.md) | Form data parsing | HTTP bodies, URI decoding |
-| 10 | [Cowboy Adapter](tutorial/10-cowboy-adapter.md) | Production HTTP server | Dependencies, adapter pattern |
-| 11 | [Error Handler](tutorial/11-error-handler.md) | 500 pages | `try/rescue`, graceful errors |
-| 12 | [LiveView](tutorial/12-liveview.md) | WebSocket server | Behaviours, stateful processes |
-| 13 | [Frontend JS Glue](tutorial/13-frontend-glue.md) | `assets/ignite.js` | WebSocket API, event delegation |
-| 14 | [Diffing Engine](tutorial/14-diffing.md) | Statics + dynamics | Bandwidth optimization |
-| 15 | [Hot Code Reloader](tutorial/15-hot-reloader.md) | Dev reloader | BEAM hot swapping |
-| 16 | [Morphdom](tutorial/16-morphdom.md) | DOM diffing | Efficient UI updates |
-| 17 | [PubSub](tutorial/17-pubsub.md) | Cross-process broadcasting | `:pg` process groups, subscribe/broadcast |
-| 18 | [LiveView Navigation](tutorial/18-live-navigation.md) | SPA-like transitions | `history.pushState`, `ignite-navigate` |
-| 19 | [LiveComponents](tutorial/19-live-components.md) | Reusable stateful widgets | Behaviours, process dictionary, event namespacing |
-| 20 | [JS Hooks](tutorial/20-js-hooks.md) | Client-side JS interop | Lifecycle callbacks, `pushEvent`, DOM cleanup |
-| 21 | [JSON API](tutorial/21-json-api.md) | `json/3` helper + body parsing | `Jason.encode!`, content-type matching |
-| 22 | [HTTP Methods](tutorial/22-http-methods.md) | PUT/PATCH/DELETE macros | REST conventions, macro reuse |
-| 23 | [Scoped Routes](tutorial/23-scoped-routes.md) | `scope "/api" do ... end` | `__CALLER__`, compile-time state, nesting |
-| 24 | [Fine-Grained Diffing](tutorial/24-fine-grained-diffing.md) | `~L` sigil + EEx engine | Custom EEx engines, compile-time splitting, sparse diffs |
-| 25 | [LiveView Streams](tutorial/25-streams.md) | Efficient list operations | Stream ops, DOM manipulation, O(1) wire updates |
-| 26 | [File Uploads](tutorial/26-file-uploads.md) | Multipart + LiveView uploads | Cowboy streaming, binary WebSocket frames, chunked transfer |
-| 27 | [Path Helpers & Resource Routes](tutorial/27-path-helpers.md) | `resources` macro + generated helpers | `@before_compile`, route metadata, code generation |
-| 28 | [Flash Messages](tutorial/28-flash-messages.md) | Signed sessions + one-time notifications | `Plug.Crypto`, signed cookies, redirect, session lifecycle |
-| 29 | [Presence Tracking](tutorial/29-presence.md) | Who's Online with auto-cleanup | `Process.monitor/1`, GenServer state, presence diffs |
+Each step is tagged in git. Jump to any step with `git checkout step-01`, or follow along commit-by-commit. No prior Elixir experience required.
+
+### HTTP Foundations
+
+- [x] Step 0 — Project Setup — Mix, project structure
+- [x] Step 1 — [TCP Socket Foundation](tutorial/01-tcp-socket.md) — Modules, functions, `:gen_tcp`, processes
+- [x] Step 2 — [Conn Struct & Parser](tutorial/02-conn-struct.md) — Structs, pattern matching, HTTP parsing
+- [x] Step 3 — [Router DSL](tutorial/03-router-dsl.md) — Macros, `quote`/`unquote`, metaprogramming
+- [x] Step 4 — [Response Helpers](tutorial/04-response-helpers.md) — Functional transforms, immutability
+- [x] Step 5 — [Dynamic Routes](tutorial/05-dynamic-routes.md) — List matching, URL segments
+- [x] Step 6 — [OTP Supervision](tutorial/06-otp-supervision.md) — OTP, fault tolerance, "let it crash"
+- [x] Step 7 — [EEx Templates](tutorial/07-templates.md) — EEx, server-side rendering, assigns
+- [x] Step 8 — [Middleware Pipeline](tutorial/08-middleware.md) — Module attributes, pipelines
+- [x] Step 9 — [POST Body Parser](tutorial/09-post-parser.md) — HTTP bodies, URI decoding
+- [x] Step 10 — [Cowboy Adapter](tutorial/10-cowboy-adapter.md) — Dependencies, adapter pattern
+- [x] Step 11 — [Error Handler](tutorial/11-error-handler.md) — `try/rescue`, graceful errors
+
+### LiveView & Real-time
+
+- [x] Step 12 — [LiveView](tutorial/12-liveview.md) — Behaviours, stateful processes
+- [x] Step 13 — [Frontend JS Glue](tutorial/13-frontend-glue.md) — WebSocket API, event delegation
+- [x] Step 14 — [Diffing Engine](tutorial/14-diffing.md) — Bandwidth optimization
+- [x] Step 15 — [Hot Code Reloader](tutorial/15-hot-reloader.md) — BEAM hot swapping
+- [x] Step 16 — [Morphdom](tutorial/16-morphdom.md) — Efficient UI updates
+
+### Broadcasting & Components
+
+- [x] Step 17 — [PubSub](tutorial/17-pubsub.md) — `:pg` process groups, subscribe/broadcast
+- [x] Step 18 — [LiveView Navigation](tutorial/18-live-navigation.md) — `history.pushState`, `ignite-navigate`
+- [x] Step 19 — [LiveComponents](tutorial/19-live-components.md) — Behaviours, process dictionary, event namespacing
+- [x] Step 20 — [JS Hooks](tutorial/20-js-hooks.md) — Lifecycle callbacks, `pushEvent`, DOM cleanup
+
+### REST API & Advanced Features
+
+- [x] Step 21 — [JSON API](tutorial/21-json-api.md) — `Jason.encode!`, content-type matching
+- [x] Step 22 — [HTTP Methods](tutorial/22-http-methods.md) — REST conventions, macro reuse
+- [x] Step 23 — [Scoped Routes](tutorial/23-scoped-routes.md) — `__CALLER__`, compile-time state, nesting
+- [x] Step 24 — [Fine-Grained Diffing](tutorial/24-fine-grained-diffing.md) — Custom EEx engines, sparse diffs
+- [x] Step 25 — [LiveView Streams](tutorial/25-streams.md) — Stream ops, DOM manipulation, O(1) updates
+- [x] Step 26 — [File Uploads](tutorial/26-file-uploads.md) — Cowboy streaming, binary WebSocket frames
+- [x] Step 27 — [Path Helpers & Resource Routes](tutorial/27-path-helpers.md) — `@before_compile`, code generation
+
+### Data & State
+
+- [x] Step 28 — [Flash Messages](tutorial/28-flash-messages.md) — `Plug.Crypto`, signed cookies, session lifecycle
+- [x] Step 29 — [Presence Tracking](tutorial/29-presence.md) — `Process.monitor/1`, GenServer state, presence diffs
+- [ ] Step 30 — Ecto Integration — Database persistence with PostgreSQL
 
 ## Quick Start
 
