@@ -35,7 +35,8 @@ defmodule Ignite.LiveView.Handler do
 
         Logger.info("[LiveView] Mounted #{inspect(view_module)}")
 
-        new_state = %{view: view_module, assigns: assigns}
+        # Store prev_dynamics for future sparse diffing
+        new_state = %{view: view_module, assigns: assigns, prev_dynamics: dynamics}
         payload = Jason.encode!(%{s: statics, d: dynamics})
         {:reply, {:text, payload}, new_state}
     end
@@ -98,13 +99,21 @@ defmodule Ignite.LiveView.Handler do
 
   # --- Private helpers ---
 
-  # Renders the view and collects component state from the process dictionary
+  # Renders the view, diffs against previous dynamics, and sends sparse update
   defp send_render_update(state, assigns) do
-    dynamics = Engine.render_dynamics(state.view, assigns)
+    {_statics, new_dynamics} = Engine.render(state.view, assigns)
     # Collect component state that was set during render
     assigns = Ignite.LiveView.collect_components(assigns)
-    new_state = %{state | assigns: assigns}
-    payload = Jason.encode!(%{d: dynamics})
+
+    # Compute sparse diff against previous dynamics
+    diff_payload =
+      case Map.get(state, :prev_dynamics) do
+        nil -> new_dynamics
+        prev -> Engine.diff(prev, new_dynamics)
+      end
+
+    new_state = %{state | assigns: assigns, prev_dynamics: new_dynamics}
+    payload = Jason.encode!(%{d: diff_payload})
     {:reply, {:text, payload}, new_state}
   end
 

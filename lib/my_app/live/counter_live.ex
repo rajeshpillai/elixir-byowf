@@ -22,10 +22,10 @@ defmodule MyApp.CounterLive do
 
   @impl true
   def render(assigns) do
-    """
+    ~L"""
     <div id="counter">
       <h1>Live Counter</h1>
-      <p style="font-size: 3em; margin: 20px 0;">#{assigns.count}</p>
+      <p style="font-size: 3em; margin: 20px 0;"><%= assigns.count %></p>
       <button ignite-click="decrement" style="font-size: 1.5em; padding: 10px 20px;">-</button>
       <button ignite-click="increment" style="font-size: 1.5em; padding: 10px 20px;">+</button>
 

@@ -40,14 +40,14 @@ defmodule MyApp.SharedCounterLive do
 
   @impl true
   def render(assigns) do
-    """
+    ~L"""
     <div id="shared-counter" style="max-width: 500px; margin: 0 auto; text-align: center;">
       <h1>Shared Counter</h1>
       <p style="color: #888; font-size: 14px;">
         Open this page in multiple tabs — clicks sync in real time via PubSub
       </p>
 
-      <p style="font-size: 4em; margin: 20px 0; font-weight: bold;">#{assigns.count}</p>
+      <p style="font-size: 4em; margin: 20px 0; font-weight: bold;"><%= assigns.count %></p>
 
       <div style="display: flex; gap: 16px; justify-content: center;">
         <button ignite-click="decrement"

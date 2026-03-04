@@ -7,7 +7,8 @@
  *
  * Protocol:
  * - On mount: server sends {s: [...statics], d: [...dynamics]}
- * - On update: server sends {d: [...dynamics]}
+ * - On update (full): server sends {d: [...dynamics]}
+ * - On update (sparse): server sends {d: {"0": "new_val", "3": "changed"}}
  * - On redirect: server sends {redirect: {live_path: "/live/x", url: "/x"}}
  * - JS zips statics + dynamics, then morphdom patches the DOM
  *
@@ -28,6 +29,9 @@
 
   // Statics are saved from the first message and reused for every update
   var statics = null;
+
+  // Dynamics are saved so sparse updates can patch individual indices
+  var dynamics = null;
 
   // Current WebSocket connection
   var socket = null;
@@ -220,8 +224,9 @@
     // Destroy all hooks from previous view
     destroyAllHooks();
 
-    // Reset statics for new view
+    // Reset statics and dynamics for new view
     statics = null;
+    dynamics = null;
 
     var container = document.getElementById(APP_CONTAINER_ID);
     if (container) {
@@ -248,9 +253,26 @@
         statics = data.s;
       }
 
-      // Reconstruct HTML and patch the DOM
+      // Apply dynamics update (supports both full array and sparse object)
       if (statics && data.d) {
-        var newHtml = buildHtml(statics, data.d);
+        if (Array.isArray(data.d)) {
+          // Full dynamics array — replace entirely
+          dynamics = data.d;
+        } else if (dynamics) {
+          // Sparse object — patch only changed indices
+          for (var key in data.d) {
+            dynamics[parseInt(key, 10)] = data.d[key];
+          }
+        } else {
+          // First update is sparse but no previous dynamics (shouldn't happen)
+          dynamics = [];
+          for (var k in data.d) {
+            dynamics[parseInt(k, 10)] = data.d[k];
+          }
+        }
+
+        // Reconstruct HTML and patch the DOM
+        var newHtml = buildHtml(statics, dynamics);
         applyUpdate(el, newHtml);
       }
     };

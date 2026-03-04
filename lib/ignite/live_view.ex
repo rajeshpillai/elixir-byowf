@@ -39,8 +39,8 @@ defmodule Ignite.LiveView do
   @callback handle_event(event :: String.t(), params :: map(), assigns :: map()) ::
               {:noreply, map()}
 
-  @doc "Returns the HTML string for the current assigns."
-  @callback render(assigns :: map()) :: String.t()
+  @doc "Returns the HTML string or %Rendered{} struct for the current assigns."
+  @callback render(assigns :: map()) :: String.t() | Ignite.LiveView.Rendered.t()
 
   @doc "Called when the process receives a message (e.g. PubSub broadcast, timer tick)."
   @callback handle_info(msg :: term(), assigns :: map()) :: {:noreply, map()}
@@ -144,10 +144,39 @@ defmodule Ignite.LiveView do
     Map.put(assigns, :__redirect__, redirect_info)
   end
 
+  @doc """
+  Compiles a LiveView template into a `%Rendered{}` struct for fine-grained diffing.
+
+  Uses EEx syntax (`<%= expr %>`) to mark dynamic expressions. Static HTML
+  is separated at compile time — only dynamic values are evaluated at runtime.
+
+  ## Example
+
+      def render(assigns) do
+        ~L\"\"\"
+        <h1>Count: <%= assigns.count %></h1>
+        <button ignite-click="inc">+1</button>
+        \"\"\"
+      end
+
+  This produces a `%Rendered{}` with:
+  - statics: `["<h1>Count: ", "</h1>\\n<button ignite-click=\\"inc\\">+1</button>\\n"]`
+  - dynamics: `[to_string(assigns.count)]`
+  """
+  defmacro sigil_L({:<<>>, _meta, [template]}, _modifiers) do
+    EEx.compile_string(template, engine: Ignite.LiveView.EExEngine)
+  end
+
   defmacro __using__(_opts) do
     quote do
       @behaviour Ignite.LiveView
-      import Ignite.LiveView, only: [push_redirect: 2, push_redirect: 3, live_component: 3, collect_components: 1]
+      import Ignite.LiveView, only: [
+        push_redirect: 2,
+        push_redirect: 3,
+        live_component: 3,
+        collect_components: 1,
+        sigil_L: 2
+      ]
     end
   end
 end

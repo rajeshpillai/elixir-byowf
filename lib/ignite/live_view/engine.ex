@@ -3,62 +3,97 @@ defmodule Ignite.LiveView.Engine do
   Splits rendered HTML into statics (unchanging parts) and dynamics
   (variable values) for efficient over-the-wire updates.
 
-  Instead of sending full HTML on every update, we:
-  1. On mount: send both statics and dynamics → {s: [...], d: [...]}
-  2. On event: send only dynamics → {d: [...]}
+  Supports two render return types:
 
-  The frontend zips statics + dynamics to reconstruct the full HTML.
+  - `%Rendered{}` (from `~L` sigil): real per-expression statics/dynamics.
+    Each `<%= expr %>` becomes its own indexed dynamic.
 
-  ## Example
+  - `String` (legacy): the entire HTML is treated as a single dynamic,
+    wrapped in empty statics `["", ""]`. Backward compatible.
 
-      Template: "<h1>Count: \#{count}</h1><p>Hello</p>"
+  ## Wire Protocol
 
-      Statics:  ["<h1>Count: ", "</h1><p>Hello</p>"]
-      Dynamics: ["42"]
+  On mount, sends both statics and dynamics:
 
-      Reconstructed: "<h1>Count: 42</h1><p>Hello</p>"
+      {s: ["<h1>Count: ", "</h1>"], d: ["42"]}
+
+  On update, sends only changed dynamics as a sparse map:
+
+      {d: {"0": "43"}}
+
+  Or as a full array when all dynamics changed:
+
+      {d: ["43"]}
   """
+
+  alias Ignite.LiveView.Rendered
 
   @doc """
-  Renders a LiveView module and returns {statics, dynamics}.
+  Renders a LiveView module and returns `{statics, dynamics}`.
 
-  Statics are extracted once (they never change between renders).
-  Dynamics are the interpolated values that change on each render.
+  Used on mount to send the full initial payload.
   """
   def render(view_module, assigns) do
-    # Get the full rendered HTML
-    html = apply(view_module, :render, [assigns])
-
-    # Split into statics and dynamics using a simple regex approach.
-    # We look for our marker pattern to identify dynamic parts.
-    # For our simplified version, we use the render function that
-    # returns HTML with special markers.
-    {statics, dynamics} = split_template(html)
-
-    {statics, dynamics}
+    result = apply(view_module, :render, [assigns])
+    normalize(result)
   end
 
   @doc """
-  Renders and returns only the dynamic values (for updates).
+  Renders and returns only the dynamics list.
+
+  Used when no previous dynamics are available for diffing.
   """
   def render_dynamics(view_module, assigns) do
-    html = apply(view_module, :render, [assigns])
-    {_statics, dynamics} = split_template(html)
+    result = apply(view_module, :render, [assigns])
+    {_statics, dynamics} = normalize(result)
     dynamics
   end
 
-  # Splits an HTML string by extracting interpolated values.
-  #
-  # Since Elixir string interpolation happens before we see the result,
-  # we use a convention: LiveView render functions return a tagged
-  # format that we can split.
-  #
-  # For our simplified engine, we treat the entire rendered HTML as
-  # a single dynamic value. A production engine would compile the EEx
-  # template at compile-time to track static vs dynamic parts.
-  defp split_template(html) do
-    # Simple approach: the entire rendered output is one dynamic chunk
-    # wrapped in empty statics.
+  @doc """
+  Computes a sparse diff between old and new dynamics.
+
+  Returns either:
+  - A map of `%{"index" => new_value}` for changed indices only (sparse)
+  - A list when all dynamics changed (more compact than a full map)
+  - An empty map when nothing changed
+  """
+  def diff(old_dynamics, new_dynamics)
+      when is_list(old_dynamics) and is_list(new_dynamics) do
+    if length(old_dynamics) != length(new_dynamics) do
+      # Structure changed — send full list
+      new_dynamics
+    else
+      changes =
+        old_dynamics
+        |> Enum.zip(new_dynamics)
+        |> Enum.with_index()
+        |> Enum.reduce(%{}, fn {{old_val, new_val}, idx}, acc ->
+          if old_val == new_val do
+            acc
+          else
+            Map.put(acc, Integer.to_string(idx), new_val)
+          end
+        end)
+
+      if map_size(changes) == length(new_dynamics) do
+        # All changed — send as array (more compact)
+        new_dynamics
+      else
+        # Sparse — send as map with only changed indices
+        changes
+      end
+    end
+  end
+
+  # --- Normalization ---
+
+  # %Rendered{} from ~L sigil: use statics/dynamics directly
+  defp normalize(%Rendered{statics: statics, dynamics: dynamics}) do
+    {statics, dynamics}
+  end
+
+  # Legacy string: entire HTML is one dynamic
+  defp normalize(html) when is_binary(html) do
     {["", ""], [html]}
   end
 end

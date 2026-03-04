@@ -1,6 +1,6 @@
 # Ignite — Build a Phoenix-like Web Framework from Scratch
 
-A step-by-step tutorial that teaches Elixir by building **Ignite**, a real web framework inspired by [Phoenix](https://www.phoenixframework.org/). You'll go from a raw TCP socket to a full-stack framework with LiveView, WebSockets, PubSub, and DOM diffing — all in 23 incremental commits.
+A step-by-step tutorial that teaches Elixir by building **Ignite**, a real web framework inspired by [Phoenix](https://www.phoenixframework.org/). You'll go from a raw TCP socket to a full-stack framework with LiveView, WebSockets, PubSub, and DOM diffing — all in 24 incremental commits.
 
 By the end, you'll understand every layer that powers production Elixir web applications: the conn pipeline, macro-based routing, OTP supervision, EEx templates, middleware plugs, real-time LiveView with efficient DOM patching, and PubSub for cross-process broadcasting.
 
@@ -22,7 +22,7 @@ By the end, you'll understand every layer that powers production Elixir web appl
 - **WebSocket Server** — persistent stateful connections via `:cowboy_websocket`
 - **LiveView Behaviour** — `mount/2`, `handle_event/3`, `render/1` callbacks
 - **Server Push** — `handle_info/2` for server-initiated updates (timers, external events)
-- **Statics/Dynamics Diffing** — sends only changed data over the wire
+- **Fine-Grained Diffing** — `~L` sigil with custom EEx engine splits templates at compile time; sends only changed values as sparse updates
 - **Morphdom DOM Patching** — efficient client-side updates that preserve input focus and animations
 - **LiveView Navigation** — SPA-like page transitions with `ignite-navigate` and `push_redirect/2`
 - **LiveComponents** — reusable stateful components with `live_component/3`, auto-namespaced events
@@ -98,6 +98,7 @@ Ignite is a real framework. You can use it to build:
 | API | JSON helpers | 21 |
 | REST | PUT/PATCH/DELETE | 22 |
 | Organization | Scoped routes | 23 |
+| Optimization | Fine-grained diffing | 24 |
 
 ## Prerequisites
 
@@ -148,6 +149,7 @@ Or follow along commit-by-commit and build everything yourself.
 | 21 | [JSON API](tutorial/21-json-api.md) | `json/3` helper + body parsing | `Jason.encode!`, content-type matching |
 | 22 | [HTTP Methods](tutorial/22-http-methods.md) | PUT/PATCH/DELETE macros | REST conventions, macro reuse |
 | 23 | [Scoped Routes](tutorial/23-scoped-routes.md) | `scope "/api" do ... end` | `__CALLER__`, compile-time state, nesting |
+| 24 | [Fine-Grained Diffing](tutorial/24-fine-grained-diffing.md) | `~L` sigil + EEx engine | Custom EEx engines, compile-time splitting, sparse diffs |
 
 ## Quick Start
 
@@ -237,7 +239,7 @@ Features that would bring Ignite closer to Phoenix for production use:
 - [x] ~~JSON response helper (`json(conn, %{ok: true})`)~~ (Step 21)
 
 ### LiveView
-- [ ] Fine-grained diffing (track individual dynamic expressions, not whole HTML)
+- [x] ~~Fine-grained diffing (track individual dynamic expressions, not whole HTML)~~ (Step 24)
 - [x] ~~LiveView navigation (`live_redirect`, `push_patch` without full page reload)~~ (Step 18)
 - [x] ~~LiveComponents (reusable stateful components within a LiveView)~~ (Step 19)
 - [ ] Streams for large collections (append/prepend without re-rendering lists)

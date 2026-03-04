@@ -47,7 +47,7 @@ defmodule MyApp.HooksDemoLive do
       |> Enum.join("\n")
     end
 
-    """
+    ~L"""
     <div id="hooks-demo" style="max-width: 600px; margin: 0 auto;">
       <h1>JS Hooks Demo</h1>
       <p style="color: #888; font-size: 14px;">
@@ -56,7 +56,7 @@ defmodule MyApp.HooksDemoLive do
 
       <div style="margin: 24px 0; padding: 20px; background: #f8f9fa; border-radius: 8px;">
         <h3 style="margin-top: 0;">Server State</h3>
-        <p>Server clicks: <strong>#{assigns.server_clicks}</strong></p>
+        <p>Server clicks: <strong><%= assigns.server_clicks %></strong></p>
         <button ignite-click="server_click"
                 style="padding: 8px 16px; background: #3498db; color: white; border: none; border-radius: 6px; cursor: pointer;">
           Server Click
@@ -66,9 +66,9 @@ defmodule MyApp.HooksDemoLive do
       <div style="margin: 24px 0; padding: 20px; background: #fff8f0; border-radius: 8px;">
         <h3 style="margin-top: 0;">Clipboard Hook</h3>
         <p style="font-size: 14px; color: #666;">Uses the Clipboard API — a pure JS operation that LiveView can't do server-side</p>
-        <div id="clipboard-hook" ignite-hook="CopyToClipboard" data-text="#{assigns.copy_text}"
+        <div id="clipboard-hook" ignite-hook="CopyToClipboard" data-text="<%= assigns.copy_text %>"
              style="display: flex; gap: 12px; align-items: center;">
-          <code style="padding: 8px 12px; background: #eee; border-radius: 4px; flex: 1;">#{assigns.copy_text}</code>
+          <code style="padding: 8px 12px; background: #eee; border-radius: 4px; flex: 1;"><%= assigns.copy_text %></code>
           <button onclick="this.parentElement.querySelector('[ignite-hook]') || void(0)"
                   style="padding: 8px 16px; background: #9b59b6; color: white; border: none; border-radius: 6px; cursor: pointer; white-space: nowrap;"
                   id="copy-btn">
@@ -94,7 +94,7 @@ defmodule MyApp.HooksDemoLive do
         <h3 style="margin-top: 0;">Hook Events Log</h3>
         <p style="font-size: 14px; color: #666;">Events received from JS hooks via <code>pushEvent()</code></p>
         <ul style="margin: 8px 0; padding-left: 20px;">
-          #{events_html}
+          <%= events_html %>
         </ul>
       </div>
 

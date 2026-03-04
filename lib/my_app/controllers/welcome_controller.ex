@@ -36,8 +36,29 @@ defmodule MyApp.WelcomeController do
     <h2>API Routes</h2>
     <ul>
       <li><a href="/api/status">/api/status</a> — JSON response</li>
-      <li><code>curl -X POST -H "Content-Type: application/json" -d '{"name":"Jose"}' http://localhost:4000/api/echo</code> — JSON echo</li>
     </ul>
+    <h3>POST /api/echo</h3>
+    <div style="margin-bottom:1em;">
+      <textarea id="echo-input" rows="3" cols="50" style="font-family:monospace;">{"name":"Jose"}</textarea><br>
+      <button id="echo-btn" style="margin-top:0.5em;">Send POST</button>
+    </div>
+    <pre id="echo-output" style="background:#f4f4f4;padding:0.5em;display:none;"></pre>
+    <script>
+      document.getElementById("echo-btn").addEventListener("click", function() {
+        var body = document.getElementById("echo-input").value;
+        var out = document.getElementById("echo-output");
+        out.style.display = "block";
+        out.textContent = "Sending...";
+        fetch("/api/echo", {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
+          body: body
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) { out.textContent = JSON.stringify(data, null, 2); })
+        .catch(function(err) { out.textContent = "Error: " + err; });
+      });
+    </script>
     """)
   end
 
