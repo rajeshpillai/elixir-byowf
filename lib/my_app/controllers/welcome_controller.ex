@@ -15,6 +15,7 @@ defmodule MyApp.WelcomeController do
       <li><a href="/users/42">/users/42</a> — EEx template with dynamic params</li>
       <li><a href="/counter">/counter</a> — LiveView (real-time counter)</li>
       <li><a href="/register">/register</a> — LiveView form with real-time validation</li>
+      <li><a href="/dashboard">/dashboard</a> — Live BEAM dashboard (auto-refresh)</li>
       <li><a href="/crash">/crash</a> — Error handler (500 page)</li>
     </ul>
     <p><small>POST example: <code>curl -X POST -d "username=Jose" http://localhost:4000/users</code></small></p>
@@ -35,5 +36,9 @@ defmodule MyApp.WelcomeController do
 
   def register(conn) do
     render(conn, "live", title: "Registration — Ignite", live_path: "/live/register")
+  end
+
+  def dashboard(conn) do
+    render(conn, "live", title: "Dashboard — Ignite", live_path: "/live/dashboard")
   end
 end

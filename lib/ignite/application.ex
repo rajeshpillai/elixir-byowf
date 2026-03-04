@@ -19,6 +19,7 @@ defmodule Ignite.Application do
          [
            {"/live", Ignite.LiveView.Handler, %{view: MyApp.CounterLive}},
            {"/live/register", Ignite.LiveView.Handler, %{view: MyApp.RegistrationLive}},
+           {"/live/dashboard", Ignite.LiveView.Handler, %{view: MyApp.DashboardLive}},
            {"/assets/[...]", :cowboy_static, {:dir, "assets"}},
            {"/[...]", Ignite.Adapters.Cowboy, []}
          ]}

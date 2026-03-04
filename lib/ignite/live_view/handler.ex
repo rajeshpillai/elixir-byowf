@@ -28,6 +28,11 @@ defmodule Ignite.LiveView.Handler do
 
         Logger.info("[LiveView] Mounted #{inspect(view_module)}")
 
+        # If the view defines handle_info, send an initial :tick to start the loop
+        if function_exported?(view_module, :handle_info, 2) do
+          Process.send_after(self(), :tick, 1000)
+        end
+
         new_state = %{view: view_module, assigns: assigns}
         payload = Jason.encode!(%{s: statics, d: dynamics})
         {:reply, {:text, payload}, new_state}
@@ -57,8 +62,22 @@ defmodule Ignite.LiveView.Handler do
     {:ok, state}
   end
 
+  # Server-push: handle messages sent to this process (e.g. :tick)
   @impl true
-  def websocket_info(_info, state) do
-    {:ok, state}
+  def websocket_info(msg, state) do
+    if function_exported?(state.view, :handle_info, 2) do
+      case apply(state.view, :handle_info, [msg, state.assigns]) do
+        {:noreply, new_assigns} ->
+          dynamics = Engine.render_dynamics(state.view, new_assigns)
+          new_state = %{state | assigns: new_assigns}
+          payload = Jason.encode!(%{d: dynamics})
+          {:reply, {:text, payload}, new_state}
+
+        _ ->
+          {:ok, state}
+      end
+    else
+      {:ok, state}
+    end
   end
 end
