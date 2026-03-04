@@ -18,11 +18,47 @@ defmodule Ignite.Router do
     quote do
       import Ignite.Router
 
-      # Entry point: split the path into segments and dispatch
+      # Accumulate plug names as a module attribute.
+      # `accumulate: true` means each `@plugs :name` adds to a list.
+      Module.register_attribute(__MODULE__, :plugs, accumulate: true)
+
+      # Entry point: run plugs first, then dispatch if not halted
       def call(conn) do
-        segments = String.split(conn.path, "/", trim: true)
-        dispatch(conn, segments)
+        # Run through plugs in order (reversed because accumulate prepends)
+        conn =
+          Enum.reduce(Enum.reverse(@plugs), conn, fn plug_func, acc ->
+            if acc.halted, do: acc, else: apply(__MODULE__, plug_func, [acc])
+          end)
+
+        # Only dispatch to routes if no plug halted the pipeline
+        if conn.halted do
+          conn
+        else
+          segments = String.split(conn.path, "/", trim: true)
+          dispatch(conn, segments)
+        end
       end
+    end
+  end
+
+  @doc """
+  Registers a middleware function to run before every request.
+
+  The function must be a public function in the router module that
+  takes a conn and returns a conn.
+
+  ## Example
+
+      plug :log_request
+
+      def log_request(conn) do
+        Logger.info("\#{conn.method} \#{conn.path}")
+        conn
+      end
+  """
+  defmacro plug(function_name) do
+    quote do
+      @plugs unquote(function_name)
     end
   end
 
