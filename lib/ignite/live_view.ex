@@ -48,6 +48,78 @@ defmodule Ignite.LiveView do
   @optional_callbacks [handle_info: 2]
 
   @doc """
+  Renders a LiveComponent inline within a LiveView's render function.
+
+  Components are identified by a unique `id`. On first render, the component's
+  `mount/1` is called with the given props. On subsequent renders, props are
+  merged into the existing component state.
+
+  The parent LiveView stores component state in its assigns under `__components__`.
+
+  ## Example
+
+      def render(assigns) do
+        \\"\\"\\"
+        <div>
+          \\\#{live_component(assigns, MyApp.Components.ToggleButton, id: "dark-mode", label: "Dark Mode")}
+        </div>
+        \\"\\"\\"
+      end
+  """
+  def live_component(parent_assigns, module, opts) do
+    id = Keyword.fetch!(opts, :id)
+    props = opts |> Keyword.delete(:id) |> Map.new()
+
+    # Get existing component state from parent assigns
+    components = Map.get(parent_assigns, :__components__, %{})
+
+    comp_assigns =
+      case Map.get(components, id) do
+        {^module, existing_assigns} ->
+          # Existing component — merge new props from parent
+          Map.merge(existing_assigns, props)
+
+        _ ->
+          # New component — call mount if defined, otherwise just use props
+          # ensure_loaded is needed because BEAM lazy-loads modules;
+          # function_exported?/3 returns false for unloaded modules
+          Code.ensure_loaded(module)
+
+          if function_exported?(module, :mount, 1) do
+            {:ok, initial} = module.mount(props)
+            initial
+          else
+            props
+          end
+      end
+
+    # Store component state in the process dictionary so the handler
+    # can persist it after render completes (render is a pure function
+    # that returns a string, so it can't update parent assigns directly)
+    rendered_components = Process.get(:__ignite_components__, %{})
+    Process.put(:__ignite_components__, Map.put(rendered_components, id, {module, comp_assigns}))
+
+    # Render the component with a wrapper div carrying component ID
+    html = module.render(comp_assigns)
+
+    ~s(<div ignite-component="#{id}">#{html}</div>)
+  end
+
+  @doc """
+  Collects component state accumulated during render.
+
+  Called by the handler after render to persist component state
+  back into the parent's assigns.
+  """
+  def collect_components(assigns) do
+    case Process.delete(:__ignite_components__) do
+      nil -> assigns
+      components when map_size(components) == 0 -> assigns
+      components -> Map.put(assigns, :__components__, components)
+    end
+  end
+
+  @doc """
   Triggers a client-side navigation to a different LiveView.
 
   The client will close the current WebSocket, update the URL via
@@ -75,7 +147,7 @@ defmodule Ignite.LiveView do
   defmacro __using__(_opts) do
     quote do
       @behaviour Ignite.LiveView
-      import Ignite.LiveView, only: [push_redirect: 2, push_redirect: 3]
+      import Ignite.LiveView, only: [push_redirect: 2, push_redirect: 3, live_component: 3, collect_components: 1]
     end
   end
 end

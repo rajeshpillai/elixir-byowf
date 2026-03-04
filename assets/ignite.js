@@ -17,6 +17,7 @@
  * - ignite-submit="event"   — sends event on form submit (with all form fields)
  * - ignite-value="val"      — optional static value sent with click events
  * - ignite-navigate="/path" — client-side LiveView navigation (no full page reload)
+ * - ignite-hook="HookName"  — attach a JS Hook for client-side interop
  */
 
 (function () {
@@ -33,6 +34,108 @@
 
   // Route mapping: HTTP path → WebSocket live_path (injected by server)
   var liveRoutes = {};
+
+  // --- JS Hooks Registry ---
+  // Users register hooks via: window.IgniteHooks = { HookName: { mounted(){}, ... } }
+  // Each hook instance gets: this.el, this.pushEvent(event, params)
+  var mountedHooks = {}; // elementId → { name, instance }
+
+  function getHookDefinitions() {
+    return window.IgniteHooks || {};
+  }
+
+  // Create a hook instance with the right context
+  function createHookInstance(hookDef, el) {
+    var instance = Object.create(hookDef);
+    instance.el = el;
+    instance.pushEvent = function (event, params) {
+      sendEvent(event, params || {});
+    };
+    return instance;
+  }
+
+  // Scan the DOM for [ignite-hook] elements and call mounted() on new ones
+  function mountHooks(container) {
+    var hookDefs = getHookDefinitions();
+    var elements = container.querySelectorAll("[ignite-hook]");
+
+    for (var i = 0; i < elements.length; i++) {
+      var el = elements[i];
+      var hookName = el.getAttribute("ignite-hook");
+      var elId = el.id;
+
+      if (!elId || !hookName) continue;
+      if (mountedHooks[elId]) continue; // already mounted
+
+      var def = hookDefs[hookName];
+      if (!def) {
+        console.warn("[Ignite] Hook '" + hookName + "' not found in IgniteHooks");
+        continue;
+      }
+
+      var instance = createHookInstance(def, el);
+      mountedHooks[elId] = { name: hookName, instance: instance };
+
+      if (typeof instance.mounted === "function") {
+        instance.mounted();
+      }
+    }
+  }
+
+  // Call updated() on hooks whose elements were re-rendered
+  function updateHooks(container) {
+    var elements = container.querySelectorAll("[ignite-hook]");
+
+    for (var i = 0; i < elements.length; i++) {
+      var el = elements[i];
+      var elId = el.id;
+      if (!elId) continue;
+
+      var entry = mountedHooks[elId];
+      if (entry) {
+        // Update the element reference (morphdom may have replaced it)
+        entry.instance.el = el;
+        if (typeof entry.instance.updated === "function") {
+          entry.instance.updated();
+        }
+      }
+    }
+  }
+
+  // Call destroyed() on hooks whose elements were removed
+  function cleanupHooks(container) {
+    var currentIds = {};
+    var elements = container.querySelectorAll("[ignite-hook]");
+    for (var i = 0; i < elements.length; i++) {
+      if (elements[i].id) currentIds[elements[i].id] = true;
+    }
+
+    var toRemove = [];
+    for (var id in mountedHooks) {
+      if (!currentIds[id]) {
+        toRemove.push(id);
+      }
+    }
+
+    for (var j = 0; j < toRemove.length; j++) {
+      var entry = mountedHooks[toRemove[j]];
+      if (entry && typeof entry.instance.destroyed === "function") {
+        entry.instance.destroyed();
+      }
+      delete mountedHooks[toRemove[j]];
+    }
+  }
+
+  // Destroy all hooks (e.g. on navigation)
+  function destroyAllHooks() {
+    for (var id in mountedHooks) {
+      var entry = mountedHooks[id];
+      if (entry && typeof entry.instance.destroyed === "function") {
+        entry.instance.destroyed();
+      }
+    }
+    mountedHooks = {};
+  }
 
   // --- Initialize ---
   var appContainer = document.getElementById(APP_CONTAINER_ID);
@@ -99,6 +202,11 @@
       // Fallback: replace entire content
       container.innerHTML = newHtml;
     }
+
+    // Hook lifecycle: clean up removed hooks, mount new ones, update existing
+    cleanupHooks(container);
+    mountHooks(container);
+    updateHooks(container);
   }
 
   // --- WebSocket connection management ---
@@ -108,6 +216,9 @@
       socket.onclose = null; // prevent disconnect log
       socket.close();
     }
+
+    // Destroy all hooks from previous view
+    destroyAllHooks();
 
     // Reset statics for new view
     statics = null;
@@ -150,6 +261,8 @@
           livePath +
           " (morphdom: " +
           (typeof morphdom === "function") +
+          ", hooks: " +
+          Object.keys(getHookDefinitions()).length +
           ")"
       );
     };
@@ -203,6 +316,20 @@
     window.location.pathname
   );
 
+  // --- Component event namespacing ---
+  // If an element is inside [ignite-component="id"], prefix its event with "id:"
+  function resolveEvent(eventName, target) {
+    var el = target;
+    while (el && el !== document) {
+      var componentId = el.getAttribute("ignite-component");
+      if (componentId) {
+        return componentId + ":" + eventName;
+      }
+      el = el.parentElement;
+    }
+    return eventName;
+  }
+
   // --- Send click events to server ---
   document.addEventListener("click", function (e) {
     var target = e.target;
@@ -227,7 +354,8 @@
           params.value = value;
         }
 
-        sendEvent(eventName, params);
+        // Namespace the event if inside a component
+        sendEvent(resolveEvent(eventName, target), params);
         return;
       }
       target = target.parentElement;
@@ -247,7 +375,8 @@
           field: target.getAttribute("name") || "",
           value: target.value,
         };
-        sendEvent(eventName, params);
+        // Namespace the event if inside a component
+        sendEvent(resolveEvent(eventName, target), params);
         return;
       }
       el = el.parentElement;
@@ -270,7 +399,8 @@
         params[key] = value;
       });
 
-      sendEvent(eventName, params);
+      // Namespace the event if inside a component
+      sendEvent(resolveEvent(eventName, form), params);
     }
   });
 

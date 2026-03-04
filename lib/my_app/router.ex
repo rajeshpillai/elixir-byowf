@@ -19,6 +19,8 @@ defmodule MyApp.Router do
   get "/register", to: MyApp.WelcomeController, action: :register
   get "/dashboard", to: MyApp.WelcomeController, action: :dashboard
   get "/shared-counter", to: MyApp.WelcomeController, action: :shared_counter
+  get "/components", to: MyApp.WelcomeController, action: :components
+  get "/hooks", to: MyApp.WelcomeController, action: :hooks
   post "/users", to: MyApp.UserController, action: :create
 
   # This must be the last line — it catches everything that didn't match above
