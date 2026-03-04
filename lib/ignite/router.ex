@@ -2,63 +2,117 @@ defmodule Ignite.Router do
   @moduledoc """
   The Router DSL — provides macros for defining routes.
 
-  When you `use Ignite.Router` in your module and write:
+  Supports both static and dynamic routes:
 
       get "/hello", to: MyController, action: :hello
+      get "/users/:id", to: UserController, action: :show
 
-  This macro generates a pattern-matching function clause at compile time.
-  The Erlang VM then jumps directly to the right handler — no looping needed.
+  Routes are compiled into pattern-matching function clauses.
+  Dynamic segments (`:id`) are captured into `conn.params`.
   """
 
   @doc """
   Sets up the router when you write `use Ignite.Router`.
-
-  This is called at compile time and injects:
-  - The `call/1` function (entry point for all requests)
-  - Imports so you can use `get`, `finalize_routes`, etc.
   """
   defmacro __using__(_opts) do
     quote do
       import Ignite.Router
 
-      # Entry point: takes a conn and dispatches to the matching route
+      # Entry point: split the path into segments and dispatch
       def call(conn) do
-        dispatch(conn)
+        segments = String.split(conn.path, "/", trim: true)
+        dispatch(conn, segments)
       end
     end
   end
 
   @doc """
-  Defines a GET route.
+  Defines a GET route. Supports dynamic segments with `:param`.
 
-  ## Example
+  ## Examples
 
       get "/hello", to: MyController, action: :hello
-
-  This generates a `dispatch/1` function clause that pattern-matches
-  on method "GET" and the given path, then calls the controller action.
+      get "/users/:id", to: UserController, action: :show
   """
   defmacro get(path, to: controller, action: action) do
+    build_route("GET", path, controller, action)
+  end
+
+  @doc """
+  Defines a POST route. Supports dynamic segments with `:param`.
+
+  ## Examples
+
+      post "/users", to: UserController, action: :create
+  """
+  defmacro post(path, to: controller, action: action) do
+    build_route("POST", path, controller, action)
+  end
+
+  @doc """
+  Adds a catch-all 404 route. Must be the last route definition.
+  """
+  defmacro finalize_routes do
     quote do
-      defp dispatch(%Ignite.Conn{method: "GET", path: unquote(path)} = conn) do
+      defp dispatch(conn, _segments) do
+        Ignite.Controller.text(conn, "404 — Not Found", 404)
+      end
+    end
+  end
+
+  # Shared logic for building route function clauses.
+  # Converts the path string into a list pattern that captures dynamic segments.
+  defp build_route(method, path, controller, action) do
+    segments = String.split(path, "/", trim: true)
+
+    # Build the pattern for each segment:
+    # - "users"  → matches the literal string "users"
+    # - ":id"    → matches anything and captures it as a variable
+    {match_pattern, param_names} = build_match_pattern(segments)
+
+    quote do
+      defp dispatch(
+             %Ignite.Conn{method: unquote(method)} = conn,
+             unquote(match_pattern)
+           ) do
+        # Build the params map from captured variables
+        params = unquote(build_params_map(param_names))
+        conn = %Ignite.Conn{conn | params: Map.merge(conn.params, params)}
         apply(unquote(controller), unquote(action), [conn])
       end
     end
   end
 
-  @doc """
-  Adds a catch-all 404 route. Must be the last route definition.
+  # Converts path segments into a quoted list pattern for function head matching.
+  # Returns {pattern_ast, list_of_param_names}.
+  #
+  # Example: ["users", ":id", "posts"]
+  #   pattern: ["users", var_id, "posts"]
+  #   params:  [:id]
+  defp build_match_pattern(segments) do
+    {patterns, names} =
+      Enum.map(segments, fn
+        ":" <> name ->
+          var_name = String.to_atom(name)
+          {Macro.var(var_name, nil), var_name}
 
-  ## Example
+        static ->
+          {static, nil}
+      end)
+      |> Enum.unzip()
 
-      get "/hello", to: MyController, action: :hello
-      finalize_routes()   # <-- must be last
-  """
-  defmacro finalize_routes do
-    quote do
-      defp dispatch(conn) do
-        %Ignite.Conn{conn | status: 404, resp_body: "404 — Not Found"}
-      end
-    end
+    {patterns, Enum.reject(names, &is_nil/1)}
+  end
+
+  # Builds a quoted expression that creates a params map at runtime.
+  # Example for param_names [:id, :name]:
+  #   %{id: var_id, name: var_name}
+  defp build_params_map(param_names) do
+    pairs =
+      Enum.map(param_names, fn name ->
+        {name, Macro.var(name, nil)}
+      end)
+
+    {:%{}, [], pairs}
   end
 end

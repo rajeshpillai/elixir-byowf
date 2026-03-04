@@ -7,6 +7,7 @@ defmodule MyApp.Router do
 
   get "/", to: MyApp.WelcomeController, action: :index
   get "/hello", to: MyApp.WelcomeController, action: :hello
+  get "/users/:id", to: MyApp.UserController, action: :show
 
   # This must be the last line — it catches everything that didn't match above
   finalize_routes()
