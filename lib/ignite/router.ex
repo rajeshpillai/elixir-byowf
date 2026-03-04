@@ -337,13 +337,21 @@ defmodule Ignite.Router do
     {:%{}, [], pairs}
   end
 
-  # --- @before_compile: Generate Helpers Submodule ---
+  # --- @before_compile: Generate Helpers Submodule + __routes__/0 ---
 
   @doc false
   defmacro __before_compile__(env) do
     route_info = Module.get_attribute(env.module, :route_info) |> Enum.reverse()
     helpers_module = Module.concat(env.module, Helpers)
     helper_functions = Ignite.Router.Helpers.build_helper_functions(route_info)
+
+    # Build a list of route maps for runtime introspection (used by `mix ignite.routes`)
+    routes_list =
+      Enum.map(route_info, fn {method, path, controller, action} ->
+        %{method: method, path: path, controller: controller, action: action}
+      end)
+
+    escaped_routes = Macro.escape(routes_list)
 
     quote do
       defmodule unquote(helpers_module) do
@@ -355,6 +363,15 @@ defmodule Ignite.Router do
 
         unquote_splicing(helper_functions)
       end
+
+      @doc """
+      Returns all registered routes as a list of maps.
+
+      Each map has keys `:method`, `:path`, `:controller`, and `:action`.
+
+      Used by `mix ignite.routes` to print the route table.
+      """
+      def __routes__, do: unquote(escaped_routes)
     end
   end
 end

@@ -1,8 +1,8 @@
 # Ignite — Build a Phoenix-like Web Framework from Scratch
 
-A step-by-step tutorial that teaches Elixir by building **Ignite**, a real web framework inspired by [Phoenix](https://www.phoenixframework.org/). You'll go from a raw TCP socket to a full-stack framework with LiveView, WebSockets, PubSub, Presence, and DOM diffing — all in 32 incremental commits.
+A step-by-step tutorial that teaches Elixir by building **Ignite**, a real web framework inspired by [Phoenix](https://www.phoenixframework.org/). You'll go from a raw TCP socket to a full-stack framework with LiveView, WebSockets, PubSub, Presence, and DOM diffing — all in 33 incremental commits.
 
-By the end, you'll understand every layer that powers production Elixir web applications: the conn pipeline, macro-based routing, OTP supervision, EEx templates, middleware plugs, real-time LiveView with efficient DOM patching, PubSub for cross-process broadcasting, signed sessions, presence tracking, CSRF protection, and Content Security Policy.
+By the end, you'll understand every layer that powers production Elixir web applications: the conn pipeline, macro-based routing, OTP supervision, EEx templates, middleware plugs, real-time LiveView with efficient DOM patching, PubSub for cross-process broadcasting, signed sessions, presence tracking, CSRF protection, Content Security Policy, and custom Mix tasks.
 
 ## Features
 
@@ -24,6 +24,7 @@ By the end, you'll understand every layer that powers production Elixir web appl
 - **Ecto Database** — schema, changesets, migrations with SQLite (swappable to PostgreSQL)
 - **CSRF Protection** — per-session tokens with XOR masking (BREACH-safe), automatic form validation
 - **Content Security Policy** — nonce-based CSP headers, blocks injected scripts, allows WebSocket for LiveView
+- **Mix Tasks** — `mix ignite.routes` prints all registered routes in a formatted table
 - **Error Handling** — `try/rescue` boundary catches crashes and renders 500 pages
 
 ### Real-time (LiveView)
@@ -146,6 +147,10 @@ Each step is tagged in git. Jump to any step with `git checkout step-01`, or fol
 - [x] Step 31 — [CSRF Protection](tutorial/31-csrf-protection.md) — Per-session tokens, XOR masking, form validation
 - [x] Step 32 — [CSP Headers](tutorial/32-csp-headers.md) — Nonce-based Content Security Policy, script protection
 
+### Developer Experience
+
+- [x] Step 33 — [`mix ignite.routes`](tutorial/33-mix-ignite-routes.md) — Custom Mix tasks, compile-time route introspection
+
 ## Quick Start
 
 ```bash
@@ -159,6 +164,9 @@ mix deps.get
 # Set up the database (SQLite — no server needed)
 mix ecto.create
 mix ecto.migrate
+
+# List all routes
+mix ignite.routes
 
 # Start the server
 iex -S mix
@@ -220,6 +228,9 @@ ignite/
 │   │   ├── reloader.ex        # Hot code reloader
 │   │   └── adapters/
 │   │       └── cowboy.ex      # Cowboy HTTP adapter
+│   ├── mix/
+│   │   └── tasks/
+│   │       └── ignite.routes.ex  # mix ignite.routes task
 │   └── my_app/                # Sample application
 │       ├── repo.ex            # Ecto Repo (database connection)
 │       ├── router.ex
@@ -284,7 +295,7 @@ Features that would bring Ignite closer to Phoenix for production use:
 - [x] ~~Flash messages (`put_flash(conn, :info, "Saved!")`)~~ (Step 28)
 
 ### Developer Experience
-- [ ] Mix tasks (`mix ignite.routes` to list all routes)
+- [x] ~~Mix tasks (`mix ignite.routes` to list all routes)~~ (Step 33)
 - [ ] Debug error page with stacktrace (like Phoenix's dev error page)
 - [ ] Logger metadata (request ID, timing)
 - [ ] Static asset pipeline (CSS/JS bundling, fingerprinting)
