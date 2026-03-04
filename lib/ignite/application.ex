@@ -1,19 +1,20 @@
 defmodule Ignite.Application do
-  # See https://hexdocs.pm/elixir/Application.html
-  # for more information on OTP Applications
-  @moduledoc false
+  @moduledoc """
+  The OTP Application for Ignite.
+
+  This module starts the supervision tree. The supervisor watches
+  the server process and restarts it if it crashes.
+  """
 
   use Application
 
   @impl true
   def start(_type, _args) do
     children = [
-      # Starts a worker by calling: Ignite.Worker.start_link(arg)
-      # {Ignite.Worker, arg}
+      # Start the server on port 4000, supervised
+      {Ignite.Server, 4000}
     ]
 
-    # See https://hexdocs.pm/elixir/Supervisor.html
-    # for other strategies and supported options
     opts = [strategy: :one_for_one, name: Ignite.Supervisor]
     Supervisor.start_link(children, opts)
   end
