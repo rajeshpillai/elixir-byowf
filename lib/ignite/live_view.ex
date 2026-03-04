@@ -47,9 +47,35 @@ defmodule Ignite.LiveView do
 
   @optional_callbacks [handle_info: 2]
 
+  @doc """
+  Triggers a client-side navigation to a different LiveView.
+
+  The client will close the current WebSocket, update the URL via
+  `history.pushState`, and open a new WebSocket to the target LiveView.
+
+  ## Example
+
+      def handle_event("go_dashboard", _params, assigns) do
+        {:noreply, push_redirect(assigns, "/dashboard")}
+      end
+  """
+  def push_redirect(assigns, url, live_path \\ nil) do
+    redirect_info = %{url: url}
+
+    redirect_info =
+      if live_path do
+        Map.put(redirect_info, :live_path, live_path)
+      else
+        redirect_info
+      end
+
+    Map.put(assigns, :__redirect__, redirect_info)
+  end
+
   defmacro __using__(_opts) do
     quote do
       @behaviour Ignite.LiveView
+      import Ignite.LiveView, only: [push_redirect: 2, push_redirect: 3]
     end
   end
 end

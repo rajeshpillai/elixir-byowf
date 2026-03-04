@@ -5,6 +5,15 @@ defmodule MyApp.WelcomeController do
 
   import Ignite.Controller
 
+  # Route mapping for client-side LiveView navigation
+  # Maps HTTP paths → WebSocket live_paths
+  @live_routes Jason.encode!(%{
+                 "/counter" => "/live",
+                 "/register" => "/live/register",
+                 "/dashboard" => "/live/dashboard",
+                 "/shared-counter" => "/live/shared-counter"
+               })
+
   def index(conn) do
     html(conn, """
     <h1>Ignite Framework</h1>
@@ -32,18 +41,30 @@ defmodule MyApp.WelcomeController do
   end
 
   def counter(conn) do
-    render(conn, "live", title: "Live Counter — Ignite")
+    render(conn, "live", title: "Live Counter — Ignite", live_routes: @live_routes)
   end
 
   def register(conn) do
-    render(conn, "live", title: "Registration — Ignite", live_path: "/live/register")
+    render(conn, "live",
+      title: "Registration — Ignite",
+      live_path: "/live/register",
+      live_routes: @live_routes
+    )
   end
 
   def dashboard(conn) do
-    render(conn, "live", title: "Dashboard — Ignite", live_path: "/live/dashboard")
+    render(conn, "live",
+      title: "Dashboard — Ignite",
+      live_path: "/live/dashboard",
+      live_routes: @live_routes
+    )
   end
 
   def shared_counter(conn) do
-    render(conn, "live", title: "Shared Counter — Ignite", live_path: "/live/shared-counter")
+    render(conn, "live",
+      title: "Shared Counter — Ignite",
+      live_path: "/live/shared-counter",
+      live_routes: @live_routes
+    )
   end
 end

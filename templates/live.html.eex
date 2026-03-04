@@ -14,7 +14,7 @@
   </style>
 </head>
 <body>
-  <div id="ignite-app" data-live-path="<%= @live_path || "/live" %>">Connecting...</div>
+  <div id="ignite-app" data-live-path="<%= @live_path || "/live" %>" data-live-routes="<%= @live_routes || "{}" %>">Connecting...</div>
   <hr>
   <p><small>Powered by <a href="/">Ignite</a></small></p>
   <script src="/assets/morphdom.min.js"></script>

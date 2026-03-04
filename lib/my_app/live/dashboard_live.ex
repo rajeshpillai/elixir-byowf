@@ -76,6 +76,12 @@ defmodule MyApp.DashboardLive do
       <button ignite-click="gc" style="padding: 8px 16px; background: #e74c3c; color: white; border: none; border-radius: 4px; cursor: pointer;">
         Run GC
       </button>
+
+      <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid #eee; text-align: center;">
+        <p style="color: #888; font-size: 14px;">Navigate without page reload:</p>
+        <a href="/counter" ignite-navigate="/counter" style="margin: 0 8px;">Counter</a>
+        <a href="/shared-counter" ignite-navigate="/shared-counter" style="margin: 0 8px;">Shared Counter</a>
+      </div>
     </div>
     """
   end

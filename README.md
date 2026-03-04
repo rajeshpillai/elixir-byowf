@@ -1,6 +1,6 @@
 # Ignite — Build a Phoenix-like Web Framework from Scratch
 
-A step-by-step tutorial that teaches Elixir by building **Ignite**, a real web framework inspired by [Phoenix](https://www.phoenixframework.org/). You'll go from a raw TCP socket to a full-stack framework with LiveView, WebSockets, PubSub, and DOM diffing — all in 17 incremental commits.
+A step-by-step tutorial that teaches Elixir by building **Ignite**, a real web framework inspired by [Phoenix](https://www.phoenixframework.org/). You'll go from a raw TCP socket to a full-stack framework with LiveView, WebSockets, PubSub, and DOM diffing — all in 18 incremental commits.
 
 By the end, you'll understand every layer that powers production Elixir web applications: the conn pipeline, macro-based routing, OTP supervision, EEx templates, middleware plugs, real-time LiveView with efficient DOM patching, and PubSub for cross-process broadcasting.
 
@@ -21,6 +21,7 @@ By the end, you'll understand every layer that powers production Elixir web appl
 - **Server Push** — `handle_info/2` for server-initiated updates (timers, external events)
 - **Statics/Dynamics Diffing** — sends only changed data over the wire
 - **Morphdom DOM Patching** — efficient client-side updates that preserve input focus and animations
+- **LiveView Navigation** — SPA-like page transitions with `ignite-navigate` and `push_redirect/2`
 
 ### Frontend Events
 - **`ignite-click`** — click events with optional `ignite-value`
@@ -80,6 +81,7 @@ Ignite is a real framework. You can use it to build:
 | Dev Tools | Hot Code Reloader | 15 |
 | UI Performance | Morphdom DOM diffing | 16 |
 | Broadcasting | PubSub | 17 |
+| Navigation | LiveView Navigation | 18 |
 
 ## Prerequisites
 
@@ -124,6 +126,7 @@ Or follow along commit-by-commit and build everything yourself.
 | 15 | [Hot Code Reloader](tutorial/15-hot-reloader.md) | Dev reloader | BEAM hot swapping |
 | 16 | [Morphdom](tutorial/16-morphdom.md) | DOM diffing | Efficient UI updates |
 | 17 | [PubSub](tutorial/17-pubsub.md) | Cross-process broadcasting | `:pg` process groups, subscribe/broadcast |
+| 18 | [LiveView Navigation](tutorial/18-live-navigation.md) | SPA-like transitions | `history.pushState`, `ignite-navigate` |
 
 ## Quick Start
 
@@ -206,7 +209,7 @@ Features that would bring Ignite closer to Phoenix for production use:
 
 ### LiveView
 - [ ] Fine-grained diffing (track individual dynamic expressions, not whole HTML)
-- [ ] LiveView navigation (`live_redirect`, `push_patch` without full page reload)
+- [x] ~~LiveView navigation (`live_redirect`, `push_patch` without full page reload)~~ (Step 18)
 - [ ] LiveComponents (reusable stateful components within a LiveView)
 - [ ] Streams for large collections (append/prepend without re-rendering lists)
 - [ ] File uploads via LiveView

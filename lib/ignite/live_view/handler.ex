@@ -41,10 +41,19 @@ defmodule Ignite.LiveView.Handler do
       {:ok, %{"event" => event, "params" => params}} ->
         case apply(state.view, :handle_event, [event, params, state.assigns]) do
           {:noreply, new_assigns} ->
-            dynamics = Engine.render_dynamics(state.view, new_assigns)
-            new_state = %{state | assigns: new_assigns}
-            payload = Jason.encode!(%{d: dynamics})
-            {:reply, {:text, payload}, new_state}
+            # Check for pending redirect
+            case Map.pop(new_assigns, :__redirect__) do
+              {nil, clean_assigns} ->
+                dynamics = Engine.render_dynamics(state.view, clean_assigns)
+                new_state = %{state | assigns: clean_assigns}
+                payload = Jason.encode!(%{d: dynamics})
+                {:reply, {:text, payload}, new_state}
+
+              {redirect_info, clean_assigns} ->
+                new_state = %{state | assigns: clean_assigns}
+                payload = Jason.encode!(%{redirect: redirect_info})
+                {:reply, {:text, payload}, new_state}
+            end
         end
 
       _ ->
