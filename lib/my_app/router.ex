@@ -9,6 +9,7 @@ defmodule MyApp.Router do
   # Middleware — runs before every request, in order
   plug :log_request
   plug :add_server_header
+  plug :set_csp_headers
   plug :verify_csrf_token
 
   # Routes
@@ -49,6 +50,17 @@ defmodule MyApp.Router do
   def add_server_header(conn) do
     new_headers = Map.put(conn.resp_headers, "x-powered-by", "Ignite")
     %Ignite.Conn{conn | resp_headers: new_headers}
+  end
+
+  @doc """
+  Content Security Policy plug.
+
+  Generates a per-request nonce and sets the `content-security-policy`
+  response header. Inline `<script>` tags must include `nonce="..."` to
+  be allowed by the browser.
+  """
+  def set_csp_headers(conn) do
+    Ignite.CSP.put_csp_headers(conn)
   end
 
   @doc """

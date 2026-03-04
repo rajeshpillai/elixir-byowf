@@ -87,7 +87,7 @@ defmodule MyApp.WelcomeController do
       <button id="echo-btn" style="margin-top:0.5em;">Send POST</button>
     </div>
     <pre id="echo-output" style="background:#f4f4f4;padding:0.5em;display:none;"></pre>
-    <script>
+    <script nonce="#{csp_nonce(conn)}">
       document.getElementById("echo-btn").addEventListener("click", function() {
         var body = document.getElementById("echo-input").value;
         var out = document.getElementById("echo-output");

@@ -144,6 +144,34 @@ defmodule Ignite.Controller do
   end
 
   @doc """
+  Returns the CSP nonce for this request.
+
+  Use this to add `nonce="..."` to inline `<script>` tags so they
+  pass the Content Security Policy check.
+
+  ## Example
+
+      <script nonce="\#{csp_nonce(conn)}">
+        console.log("allowed by CSP");
+      </script>
+  """
+  def csp_nonce(conn) do
+    Ignite.CSP.csp_nonce(conn)
+  end
+
+  @doc """
+  Wraps JavaScript code in a `<script>` tag with the CSP nonce.
+
+  ## Example
+
+      csp_script_tag(conn, "alert('hello');")
+      #=> ~s(<script nonce="abc123">alert('hello');</script>)
+  """
+  def csp_script_tag(conn, js_code) do
+    Ignite.CSP.csp_script_tag(conn, js_code)
+  end
+
+  @doc """
   Renders an EEx template and sets it as the HTML response.
 
   Templates are loaded from the `templates/` directory.
