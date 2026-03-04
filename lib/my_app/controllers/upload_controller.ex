@@ -10,6 +10,7 @@ defmodule MyApp.UploadController do
     <h1>File Upload</h1>
     <form action="/upload" method="post" enctype="multipart/form-data"
           style="max-width:500px;margin:20px auto;text-align:left;">
+      #{csrf_token_tag(conn)}
       <div style="margin-bottom:15px;">
         <label style="display:block;margin-bottom:4px;font-weight:bold;">Select a file</label>
         <input type="file" name="file" required />

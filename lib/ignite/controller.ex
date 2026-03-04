@@ -129,6 +129,21 @@ defmodule Ignite.Controller do
   end
 
   @doc """
+  Returns an HTML hidden input containing a masked CSRF token.
+
+  Use this in forms to protect against Cross-Site Request Forgery:
+
+      <form action="/users" method="POST">
+        \#{csrf_token_tag(conn)}
+        <input type="text" name="username">
+        <button type="submit">Create</button>
+      </form>
+  """
+  def csrf_token_tag(conn) do
+    Ignite.CSRF.csrf_token_tag(conn)
+  end
+
+  @doc """
   Renders an EEx template and sets it as the HTML response.
 
   Templates are loaded from the `templates/` directory.
@@ -165,7 +180,9 @@ defmodule Ignite.Controller do
   defp status_text(301), do: "Moved Permanently"
   defp status_text(302), do: "Found"
   defp status_text(400), do: "Bad Request"
+  defp status_text(403), do: "Forbidden"
   defp status_text(404), do: "Not Found"
+  defp status_text(422), do: "Unprocessable Entity"
   defp status_text(500), do: "Internal Server Error"
   defp status_text(_), do: "OK"
 end

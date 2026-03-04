@@ -1,8 +1,8 @@
 # Ignite — Build a Phoenix-like Web Framework from Scratch
 
-A step-by-step tutorial that teaches Elixir by building **Ignite**, a real web framework inspired by [Phoenix](https://www.phoenixframework.org/). You'll go from a raw TCP socket to a full-stack framework with LiveView, WebSockets, PubSub, Presence, and DOM diffing — all in 30 incremental commits.
+A step-by-step tutorial that teaches Elixir by building **Ignite**, a real web framework inspired by [Phoenix](https://www.phoenixframework.org/). You'll go from a raw TCP socket to a full-stack framework with LiveView, WebSockets, PubSub, Presence, and DOM diffing — all in 31 incremental commits.
 
-By the end, you'll understand every layer that powers production Elixir web applications: the conn pipeline, macro-based routing, OTP supervision, EEx templates, middleware plugs, real-time LiveView with efficient DOM patching, PubSub for cross-process broadcasting, signed sessions, and presence tracking.
+By the end, you'll understand every layer that powers production Elixir web applications: the conn pipeline, macro-based routing, OTP supervision, EEx templates, middleware plugs, real-time LiveView with efficient DOM patching, PubSub for cross-process broadcasting, signed sessions, presence tracking, and CSRF protection.
 
 ## Features
 
@@ -22,6 +22,7 @@ By the end, you'll understand every layer that powers production Elixir web appl
 - **Redirect Helper** — `redirect(conn, to: "/")` with 302 status and location header
 - **Presence Tracking** — GenServer-based "Who's Online" with `Process.monitor/1` auto-cleanup
 - **Ecto Database** — schema, changesets, migrations with SQLite (swappable to PostgreSQL)
+- **CSRF Protection** — per-session tokens with XOR masking (BREACH-safe), automatic form validation
 - **Error Handling** — `try/rescue` boundary catches crashes and renders 500 pages
 
 ### Real-time (LiveView)
@@ -139,6 +140,10 @@ Each step is tagged in git. Jump to any step with `git checkout step-01`, or fol
 - [x] Step 29 — [Presence Tracking](tutorial/29-presence.md) — `Process.monitor/1`, GenServer state, presence diffs
 - [x] Step 30 — [Ecto Integration](tutorial/30-ecto-integration.md) — Database persistence with SQLite (Ecto)
 
+### Security
+
+- [x] Step 31 — [CSRF Protection](tutorial/31-csrf-protection.md) — Per-session tokens, XOR masking, form validation
+
 ## Quick Start
 
 ```bash
@@ -194,6 +199,7 @@ ignite/
 │   │   ├── controller.ex      # Response helpers (text, html, render)
 │   │   ├── router.ex          # Router DSL macros
 │   │   ├── session.ex         # Signed cookie session encode/decode
+│   │   ├── csrf.ex            # CSRF token generation & validation
 │   │   ├── router/
 │   │   │   └── helpers.ex     # Path helper generation
 │   │   ├── live_view.ex       # LiveView behaviour + component helpers
@@ -263,7 +269,7 @@ Features that would bring Ignite closer to Phoenix for production use:
 - [x] ~~JS hooks (`phx-hook` equivalent for interop with JS libraries)~~ (Step 20)
 
 ### Security
-- [ ] CSRF token generation and validation on forms
+- [x] ~~CSRF token generation and validation on forms~~ (Step 31)
 - [x] ~~Signed/encrypted session cookies~~ (Step 28)
 - [ ] Content Security Policy headers
 - [ ] Rate limiting middleware

@@ -104,6 +104,15 @@ defmodule Ignite.Adapters.Cowboy do
     # via get_flash, but won't be echoed back unless put_flash is called again.
     {flash, session} = Map.pop(raw_session, "_flash", %{})
 
+    # Ensure a CSRF token exists in the session.
+    # Generated once per session, reused until the session expires.
+    session =
+      if Map.has_key?(session, "_csrf_token") do
+        session
+      else
+        Map.put(session, "_csrf_token", Ignite.CSRF.generate_token())
+      end
+
     %Ignite.Conn{
       method: req.method,
       path: req.path,

@@ -9,6 +9,7 @@ defmodule MyApp.Router do
   # Middleware — runs before every request, in order
   plug :log_request
   plug :add_server_header
+  plug :verify_csrf_token
 
   # Routes
   get "/", to: MyApp.WelcomeController, action: :index
@@ -48,5 +49,66 @@ defmodule MyApp.Router do
   def add_server_header(conn) do
     new_headers = Map.put(conn.resp_headers, "x-powered-by", "Ignite")
     %Ignite.Conn{conn | resp_headers: new_headers}
+  end
+
+  @doc """
+  CSRF protection plug.
+
+  Allows safe HTTP methods (GET, HEAD, OPTIONS) through without checks.
+  For state-changing methods (POST, PUT, PATCH, DELETE), validates that
+  the `_csrf_token` form parameter matches the token stored in the session.
+
+  JSON API requests (content-type: application/json) are exempt — they
+  rely on SameSite cookies and browser CORS policy instead.
+  """
+  def verify_csrf_token(%Ignite.Conn{method: method} = conn)
+      when method in ["GET", "HEAD", "OPTIONS"] do
+    conn
+  end
+
+  def verify_csrf_token(conn) do
+    content_type = Map.get(conn.headers, "content-type", "")
+
+    if String.starts_with?(content_type, "application/json") do
+      # JSON APIs are exempt — protected by SameSite cookies + CORS
+      conn
+    else
+      session_token = conn.session["_csrf_token"]
+      submitted_token = conn.params["_csrf_token"]
+
+      if Ignite.CSRF.valid_token?(session_token, submitted_token) do
+        conn
+      else
+        Logger.warning("[Ignite] CSRF token mismatch for #{conn.method} #{conn.path}")
+
+        conn
+        |> Ignite.Controller.html(
+          csrf_error_page(),
+          403
+        )
+      end
+    end
+  end
+
+  defp csrf_error_page do
+    """
+    <!DOCTYPE html>
+    <html>
+    <head><title>403 — Forbidden</title>
+    <style>
+      body { font-family: system-ui, sans-serif; max-width: 600px; margin: 50px auto; }
+      h1 { color: #e74c3c; }
+    </style>
+    </head>
+    <body>
+      <h1>403 — Forbidden</h1>
+      <p>Invalid CSRF token. This request was blocked to protect against
+      Cross-Site Request Forgery.</p>
+      <p>If you submitted a form, please go back and try again. Your session
+      may have expired.</p>
+      <p><a href="/">Back to Home</a></p>
+    </body>
+    </html>
+    """
   end
 end
