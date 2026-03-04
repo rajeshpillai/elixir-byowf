@@ -54,21 +54,18 @@ defmodule Ignite.Server do
     loop_acceptor(listen_socket)
   end
 
-  # Parse the HTTP request into a Conn struct, then generate a response.
+  # Parse → Route → Respond. The three-step lifecycle of every request.
   defp serve(client_socket) do
-    # Use our Parser to turn raw HTTP into a structured %Ignite.Conn{}
+    # 1. Parse: turn raw HTTP into a structured %Ignite.Conn{}
     conn = Ignite.Parser.parse(client_socket)
 
     Logger.info("#{conn.method} #{conn.path}")
 
-    # Simple path-based response using the parsed conn
-    body =
-      case conn.path do
-        "/fire" -> "Everything is on fire!"
-        _ -> "Hello, Ignite! You requested: #{conn.path}"
-      end
+    # 2. Route: hand the conn to the router, which finds the right controller
+    conn = MyApp.Router.call(conn)
 
-    response = build_response(200, body)
+    # 3. Respond: convert the conn back into raw HTTP and send it
+    response = build_response(conn.status, conn.resp_body)
     :gen_tcp.send(client_socket, response)
     :gen_tcp.close(client_socket)
   end
