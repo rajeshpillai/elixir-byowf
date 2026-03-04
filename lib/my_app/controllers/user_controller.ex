@@ -7,6 +7,6 @@ defmodule MyApp.UserController do
 
   def show(conn) do
     user_id = conn.params[:id]
-    text(conn, "Showing profile for User ##{user_id}")
+    render(conn, "profile", name: "Elixir Enthusiast", id: user_id)
   end
 end

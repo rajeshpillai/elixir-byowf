@@ -46,6 +46,22 @@ defmodule Ignite.Controller do
   end
 
   @doc """
+  Renders an EEx template and sets it as the HTML response.
+
+  Templates are loaded from the `templates/` directory.
+
+  ## Examples
+
+      render(conn, "profile", name: "Rajesh", id: 42)
+      # Renders templates/profile.html.eex with @name and @id available
+  """
+  def render(conn, template_name, assigns \\ []) do
+    template_path = Path.join("templates", "#{template_name}.html.eex")
+    content = EEx.eval_file(template_path, assigns: Enum.into(assigns, %{}))
+    html(conn, content)
+  end
+
+  @doc """
   Converts a conn into a raw HTTP response string for sending over TCP.
   """
   def send_resp(conn) do
