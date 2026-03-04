@@ -1,11 +1,10 @@
 /**
  * Ignite.js — Frontend glue for Ignite LiveView.
  *
- * This script:
- * 1. Opens a WebSocket connection to the server
- * 2. Listens for clicks on elements with `ignite-click` attributes
- * 3. Sends events to the server as JSON
- * 4. Updates the DOM with HTML received from the server
+ * Handles the statics/dynamics diffing protocol:
+ * - On mount: server sends {s: [...statics], d: [...dynamics]}
+ * - On update: server sends {d: [...dynamics]}
+ * - JS zips statics + dynamics to reconstruct full HTML
  */
 
 (function () {
@@ -15,32 +14,54 @@
   var LIVE_PATH = "/live";
   var APP_CONTAINER_ID = "ignite-app";
 
+  // Statics are saved from the first message and reused for every update
+  var statics = null;
+
   // --- WebSocket Connection ---
   var protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
   var socket = new WebSocket(protocol + "//" + window.location.host + LIVE_PATH);
+
+  // --- Reconstruct HTML from statics + dynamics ---
+  // Statics: ["<h1>Count: ", "</h1>"]
+  // Dynamics: ["42"]
+  // Result:  "<h1>Count: 42</h1>"
+  function buildHtml(statics, dynamics) {
+    var html = "";
+    for (var i = 0; i < statics.length; i++) {
+      html += statics[i];
+      if (i < dynamics.length) {
+        html += dynamics[i];
+      }
+    }
+    return html;
+  }
 
   // --- Receive updates from server ---
   socket.onmessage = function (event) {
     var data = JSON.parse(event.data);
     var container = document.getElementById(APP_CONTAINER_ID);
+    if (!container) return;
 
-    if (container && data.html) {
-      container.innerHTML = data.html;
+    // First message includes statics — save them
+    if (data.s) {
+      statics = data.s;
+    }
+
+    // Reconstruct HTML from statics + dynamics
+    if (statics && data.d) {
+      container.innerHTML = buildHtml(statics, data.d);
     }
   };
 
   // --- Send events to server ---
-  // Uses event delegation — one listener on the document catches all clicks.
   document.addEventListener("click", function (e) {
     var target = e.target;
 
-    // Walk up the DOM tree to find the element with ignite-click
     while (target && target !== document) {
       var eventName = target.getAttribute("ignite-click");
       if (eventName) {
         e.preventDefault();
 
-        // Collect data attributes as params
         var params = {};
         var value = target.getAttribute("ignite-value");
         if (value) {
