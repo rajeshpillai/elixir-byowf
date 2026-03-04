@@ -21,9 +21,14 @@ defmodule Ignite.Session do
      the updated session and sets it as a `set-cookie` header.
   """
 
-  # In production, this should come from an environment variable.
+  # In production, set SECRET_KEY_BASE as an environment variable.
   # Must be at least 64 bytes for security.
-  @secret "ignite-secret-key-change-in-prod-min-64-bytes-long-for-security!!"
+  # In dev/test, the default fallback is used automatically.
+  @default_secret "ignite-secret-key-change-in-prod-min-64-bytes-long-for-security!!"
+
+  defp secret do
+    Application.get_env(:ignite, :secret_key_base, @default_secret)
+  end
   @cookie_name "_ignite_session"
 
   @doc "Returns the session cookie name."
@@ -40,7 +45,7 @@ defmodule Ignite.Session do
   def encode(session) when is_map(session) do
     session
     |> :erlang.term_to_binary()
-    |> Plug.Crypto.MessageVerifier.sign(@secret)
+    |> Plug.Crypto.MessageVerifier.sign(secret())
   end
 
   @doc """
@@ -59,7 +64,7 @@ defmodule Ignite.Session do
   def decode(""), do: :error
 
   def decode(cookie_value) when is_binary(cookie_value) do
-    case Plug.Crypto.MessageVerifier.verify(cookie_value, @secret) do
+    case Plug.Crypto.MessageVerifier.verify(cookie_value, secret()) do
       {:ok, binary} ->
         # safe: only allow existing atoms — prevents atom table DoS
         {:ok, :erlang.binary_to_term(binary, [:safe])}

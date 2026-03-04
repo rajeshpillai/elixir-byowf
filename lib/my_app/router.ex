@@ -9,6 +9,7 @@ defmodule MyApp.Router do
   # Middleware — runs before every request, in order
   # Note: request logging (with request_id + timing) is now handled by the
   # Cowboy adapter, so we no longer need a log_request plug here.
+  plug :rate_limit
   plug :add_server_header
   plug :set_hsts_header
   plug :set_csp_headers
@@ -44,6 +45,14 @@ defmodule MyApp.Router do
   finalize_routes()
 
   # --- Plug Implementations ---
+
+  @doc """
+  Rate limiting plug — rejects requests exceeding the configured
+  requests-per-window limit with 429 Too Many Requests.
+  """
+  def rate_limit(conn) do
+    Ignite.RateLimiter.call(conn)
+  end
 
   def add_server_header(conn) do
     new_headers = Map.put(conn.resp_headers, "x-powered-by", "Ignite")

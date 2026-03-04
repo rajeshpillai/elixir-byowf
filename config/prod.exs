@@ -26,7 +26,8 @@ config :ignite,
   hsts: true,
   hsts_max_age: 31_536_000
 
-# Production database
+# Production database — defaults here, overridden by runtime.exs env vars.
+# In a release, set DATABASE_PATH to configure the SQLite path.
 config :ignite, MyApp.Repo,
   database: "ignite_prod.db",
   pool_size: 10

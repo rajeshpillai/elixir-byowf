@@ -46,6 +46,9 @@ defmodule Ignite.Application do
         # Start Presence after PubSub (it broadcasts diffs via PubSub)
         Ignite.Presence,
 
+        # Start rate limiter before Cowboy (must be ready for first request)
+        Ignite.RateLimiter,
+
         # Start Cowboy — HTTP or HTTPS depending on :ssl config
         Ignite.SSL.child_spec(port, dispatch)
       ] ++ redirect_children(port) ++ dev_children()
@@ -70,9 +73,11 @@ defmodule Ignite.Application do
     end
   end
 
-  # Only start the reloader in dev mode
+  # Only start the reloader in dev mode.
+  # Uses Application config instead of Mix.env() so this works in releases
+  # (Mix is not available at runtime in a release).
   defp dev_children do
-    if Mix.env() == :dev do
+    if Application.get_env(:ignite, :env) == :dev do
       [{Ignite.Reloader, [path: "lib"]}]
     else
       []

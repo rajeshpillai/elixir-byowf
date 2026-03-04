@@ -6,7 +6,7 @@ defmodule Ignite.DebugPage do
   catches it and calls `render/3` to build an informative HTML page
   showing the exception, stacktrace, and request context.
 
-  In production (`Mix.env() == :prod`), a generic error page is shown
+  In production (`env: :prod` config), a generic error page is shown
   instead — no exception details, stacktrace, or request data are leaked.
   """
 
@@ -19,7 +19,7 @@ defmodule Ignite.DebugPage do
   In prod: shows a generic "Something went wrong" page.
   """
   def render(exception, stacktrace, conn) do
-    if Mix.env() == :prod do
+    if Application.get_env(:ignite, :env) == :prod do
       render_prod()
     else
       render_dev(exception, stacktrace, conn)

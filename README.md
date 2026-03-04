@@ -1,6 +1,6 @@
 # Ignite — Build a Phoenix-like Web Framework from Scratch
 
-A step-by-step tutorial that teaches Elixir by building **Ignite**, a real web framework inspired by [Phoenix](https://www.phoenixframework.org/). You'll go from a raw TCP socket to a full-stack framework with LiveView, WebSockets, PubSub, Presence, and DOM diffing — all in 39 incremental commits.
+A step-by-step tutorial that teaches Elixir by building **Ignite**, a real web framework inspired by [Phoenix](https://www.phoenixframework.org/). You'll go from a raw TCP socket to a full-stack framework with LiveView, WebSockets, PubSub, Presence, and DOM diffing — all in 40 incremental commits.
 
 By the end, you'll understand every layer that powers production Elixir web applications: the conn pipeline, macro-based routing, OTP supervision, EEx templates, middleware plugs, real-time LiveView with efficient DOM patching, PubSub for cross-process broadcasting, signed sessions, presence tracking, CSRF protection, Content Security Policy, custom Mix tasks, and structured request logging with correlation IDs.
 
@@ -31,6 +31,8 @@ By the end, you'll understand every layer that powers production Elixir web appl
 - **Static Asset Pipeline** — content-hashed URLs (`?v=abc123`) for cache busting, ETS manifest, reloader integration
 - **Test Helpers (ConnTest)** — `build_conn`, `get/post/put/patch/delete`, `html_response`, `json_response`, CSRF helpers for form tests
 - **SSL/TLS Support** — config-driven HTTPS via Cowboy `:start_tls`, HTTP→HTTPS redirect, HSTS headers, `mix ignite.gen.cert`
+- **Rate Limiting** — ETS-based sliding window per-IP rate limiter with `x-ratelimit-*` headers and 429 responses
+- **`mix release` Support** — `runtime.exs` for env vars, release migration tasks, configurable session secret
 - **Error Handling** — `try/rescue` boundary catches crashes and renders 500 pages
 
 ### Real-time (LiveView)
@@ -166,6 +168,7 @@ Each step is tagged in git. Jump to any step with `git checkout step-01`, or fol
 
 - [x] Step 36 — [Health Check](tutorial/36-health-check.md) — `/health` endpoint with BEAM runtime metrics
 - [x] Step 39 — [SSL/TLS Support](tutorial/39-ssl-tls.md) — Config-driven HTTPS, HTTP→HTTPS redirect, HSTS, `mix ignite.gen.cert`
+- [x] Step 40 — [Deployment & Rate Limiting](tutorial/40-release-and-rate-limit.md) — `mix release`, `runtime.exs`, ETS rate limiter, release migration tasks
 
 ## Quick Start
 
@@ -244,6 +247,8 @@ ignite/
 │   │   │   └── upload.ex      # LiveView upload helpers
 │   │   ├── upload.ex          # %Ignite.Upload{} struct + temp file utils
 │   │   ├── reloader.ex        # Hot code reloader
+│   │   ├── rate_limiter.ex    # ETS-based rate limiting
+│   │   ├── release.ex         # Release tasks (migrate, rollback)
 │   │   ├── ssl.ex             # SSL/TLS config + Cowboy child spec
 │   │   ├── ssl/
 │   │   │   └── redirect_handler.ex  # HTTP→HTTPS 301 redirect
@@ -264,7 +269,8 @@ ignite/
 ├── config/
 │   ├── config.exs             # Application config (database, etc.)
 │   ├── test.exs               # Test config (port 4002, test DB)
-│   └── prod.exs               # Production config (SSL, HSTS)
+│   ├── prod.exs               # Production config (SSL, HSTS)
+│   └── runtime.exs            # Runtime config (env vars for releases)
 ├── priv/
 │   └── repo/
 │       └── migrations/        # Ecto database migrations
@@ -311,7 +317,7 @@ Features that would bring Ignite closer to Phoenix for production use:
 - [x] ~~CSRF token generation and validation on forms~~ (Step 31)
 - [x] ~~Signed/encrypted session cookies~~ (Step 28)
 - [x] ~~Content Security Policy headers~~ (Step 32)
-- [ ] Rate limiting middleware
+- [x] ~~Rate limiting middleware~~ (Step 40)
 
 ### Data & State
 - [x] ~~Ecto integration for database access~~ (Step 30)
@@ -328,9 +334,8 @@ Features that would bring Ignite closer to Phoenix for production use:
 
 ### Production
 - [x] ~~SSL/TLS configuration~~ (Step 39)
-- [ ] Clustering (distributed Erlang nodes)
 - [ ] Telemetry integration for metrics
-- [ ] Deployment with `mix release`
+- [x] ~~Deployment with `mix release`~~ (Step 40)
 - [x] ~~Health check endpoint~~ (Step 36)
 
 ## License

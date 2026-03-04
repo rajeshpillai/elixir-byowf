@@ -225,6 +225,7 @@ defmodule Ignite.Controller do
   defp status_text(403), do: "Forbidden"
   defp status_text(404), do: "Not Found"
   defp status_text(422), do: "Unprocessable Entity"
+  defp status_text(429), do: "Too Many Requests"
   defp status_text(500), do: "Internal Server Error"
   defp status_text(_), do: "OK"
 end

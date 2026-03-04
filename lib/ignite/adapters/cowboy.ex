@@ -126,6 +126,11 @@ defmodule Ignite.Adapters.Cowboy do
         Map.put(session, "_csrf_token", Ignite.CSRF.generate_token())
       end
 
+    # Extract the peer (client) IP address from Cowboy for rate limiting.
+    # :cowboy_req.peer/1 returns {{a,b,c,d}, port} for IPv4.
+    {peer_ip_tuple, _peer_port} = :cowboy_req.peer(req)
+    peer_ip = peer_ip_tuple |> :inet.ntoa() |> to_string()
+
     %Ignite.Conn{
       method: req.method,
       path: req.path,
@@ -133,7 +138,7 @@ defmodule Ignite.Adapters.Cowboy do
       params: body_params,
       cookies: cookies,
       session: session,
-      private: %{flash: flash}
+      private: %{flash: flash, peer_ip: peer_ip}
     }
   end
 
