@@ -1,8 +1,49 @@
-# Ignite — Build a Phoenix-like Web Framework from Scratch
+# Ignite — Build Your Own Web Framework in Elixir
 
-A step-by-step tutorial that teaches Elixir by building **Ignite**, a real web framework inspired by [Phoenix](https://www.phoenixframework.org/). You'll go from a raw TCP socket to a full-stack framework with LiveView, WebSockets, PubSub, Presence, and DOM diffing — all in 40 incremental commits.
+**A hands-on training guide** that teaches Elixir by building **Ignite**, a production-grade web framework inspired by [Phoenix](https://www.phoenixframework.org/). Go from a raw TCP socket to a full-stack framework with LiveView, WebSockets, PubSub, Presence, and DOM diffing — all in 40 incremental, well-documented steps.
 
-By the end, you'll understand every layer that powers production Elixir web applications: the conn pipeline, macro-based routing, OTP supervision, EEx templates, middleware plugs, real-time LiveView with efficient DOM patching, PubSub for cross-process broadcasting, signed sessions, presence tracking, CSRF protection, Content Security Policy, custom Mix tasks, and structured request logging with correlation IDs.
+---
+
+## Training Overview
+
+| | |
+|---|---|
+| **Total time** | ~40–50 hours (self-paced) |
+| **Steps** | 40 commits, each with a detailed tutorial |
+| **Prerequisites** | Basic programming experience (any language) |
+| **Elixir required?** | No — Elixir concepts are introduced as you build |
+| **Format** | Read tutorial → write code → verify → move on |
+| **Dependencies** | Only 3 libraries added across 40 steps |
+
+### What You'll Learn
+
+By the end of this guide you'll understand every layer that powers production Elixir web applications:
+
+- **Networking & OTP** — TCP sockets, GenServer, Supervisors, fault tolerance
+- **Functional web pipelines** — the Conn struct, middleware plugs, macro-based routing
+- **Server-side rendering** — EEx templates, controllers, response helpers
+- **Real-time UI** — WebSockets, LiveView, DOM diffing with Morphdom, PubSub
+- **Data persistence** — Ecto schemas, changesets, migrations (SQLite)
+- **Security** — signed sessions, CSRF protection, CSP headers, rate limiting, SSL/TLS
+- **Production deployment** — `mix release`, runtime config, health checks, HSTS
+
+### How to Use This Guide
+
+Each step is a git tag. You can follow along commit-by-commit, or jump to any step:
+
+```bash
+git checkout step-01   # Start from Step 1
+git checkout step-40   # Jump to the final step
+git checkout main      # See the complete framework
+```
+
+Every step has a matching tutorial doc in `tutorial/` with:
+- What we built and why
+- Full code with explanations
+- Key concepts introduced
+- Verification commands to confirm it works
+
+---
 
 ## Features
 
@@ -101,74 +142,140 @@ Ignite is a real framework. You can use it to build:
 - **IoT control panels** — live device status with server-push updates
 - **Prototypes** — quickly test ideas with minimal dependencies
 
-## Tutorial Steps
+## Curriculum — 40 Steps, 8 Modules
 
-Each step is tagged in git. Jump to any step with `git checkout step-01`, or follow along commit-by-commit. No prior Elixir experience required.
+Each step is a git tag with a detailed tutorial in `tutorial/`. Estimated times assume you're reading the explanation, writing the code, and verifying it works.
 
-### HTTP Foundations
+> **Total estimated time: ~40–50 hours**
 
-- [x] Step 0 — Project Setup — Mix, project structure
-- [x] Step 1 — [TCP Socket Foundation](tutorial/01-tcp-socket.md) — Modules, functions, `:gen_tcp`, processes
-- [x] Step 2 — [Conn Struct & Parser](tutorial/02-conn-struct.md) — Structs, pattern matching, HTTP parsing
-- [x] Step 3 — [Router DSL](tutorial/03-router-dsl.md) — Macros, `quote`/`unquote`, metaprogramming
-- [x] Step 4 — [Response Helpers](tutorial/04-response-helpers.md) — Functional transforms, immutability
-- [x] Step 5 — [Dynamic Routes](tutorial/05-dynamic-routes.md) — List matching, URL segments
-- [x] Step 6 — [OTP Supervision](tutorial/06-otp-supervision.md) — OTP, fault tolerance, "let it crash"
-- [x] Step 7 — [EEx Templates](tutorial/07-templates.md) — EEx, server-side rendering, assigns
-- [x] Step 8 — [Middleware Pipeline](tutorial/08-middleware.md) — Module attributes, pipelines
-- [x] Step 9 — [POST Body Parser](tutorial/09-post-parser.md) — HTTP bodies, URI decoding
-- [x] Step 10 — [Cowboy Adapter](tutorial/10-cowboy-adapter.md) — Dependencies, adapter pattern
-- [x] Step 11 — [Error Handler](tutorial/11-error-handler.md) — `try/rescue`, graceful errors
+---
 
-### LiveView & Real-time
+### Module 1: HTTP Foundations *(~10 hours)*
 
-- [x] Step 12 — [LiveView](tutorial/12-liveview.md) — Behaviours, stateful processes
-- [x] Step 13 — [Frontend JS Glue](tutorial/13-frontend-glue.md) — WebSocket API, event delegation
-- [x] Step 14 — [Diffing Engine](tutorial/14-diffing.md) — Bandwidth optimization
-- [x] Step 15 — [Hot Code Reloader](tutorial/15-hot-reloader.md) — BEAM hot swapping
-- [x] Step 16 — [Morphdom](tutorial/16-morphdom.md) — Efficient UI updates
+Build a web server from scratch — raw TCP, then a proper Conn pipeline with routing, templates, and middleware.
 
-### Broadcasting & Components
+| Step | Tutorial | Topics | Est. |
+|------|----------|--------|------|
+| 0 | Project Setup | Mix, project structure | 30m |
+| 1 | [TCP Socket Foundation](tutorial/01-tcp-socket.md) | Modules, functions, `:gen_tcp`, processes | 1h |
+| 2 | [Conn Struct & Parser](tutorial/02-conn-struct.md) | Structs, pattern matching, HTTP parsing | 1h |
+| 3 | [Router DSL](tutorial/03-router-dsl.md) | Macros, `quote`/`unquote`, metaprogramming | 1.5h |
+| 4 | [Response Helpers](tutorial/04-response-helpers.md) | Functional transforms, immutability | 45m |
+| 5 | [Dynamic Routes](tutorial/05-dynamic-routes.md) | List matching, URL segments | 1h |
+| 6 | [OTP Supervision](tutorial/06-otp-supervision.md) | OTP, fault tolerance, "let it crash" | 1.5h |
+| 7 | [EEx Templates](tutorial/07-templates.md) | EEx, server-side rendering, assigns | 45m |
+| 8 | [Middleware Pipeline](tutorial/08-middleware.md) | Module attributes, pipelines | 45m |
+| 9 | [POST Body Parser](tutorial/09-post-parser.md) | HTTP bodies, URI decoding | 30m |
+| 10 | [Cowboy Adapter](tutorial/10-cowboy-adapter.md) | Dependencies, adapter pattern | 1h |
+| 11 | [Error Handler](tutorial/11-error-handler.md) | `try/rescue`, graceful errors | 30m |
 
-- [x] Step 17 — [PubSub](tutorial/17-pubsub.md) — `:pg` process groups, subscribe/broadcast
-- [x] Step 18 — [LiveView Navigation](tutorial/18-live-navigation.md) — `history.pushState`, `ignite-navigate`
-- [x] Step 19 — [LiveComponents](tutorial/19-live-components.md) — Behaviours, process dictionary, event namespacing
-- [x] Step 20 — [JS Hooks](tutorial/20-js-hooks.md) — Lifecycle callbacks, `pushEvent`, DOM cleanup
+**Milestone:** You have a working HTTP framework with routing, templates, and middleware — similar to early Sinatra or Express.
 
-### REST API & Advanced Features
+---
 
-- [x] Step 21 — [JSON API](tutorial/21-json-api.md) — `Jason.encode!`, content-type matching
-- [x] Step 22 — [HTTP Methods](tutorial/22-http-methods.md) — REST conventions, macro reuse
-- [x] Step 23 — [Scoped Routes](tutorial/23-scoped-routes.md) — `__CALLER__`, compile-time state, nesting
-- [x] Step 24 — [Fine-Grained Diffing](tutorial/24-fine-grained-diffing.md) — Custom EEx engines, sparse diffs
-- [x] Step 25 — [LiveView Streams](tutorial/25-streams.md) — Stream ops, DOM manipulation, O(1) updates
-- [x] Step 26 — [File Uploads](tutorial/26-file-uploads.md) — Cowboy streaming, binary WebSocket frames
-- [x] Step 27 — [Path Helpers & Resource Routes](tutorial/27-path-helpers.md) — `@before_compile`, code generation
+### Module 2: LiveView & Real-time *(~6 hours)*
 
-### Data & State
+Add persistent WebSocket connections, server-rendered UI updates, and efficient DOM patching.
 
-- [x] Step 28 — [Flash Messages](tutorial/28-flash-messages.md) — `Plug.Crypto`, signed cookies, session lifecycle
-- [x] Step 29 — [Presence Tracking](tutorial/29-presence.md) — `Process.monitor/1`, GenServer state, presence diffs
-- [x] Step 30 — [Ecto Integration](tutorial/30-ecto-integration.md) — Database persistence with SQLite (Ecto)
+| Step | Tutorial | Topics | Est. |
+|------|----------|--------|------|
+| 12 | [LiveView](tutorial/12-liveview.md) | Behaviours, stateful processes | 1.5h |
+| 13 | [Frontend JS Glue](tutorial/13-frontend-glue.md) | WebSocket API, event delegation | 1h |
+| 14 | [Diffing Engine](tutorial/14-diffing.md) | Bandwidth optimization | 1.5h |
+| 15 | [Hot Code Reloader](tutorial/15-hot-reloader.md) | BEAM hot swapping | 1h |
+| 16 | [Morphdom](tutorial/16-morphdom.md) | Efficient UI updates | 1h |
 
-### Security
+**Milestone:** Real-time counter that updates without page refreshes — your own LiveView.
 
-- [x] Step 31 — [CSRF Protection](tutorial/31-csrf-protection.md) — Per-session tokens, XOR masking, form validation
-- [x] Step 32 — [CSP Headers](tutorial/32-csp-headers.md) — Nonce-based Content Security Policy, script protection
+---
 
-### Developer Experience
+### Module 3: Broadcasting & Components *(~5 hours)*
 
-- [x] Step 33 — [`mix ignite.routes`](tutorial/33-mix-ignite-routes.md) — Custom Mix tasks, compile-time route introspection
-- [x] Step 34 — [Debug Error Page](tutorial/34-debug-error-page.md) — Rich dev error page, stacktrace formatting, dev/prod branching
-- [x] Step 35 — [Logger Metadata](tutorial/35-logger-metadata.md) — Request ID, response timing, `Logger.metadata`, `x-request-id` header
-- [x] Step 37 — [Static Asset Pipeline](tutorial/37-static-asset-pipeline.md) — Content-hashed URLs, ETS manifest, `static_path/1` helper
-- [x] Step 38 — [Test Helpers](tutorial/38-test-helpers.md) — ConnTest module, response assertions, CSRF helpers, plug execution fix
+Build PubSub for cross-process messaging, SPA-like navigation, reusable components, and JS interop.
 
-### Production
+| Step | Tutorial | Topics | Est. |
+|------|----------|--------|------|
+| 17 | [PubSub](tutorial/17-pubsub.md) | `:pg` process groups, subscribe/broadcast | 1.5h |
+| 18 | [LiveView Navigation](tutorial/18-live-navigation.md) | `history.pushState`, `ignite-navigate` | 1h |
+| 19 | [LiveComponents](tutorial/19-live-components.md) | Behaviours, process dictionary, event namespacing | 1.5h |
+| 20 | [JS Hooks](tutorial/20-js-hooks.md) | Lifecycle callbacks, `pushEvent`, DOM cleanup | 1h |
 
-- [x] Step 36 — [Health Check](tutorial/36-health-check.md) — `/health` endpoint with BEAM runtime metrics
-- [x] Step 39 — [SSL/TLS Support](tutorial/39-ssl-tls.md) — Config-driven HTTPS, HTTP→HTTPS redirect, HSTS, `mix ignite.gen.cert`
-- [x] Step 40 — [Deployment & Rate Limiting](tutorial/40-release-and-rate-limit.md) — `mix release`, `runtime.exs`, ETS rate limiter, release migration tasks
+**Milestone:** A shared counter that syncs across browser tabs via PubSub.
+
+---
+
+### Module 4: REST API & Advanced Features *(~8 hours)*
+
+Full REST support, fine-grained diffing, file uploads, and code-generated path helpers.
+
+| Step | Tutorial | Topics | Est. |
+|------|----------|--------|------|
+| 21 | [JSON API](tutorial/21-json-api.md) | `Jason.encode!`, content-type matching | 1h |
+| 22 | [HTTP Methods](tutorial/22-http-methods.md) | REST conventions, macro reuse | 45m |
+| 23 | [Scoped Routes](tutorial/23-scoped-routes.md) | `__CALLER__`, compile-time state, nesting | 1h |
+| 24 | [Fine-Grained Diffing](tutorial/24-fine-grained-diffing.md) | Custom EEx engines, sparse diffs | 1.5h |
+| 25 | [LiveView Streams](tutorial/25-streams.md) | Stream ops, DOM manipulation, O(1) updates | 1h |
+| 26 | [File Uploads](tutorial/26-file-uploads.md) | Cowboy streaming, binary WebSocket frames | 1.5h |
+| 27 | [Path Helpers & Resource Routes](tutorial/27-path-helpers.md) | `@before_compile`, code generation | 1h |
+
+**Milestone:** Full CRUD API with resource routes, file uploads, and optimized LiveView rendering.
+
+---
+
+### Module 5: Data & State *(~4 hours)*
+
+Signed sessions, flash messages, presence tracking, and database persistence.
+
+| Step | Tutorial | Topics | Est. |
+|------|----------|--------|------|
+| 28 | [Flash Messages](tutorial/28-flash-messages.md) | `Plug.Crypto`, signed cookies, session lifecycle | 1.5h |
+| 29 | [Presence Tracking](tutorial/29-presence.md) | `Process.monitor/1`, GenServer state, presence diffs | 1.5h |
+| 30 | [Ecto Integration](tutorial/30-ecto-integration.md) | Database persistence with SQLite (Ecto) | 1h |
+
+**Milestone:** Users are persisted in a database, with sessions, flash messages, and "Who's Online" tracking.
+
+---
+
+### Module 6: Security *(~2 hours)*
+
+Protect forms from CSRF attacks and lock down inline scripts with Content Security Policy.
+
+| Step | Tutorial | Topics | Est. |
+|------|----------|--------|------|
+| 31 | [CSRF Protection](tutorial/31-csrf-protection.md) | Per-session tokens, XOR masking, form validation | 1h |
+| 32 | [CSP Headers](tutorial/32-csp-headers.md) | Nonce-based Content Security Policy, script protection | 1h |
+
+**Milestone:** Forms are CSRF-protected and scripts are locked down — ready for real users.
+
+---
+
+### Module 7: Developer Experience *(~5 hours)*
+
+Mix tasks, error pages, structured logging, static assets, and test helpers.
+
+| Step | Tutorial | Topics | Est. |
+|------|----------|--------|------|
+| 33 | [`mix ignite.routes`](tutorial/33-mix-ignite-routes.md) | Custom Mix tasks, compile-time route introspection | 45m |
+| 34 | [Debug Error Page](tutorial/34-debug-error-page.md) | Rich dev error page, stacktrace formatting, dev/prod branching | 1h |
+| 35 | [Logger Metadata](tutorial/35-logger-metadata.md) | Request ID, response timing, `Logger.metadata`, `x-request-id` header | 1h |
+| 37 | [Static Asset Pipeline](tutorial/37-static-asset-pipeline.md) | Content-hashed URLs, ETS manifest, `static_path/1` helper | 1h |
+| 38 | [Test Helpers](tutorial/38-test-helpers.md) | ConnTest module, response assertions, CSRF helpers, plug execution fix | 1h |
+
+**Milestone:** Professional DX — rich error pages, structured logs, cache-busting assets, and test infrastructure.
+
+---
+
+### Module 8: Production *(~4 hours)*
+
+Health checks, SSL/TLS, rate limiting, and `mix release` for deployment.
+
+| Step | Tutorial | Topics | Est. |
+|------|----------|--------|------|
+| 36 | [Health Check](tutorial/36-health-check.md) | `/health` endpoint with BEAM runtime metrics | 45m |
+| 39 | [SSL/TLS Support](tutorial/39-ssl-tls.md) | Config-driven HTTPS, HTTP→HTTPS redirect, HSTS, `mix ignite.gen.cert` | 1.5h |
+| 40 | [Deployment & Rate Limiting](tutorial/40-release-and-rate-limit.md) | `mix release`, `runtime.exs`, ETS rate limiter, release migration tasks | 1.5h |
+
+**Milestone:** Framework is production-deployable — HTTPS, rate-limited, health-monitored, and packaged as a release.
 
 ## Quick Start
 
