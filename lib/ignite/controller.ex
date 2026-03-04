@@ -46,6 +46,28 @@ defmodule Ignite.Controller do
   end
 
   @doc """
+  Sets a JSON response on the conn.
+
+  Encodes the given data (map, list, etc.) as JSON using `Jason.encode!/1`
+  and sets the content-type to `application/json`.
+
+  ## Examples
+
+      json(conn, %{status: "ok", count: 42})
+      json(conn, [1, 2, 3])
+      json(conn, %{error: "not found"}, 404)
+  """
+  def json(conn, data, status \\ 200) do
+    %Ignite.Conn{
+      conn
+      | status: status,
+        resp_body: Jason.encode!(data),
+        resp_headers: Map.put(conn.resp_headers, "content-type", "application/json"),
+        halted: true
+    }
+  end
+
+  @doc """
   Renders an EEx template and sets it as the HTML response.
 
   Templates are loaded from the `templates/` directory.

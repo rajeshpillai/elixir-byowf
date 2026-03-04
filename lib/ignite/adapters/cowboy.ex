@@ -100,6 +100,14 @@ defmodule Ignite.Adapters.Cowboy do
     URI.decode_query(body)
   end
 
+  defp parse_body(body, "application/json" <> _) when byte_size(body) > 0 do
+    case Jason.decode(body) do
+      {:ok, parsed} when is_map(parsed) -> parsed
+      {:ok, parsed} -> %{"_json" => parsed}
+      {:error, _} -> %{"_body" => body}
+    end
+  end
+
   defp parse_body(body, _) when byte_size(body) > 0 do
     %{"_body" => body}
   end

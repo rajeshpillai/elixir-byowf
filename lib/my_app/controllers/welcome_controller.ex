@@ -33,6 +33,11 @@ defmodule MyApp.WelcomeController do
       <li><a href="/crash">/crash</a> — Error handler (500 page)</li>
     </ul>
     <p><small>POST example: <code>curl -X POST -d "username=Jose" http://localhost:4000/users</code></small></p>
+    <h2>API Routes</h2>
+    <ul>
+      <li><a href="/api/status">/api/status</a> — JSON response</li>
+      <li><code>curl -X POST -H "Content-Type: application/json" -d '{"name":"Jose"}' http://localhost:4000/api/echo</code> — JSON echo</li>
+    </ul>
     """)
   end
 

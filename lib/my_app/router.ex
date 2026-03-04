@@ -22,6 +22,15 @@ defmodule MyApp.Router do
   get "/components", to: MyApp.WelcomeController, action: :components
   get "/hooks", to: MyApp.WelcomeController, action: :hooks
   post "/users", to: MyApp.UserController, action: :create
+  put "/users/:id", to: MyApp.UserController, action: :update
+  patch "/users/:id", to: MyApp.UserController, action: :update
+  delete "/users/:id", to: MyApp.UserController, action: :delete
+
+  # API routes (JSON) — grouped under /api using scope
+  scope "/api" do
+    get "/status", to: MyApp.ApiController, action: :status
+    post "/echo", to: MyApp.ApiController, action: :echo
+  end
 
   # This must be the last line — it catches everything that didn't match above
   finalize_routes()
