@@ -12,10 +12,14 @@ defmodule Ignite.Application do
   def start(_type, _args) do
     port = 4000
 
-    # Tell Cowboy to route ALL requests to our adapter
+    # Cowboy routing: WebSocket for /live, HTTP for everything else
     dispatch =
       :cowboy_router.compile([
-        {:_, [{"/[...]", Ignite.Adapters.Cowboy, []}]}
+        {:_,
+         [
+           {"/live", Ignite.LiveView.Handler, %{view: MyApp.CounterLive}},
+           {"/[...]", Ignite.Adapters.Cowboy, []}
+         ]}
       ])
 
     children = [
