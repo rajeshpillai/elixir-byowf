@@ -7,7 +7,8 @@ defmodule MyApp.Router do
   require Logger
 
   # Middleware — runs before every request, in order
-  plug :log_request
+  # Note: request logging (with request_id + timing) is now handled by the
+  # Cowboy adapter, so we no longer need a log_request plug here.
   plug :add_server_header
   plug :set_csp_headers
   plug :verify_csrf_token
@@ -41,11 +42,6 @@ defmodule MyApp.Router do
   finalize_routes()
 
   # --- Plug Implementations ---
-
-  def log_request(conn) do
-    Logger.info("[Ignite] #{conn.method} #{conn.path}")
-    conn
-  end
 
   def add_server_header(conn) do
     new_headers = Map.put(conn.resp_headers, "x-powered-by", "Ignite")

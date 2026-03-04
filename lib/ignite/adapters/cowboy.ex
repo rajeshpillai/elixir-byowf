@@ -13,9 +13,23 @@ defmodule Ignite.Adapters.Cowboy do
 
   @impl true
   def init(req, state) do
+    # Generate a unique request ID for log correlation and tracing.
+    # 16 random bytes → base64url gives a short, URL-safe identifier.
+    request_id = :crypto.strong_rand_bytes(16) |> Base.url_encode64(padding: false)
+
+    # Attach request_id to Logger metadata so ALL downstream Logger calls
+    # in this process automatically include it — no explicit passing needed.
+    Logger.metadata(request_id: request_id)
+
+    # Start the timer — monotonic_time is immune to clock adjustments.
+    start_time = System.monotonic_time()
+
     # Build conn outside the try so it's available in the rescue block
     # for the debug error page to display request context.
     conn = cowboy_to_conn(req)
+    conn = put_in(conn.private[:request_id], request_id)
+
+    Logger.info("#{conn.method} #{conn.path}")
 
     req =
       try do
@@ -35,26 +49,48 @@ defmodule Ignite.Adapters.Cowboy do
             %{path: "/", http_only: true, same_site: :lax}
           )
 
-        # 3. Send response back through Cowboy
-        :cowboy_req.reply(conn.status, conn.resp_headers, conn.resp_body, req)
+        # 3. Add request ID to response headers for client-side correlation
+        resp_headers = Map.put(conn.resp_headers, "x-request-id", request_id)
+
+        # 4. Log the completion with timing
+        duration = log_duration(start_time)
+        Logger.info("Sent #{conn.status} in #{duration}")
+
+        # 5. Send response back through Cowboy
+        :cowboy_req.reply(conn.status, resp_headers, conn.resp_body, req)
       rescue
         exception ->
+          duration = log_duration(start_time)
+
           # Log the error with full stacktrace for debugging
           Logger.error("""
-          [Ignite] Request crashed:
+          [Ignite] Request crashed (#{duration}):
           #{Exception.format(:error, exception, __STACKTRACE__)}
           """)
 
           # Render a debug error page (rich in dev, generic in prod)
           :cowboy_req.reply(
             500,
-            %{"content-type" => "text/html"},
+            %{"content-type" => "text/html", "x-request-id" => request_id},
             Ignite.DebugPage.render(exception, __STACKTRACE__, conn),
             req
           )
       end
 
     {:ok, req, state}
+  end
+
+  # Calculates elapsed time since `start_time` and formats it as a human-readable string.
+  # Uses native time units for maximum precision, then converts to the most appropriate unit.
+  defp log_duration(start_time) do
+    diff = System.monotonic_time() - start_time
+    micro = System.convert_time_unit(diff, :native, :microsecond)
+
+    cond do
+      micro < 1_000 -> "#{micro}µs"
+      micro < 1_000_000 -> "#{Float.round(micro / 1_000, 1)}ms"
+      true -> "#{Float.round(micro / 1_000_000, 2)}s"
+    end
   end
 
   defp cowboy_to_conn(req) do

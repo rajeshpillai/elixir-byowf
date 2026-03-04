@@ -1,8 +1,8 @@
 # Ignite — Build a Phoenix-like Web Framework from Scratch
 
-A step-by-step tutorial that teaches Elixir by building **Ignite**, a real web framework inspired by [Phoenix](https://www.phoenixframework.org/). You'll go from a raw TCP socket to a full-stack framework with LiveView, WebSockets, PubSub, Presence, and DOM diffing — all in 34 incremental commits.
+A step-by-step tutorial that teaches Elixir by building **Ignite**, a real web framework inspired by [Phoenix](https://www.phoenixframework.org/). You'll go from a raw TCP socket to a full-stack framework with LiveView, WebSockets, PubSub, Presence, and DOM diffing — all in 35 incremental commits.
 
-By the end, you'll understand every layer that powers production Elixir web applications: the conn pipeline, macro-based routing, OTP supervision, EEx templates, middleware plugs, real-time LiveView with efficient DOM patching, PubSub for cross-process broadcasting, signed sessions, presence tracking, CSRF protection, Content Security Policy, and custom Mix tasks.
+By the end, you'll understand every layer that powers production Elixir web applications: the conn pipeline, macro-based routing, OTP supervision, EEx templates, middleware plugs, real-time LiveView with efficient DOM patching, PubSub for cross-process broadcasting, signed sessions, presence tracking, CSRF protection, Content Security Policy, custom Mix tasks, and structured request logging with correlation IDs.
 
 ## Features
 
@@ -26,6 +26,7 @@ By the end, you'll understand every layer that powers production Elixir web appl
 - **Content Security Policy** — nonce-based CSP headers, blocks injected scripts, allows WebSocket for LiveView
 - **Mix Tasks** — `mix ignite.routes` prints all registered routes in a formatted table
 - **Debug Error Page** — rich dev error page with stacktrace, request context, and session (generic in prod)
+- **Logger Metadata** — per-request ID for log correlation, response timing, `x-request-id` header
 - **Error Handling** — `try/rescue` boundary catches crashes and renders 500 pages
 
 ### Real-time (LiveView)
@@ -152,6 +153,7 @@ Each step is tagged in git. Jump to any step with `git checkout step-01`, or fol
 
 - [x] Step 33 — [`mix ignite.routes`](tutorial/33-mix-ignite-routes.md) — Custom Mix tasks, compile-time route introspection
 - [x] Step 34 — [Debug Error Page](tutorial/34-debug-error-page.md) — Rich dev error page, stacktrace formatting, dev/prod branching
+- [x] Step 35 — [Logger Metadata](tutorial/35-logger-metadata.md) — Request ID, response timing, `Logger.metadata`, `x-request-id` header
 
 ## Quick Start
 
@@ -300,7 +302,7 @@ Features that would bring Ignite closer to Phoenix for production use:
 ### Developer Experience
 - [x] ~~Mix tasks (`mix ignite.routes` to list all routes)~~ (Step 33)
 - [x] ~~Debug error page with stacktrace (like Phoenix's dev error page)~~ (Step 34)
-- [ ] Logger metadata (request ID, timing)
+- [x] ~~Logger metadata (request ID, timing)~~ (Step 35)
 - [ ] Static asset pipeline (CSS/JS bundling, fingerprinting)
 - [ ] Test helpers (`ConnTest` for controller testing)
 
