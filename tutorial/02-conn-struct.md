@@ -1,0 +1,207 @@
+# Step 2: The Conn Struct & Parser
+
+## What We're Building
+
+In Step 1, our server treated every request the same. Now we need to *understand*
+what the browser is asking for.
+
+We'll create two things:
+1. **`%Ignite.Conn{}`** — a struct that holds all request and response data
+2. **`Ignite.Parser`** — a module that reads the TCP socket and fills in the struct
+
+This is the same pattern Phoenix uses with `%Plug.Conn{}`. The conn flows through
+your entire application: parser → router → controller → response.
+
+## Concepts You'll Learn
+
+### Structs
+
+A **struct** is a map with a fixed set of keys and default values:
+
+```elixir
+defmodule Ignite.Conn do
+  defstruct [
+    method: nil,
+    path: nil,
+    status: 200,
+    resp_body: ""
+  ]
+end
+```
+
+You create one with `%Ignite.Conn{}`:
+
+```elixir
+conn = %Ignite.Conn{method: "GET", path: "/hello"}
+conn.path   #=> "/hello"
+conn.status #=> 200 (the default)
+```
+
+Unlike plain maps, structs **catch typos at compile time**:
+
+```elixir
+conn.nonexistent  #=> ** (KeyError) - Elixir catches this!
+```
+
+### The Alias Keyword
+
+`alias` creates a shortcut so you don't have to type the full module name:
+
+```elixir
+alias Ignite.Conn
+
+# Now you can write:
+%Conn{method: "GET"}
+# Instead of:
+%Ignite.Conn{method: "GET"}
+```
+
+### Accumulator Pattern
+
+When reading headers, we use a common Elixir pattern — passing an accumulator
+through recursive calls:
+
+```elixir
+defp read_headers(socket, acc \\ %{}) do
+  case :gen_tcp.recv(socket, 0) do
+    {:ok, :http_eoh} ->
+      acc                                           # Done! Return what we collected
+
+    {:ok, {:http_header, _, name, _, value}} ->
+      read_headers(socket, Map.put(acc, key, value))  # Add to acc, keep going
+  end
+end
+```
+
+The `\\` gives `acc` a default value of `%{}` (empty map), so callers don't
+need to pass it.
+
+### The Pipe Operator
+
+The `|>` (pipe) operator passes the result of one function as the first
+argument to the next:
+
+```elixir
+# Without pipe:
+String.downcase(to_string(name))
+
+# With pipe (reads top-to-bottom):
+name |> to_string() |> String.downcase()
+```
+
+## The Code
+
+### `lib/ignite/conn.ex`
+
+The struct definition. Each field represents a piece of the request/response lifecycle:
+
+```elixir
+defstruct [
+  # Request fields (filled by the parser)
+  method: nil,       # "GET", "POST", etc.
+  path: nil,         # "/users/42"
+  headers: %{},      # %{"host" => "localhost:4000", ...}
+  params: %{},       # URL and body parameters (used later)
+
+  # Response fields (filled by controllers)
+  status: 200,
+  resp_headers: %{"content-type" => "text/plain"},
+  resp_body: "",
+
+  # Control flow
+  halted: false      # When true, stops the middleware pipeline
+]
+```
+
+### `lib/ignite/parser.ex`
+
+The parser reads from the socket and returns a filled-in `%Conn{}`:
+
+```elixir
+def parse(client_socket) do
+  {method, path} = read_request_line(client_socket)
+  headers = read_headers(client_socket)
+
+  %Conn{
+    method: to_string(method),   # :GET → "GET"
+    path: path,                  # "/hello"
+    headers: headers             # %{"host" => "localhost:4000"}
+  }
+end
+```
+
+Key detail: `to_string(method)` converts the Erlang atom `:GET` into the
+string `"GET"`, which is easier to work with in our router.
+
+### Updated `lib/ignite/server.ex`
+
+The server now uses the parser:
+
+```elixir
+defp serve(client_socket) do
+  conn = Ignite.Parser.parse(client_socket)
+
+  body =
+    case conn.path do
+      "/fire" -> "Everything is on fire!"
+      _ -> "Hello, Ignite! You requested: #{conn.path}"
+    end
+
+  response = build_response(200, body)
+  :gen_tcp.send(client_socket, response)
+  :gen_tcp.close(client_socket)
+end
+```
+
+We've gone from "raw TCP data" to "structured Elixir data." The rest of
+the framework will always work with `%Ignite.Conn{}` — never raw sockets.
+
+## How It Works
+
+```
+TCP Socket ──→ Ignite.Parser.parse/1 ──→ %Ignite.Conn{
+                                             method: "GET",
+                                             path: "/fire",
+                                             headers: %{"host" => "localhost:4000"}
+                                           }
+```
+
+The parser is the **bridge** between the network layer (bytes on a wire)
+and the application layer (Elixir data structures).
+
+## Try It Out
+
+1. Start the server:
+
+```bash
+iex -S mix
+iex> Ignite.Server.start()
+```
+
+2. Visit http://localhost:4000/ — you'll see "Hello, Ignite! You requested: /"
+
+3. Visit http://localhost:4000/fire — you'll see "Everything is on fire!"
+
+4. Visit http://localhost:4000/anything — you'll see the path echoed back
+
+5. Check your terminal — you'll see structured log output like:
+
+```
+[info] GET /
+[info] GET /fire
+```
+
+## What's Next
+
+The `case conn.path do` approach works, but it's not scalable. Imagine having
+100 routes all in one big `case` statement!
+
+In **Step 3**, we'll build a **Router DSL** using Elixir macros. You'll be
+able to write clean, declarative routes like:
+
+```elixir
+get "/", to: WelcomeController, action: :index
+get "/fire", to: WelcomeController, action: :fire
+```
+
+This is where Elixir's metaprogramming superpowers come in.

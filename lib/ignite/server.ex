@@ -54,44 +54,23 @@ defmodule Ignite.Server do
     loop_acceptor(listen_socket)
   end
 
-  # Read the HTTP request from the client and send back a response.
+  # Parse the HTTP request into a Conn struct, then generate a response.
   defp serve(client_socket) do
-    # Read the HTTP request line (e.g., "GET /hello HTTP/1.1")
-    request_line = read_request_line(client_socket)
+    # Use our Parser to turn raw HTTP into a structured %Ignite.Conn{}
+    conn = Ignite.Parser.parse(client_socket)
 
-    # Read and discard the headers (we'll parse them in Step 2)
-    read_headers(client_socket)
+    Logger.info("#{conn.method} #{conn.path}")
 
-    Logger.info("Received: #{inspect(request_line)}")
+    # Simple path-based response using the parsed conn
+    body =
+      case conn.path do
+        "/fire" -> "Everything is on fire!"
+        _ -> "Hello, Ignite! You requested: #{conn.path}"
+      end
 
-    # Build and send the HTTP response
-    body = "Hello, Ignite!"
     response = build_response(200, body)
     :gen_tcp.send(client_socket, response)
     :gen_tcp.close(client_socket)
-  end
-
-  # Reads the HTTP request line using Erlang's built-in HTTP parsing.
-  # With `packet: :http`, Erlang parses each part of the HTTP request
-  # into tagged tuples for us.
-  defp read_request_line(socket) do
-    {:ok, {:http_request, method, {:abs_path, path}, _version}} = :gen_tcp.recv(socket, 0)
-    {method, path}
-  end
-
-  # Reads headers one at a time until we hit the end-of-headers marker.
-  # We don't use the headers yet, but we must read them to consume
-  # the full request from the socket.
-  defp read_headers(socket) do
-    case :gen_tcp.recv(socket, 0) do
-      {:ok, :http_eoh} ->
-        # End of headers — we're done
-        :ok
-
-      {:ok, {:http_header, _, _name, _, _value}} ->
-        # Got a header, keep reading
-        read_headers(socket)
-    end
   end
 
   # Builds a raw HTTP/1.1 response string.
