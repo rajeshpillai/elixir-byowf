@@ -9,24 +9,62 @@ defmodule Ignite.Adapters.Cowboy do
 
   @behaviour :cowboy_handler
 
+  require Logger
+
   @impl true
   def init(req, state) do
-    # 1. Convert Cowboy request → Ignite.Conn
-    conn = cowboy_to_conn(req)
-
-    # 2. Route through our framework
-    conn = MyApp.Router.call(conn)
-
-    # 3. Send response back through Cowboy
     req =
-      :cowboy_req.reply(
-        conn.status,
-        conn.resp_headers,
-        conn.resp_body,
-        req
-      )
+      try do
+        # 1. Convert Cowboy request → Ignite.Conn
+        conn = cowboy_to_conn(req)
+
+        # 2. Route through our framework
+        conn = MyApp.Router.call(conn)
+
+        # 3. Send response back through Cowboy
+        :cowboy_req.reply(conn.status, conn.resp_headers, conn.resp_body, req)
+      rescue
+        exception ->
+          # Log the error with full stacktrace for debugging
+          Logger.error("""
+          [Ignite] Request crashed:
+          #{Exception.format(:error, exception, __STACKTRACE__)}
+          """)
+
+          # Return a 500 error page to the user
+          :cowboy_req.reply(
+            500,
+            %{"content-type" => "text/html"},
+            error_page(exception),
+            req
+          )
+      end
 
     {:ok, req, state}
+  end
+
+  # In development, show the error details. In production, you'd
+  # want a generic "Something went wrong" page instead.
+  defp error_page(exception) do
+    """
+    <!DOCTYPE html>
+    <html>
+    <head><title>500 — Internal Server Error</title>
+    <style>
+      body { font-family: system-ui, sans-serif; max-width: 700px; margin: 50px auto; }
+      h1 { color: #e74c3c; }
+      pre { background: #2d2d2d; color: #f8f8f2; padding: 16px;
+            border-radius: 8px; overflow-x: auto; }
+    </style>
+    </head>
+    <body>
+      <h1>500 — Internal Server Error</h1>
+      <p>Something went wrong while processing your request.</p>
+      <pre>#{Exception.message(exception)}</pre>
+      <p><a href="/">Back to Home</a></p>
+    </body>
+    </html>
+    """
   end
 
   defp cowboy_to_conn(req) do

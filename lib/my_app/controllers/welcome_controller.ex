@@ -12,4 +12,8 @@ defmodule MyApp.WelcomeController do
   def hello(conn) do
     text(conn, "Hello from the Controller!")
   end
+
+  def crash(_conn) do
+    raise "This is a test crash!"
+  end
 end
