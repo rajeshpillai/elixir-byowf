@@ -13,15 +13,16 @@ defmodule Ignite.Adapters.Cowboy do
 
   @impl true
   def init(req, state) do
+    # Build conn outside the try so it's available in the rescue block
+    # for the debug error page to display request context.
+    conn = cowboy_to_conn(req)
+
     req =
       try do
-        # 1. Convert Cowboy request → Ignite.Conn
-        conn = cowboy_to_conn(req)
-
-        # 2. Route through our framework
+        # 1. Route through our framework
         conn = MyApp.Router.call(conn)
 
-        # 3. Set session cookie via Cowboy's cookie API
+        # 2. Set session cookie via Cowboy's cookie API
         #    conn.session contains only NEW flash (if put_flash was called).
         #    Inherited flash was already popped into conn.private in cowboy_to_conn.
         cookie_value = Ignite.Session.encode(conn.session)
@@ -34,7 +35,7 @@ defmodule Ignite.Adapters.Cowboy do
             %{path: "/", http_only: true, same_site: :lax}
           )
 
-        # 4. Send response back through Cowboy
+        # 3. Send response back through Cowboy
         :cowboy_req.reply(conn.status, conn.resp_headers, conn.resp_body, req)
       rescue
         exception ->
@@ -44,40 +45,16 @@ defmodule Ignite.Adapters.Cowboy do
           #{Exception.format(:error, exception, __STACKTRACE__)}
           """)
 
-          # Return a 500 error page to the user
+          # Render a debug error page (rich in dev, generic in prod)
           :cowboy_req.reply(
             500,
             %{"content-type" => "text/html"},
-            error_page(exception),
+            Ignite.DebugPage.render(exception, __STACKTRACE__, conn),
             req
           )
       end
 
     {:ok, req, state}
-  end
-
-  # In development, show the error details. In production, you'd
-  # want a generic "Something went wrong" page instead.
-  defp error_page(exception) do
-    """
-    <!DOCTYPE html>
-    <html>
-    <head><title>500 — Internal Server Error</title>
-    <style>
-      body { font-family: system-ui, sans-serif; max-width: 700px; margin: 50px auto; }
-      h1 { color: #e74c3c; }
-      pre { background: #2d2d2d; color: #f8f8f2; padding: 16px;
-            border-radius: 8px; overflow-x: auto; }
-    </style>
-    </head>
-    <body>
-      <h1>500 — Internal Server Error</h1>
-      <p>Something went wrong while processing your request.</p>
-      <pre>#{Exception.message(exception)}</pre>
-      <p><a href="/">Back to Home</a></p>
-    </body>
-    </html>
-    """
   end
 
   defp cowboy_to_conn(req) do

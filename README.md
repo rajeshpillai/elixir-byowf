@@ -1,6 +1,6 @@
 # Ignite — Build a Phoenix-like Web Framework from Scratch
 
-A step-by-step tutorial that teaches Elixir by building **Ignite**, a real web framework inspired by [Phoenix](https://www.phoenixframework.org/). You'll go from a raw TCP socket to a full-stack framework with LiveView, WebSockets, PubSub, Presence, and DOM diffing — all in 33 incremental commits.
+A step-by-step tutorial that teaches Elixir by building **Ignite**, a real web framework inspired by [Phoenix](https://www.phoenixframework.org/). You'll go from a raw TCP socket to a full-stack framework with LiveView, WebSockets, PubSub, Presence, and DOM diffing — all in 34 incremental commits.
 
 By the end, you'll understand every layer that powers production Elixir web applications: the conn pipeline, macro-based routing, OTP supervision, EEx templates, middleware plugs, real-time LiveView with efficient DOM patching, PubSub for cross-process broadcasting, signed sessions, presence tracking, CSRF protection, Content Security Policy, and custom Mix tasks.
 
@@ -25,6 +25,7 @@ By the end, you'll understand every layer that powers production Elixir web appl
 - **CSRF Protection** — per-session tokens with XOR masking (BREACH-safe), automatic form validation
 - **Content Security Policy** — nonce-based CSP headers, blocks injected scripts, allows WebSocket for LiveView
 - **Mix Tasks** — `mix ignite.routes` prints all registered routes in a formatted table
+- **Debug Error Page** — rich dev error page with stacktrace, request context, and session (generic in prod)
 - **Error Handling** — `try/rescue` boundary catches crashes and renders 500 pages
 
 ### Real-time (LiveView)
@@ -74,7 +75,7 @@ By the end, you'll understand every layer that powers production Elixir web appl
 | `/upload-demo` | LiveView uploads | Chunked WebSocket uploads + progress |
 | `/presence` | Who's Online | Presence tracking + auto-cleanup on disconnect |
 | `/users` | User list (JSON) | Ecto DB query + resource routes |
-| `/crash` | Error page | Error handler + 500 page |
+| `/crash` | Debug error page | Rich stacktrace + request context (dev) |
 | `POST /users` | Create user | Ecto changeset validation + flash + redirect |
 | `PUT /users/42` | Update user | PUT/PATCH methods + JSON response |
 | `DELETE /users/42` | Delete user | DELETE method |
@@ -150,6 +151,7 @@ Each step is tagged in git. Jump to any step with `git checkout step-01`, or fol
 ### Developer Experience
 
 - [x] Step 33 — [`mix ignite.routes`](tutorial/33-mix-ignite-routes.md) — Custom Mix tasks, compile-time route introspection
+- [x] Step 34 — [Debug Error Page](tutorial/34-debug-error-page.md) — Rich dev error page, stacktrace formatting, dev/prod branching
 
 ## Quick Start
 
@@ -211,6 +213,7 @@ ignite/
 │   │   ├── session.ex         # Signed cookie session encode/decode
 │   │   ├── csrf.ex            # CSRF token generation & validation
 │   │   ├── csp.ex             # Content Security Policy headers
+│   │   ├── debug_page.ex     # Rich dev error page rendering
 │   │   ├── router/
 │   │   │   └── helpers.ex     # Path helper generation
 │   │   ├── live_view.ex       # LiveView behaviour + component helpers
@@ -296,7 +299,7 @@ Features that would bring Ignite closer to Phoenix for production use:
 
 ### Developer Experience
 - [x] ~~Mix tasks (`mix ignite.routes` to list all routes)~~ (Step 33)
-- [ ] Debug error page with stacktrace (like Phoenix's dev error page)
+- [x] ~~Debug error page with stacktrace (like Phoenix's dev error page)~~ (Step 34)
 - [ ] Logger metadata (request ID, timing)
 - [ ] Static asset pipeline (CSS/JS bundling, fingerprinting)
 - [ ] Test helpers (`ConnTest` for controller testing)
