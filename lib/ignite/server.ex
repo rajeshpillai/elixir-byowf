@@ -64,34 +64,9 @@ defmodule Ignite.Server do
     # 2. Route: hand the conn to the router, which finds the right controller
     conn = MyApp.Router.call(conn)
 
-    # 3. Respond: convert the conn back into raw HTTP and send it
-    response = build_response(conn.status, conn.resp_body)
+    # 3. Respond: convert the conn into raw HTTP and send it
+    response = Ignite.Controller.send_resp(conn)
     :gen_tcp.send(client_socket, response)
     :gen_tcp.close(client_socket)
   end
-
-  # Builds a raw HTTP/1.1 response string.
-  # HTTP responses have this format:
-  #
-  #   HTTP/1.1 200 OK\r\n
-  #   Content-Type: text/plain\r\n
-  #   Content-Length: 14\r\n
-  #   \r\n
-  #   Hello, Ignite!
-  #
-  # The blank line (\r\n\r\n) separates headers from the body.
-  defp build_response(status_code, body) do
-    status_text = status_text(status_code)
-
-    "HTTP/1.1 #{status_code} #{status_text}\r\n" <>
-      "Content-Type: text/plain\r\n" <>
-      "Content-Length: #{byte_size(body)}\r\n" <>
-      "Connection: close\r\n" <>
-      "\r\n" <>
-      body
-  end
-
-  defp status_text(200), do: "OK"
-  defp status_text(404), do: "Not Found"
-  defp status_text(_), do: "OK"
 end

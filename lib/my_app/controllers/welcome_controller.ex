@@ -3,13 +3,13 @@ defmodule MyApp.WelcomeController do
   Handles requests to the welcome/home pages.
   """
 
+  import Ignite.Controller
+
   def index(conn) do
-    body = "Welcome to Ignite!"
-    %Ignite.Conn{conn | resp_body: body}
+    text(conn, "Welcome to Ignite!")
   end
 
   def hello(conn) do
-    body = "Hello from the Controller!"
-    %Ignite.Conn{conn | resp_body: body}
+    text(conn, "Hello from the Controller!")
   end
 end
