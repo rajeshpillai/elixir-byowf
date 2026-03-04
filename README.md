@@ -1,8 +1,8 @@
 # Ignite — Build a Phoenix-like Web Framework from Scratch
 
-A step-by-step tutorial that teaches Elixir by building **Ignite**, a real web framework inspired by [Phoenix](https://www.phoenixframework.org/). You'll go from a raw TCP socket to a full-stack framework with LiveView, WebSockets, PubSub, and DOM diffing — all in 28 incremental commits.
+A step-by-step tutorial that teaches Elixir by building **Ignite**, a real web framework inspired by [Phoenix](https://www.phoenixframework.org/). You'll go from a raw TCP socket to a full-stack framework with LiveView, WebSockets, PubSub, Presence, and DOM diffing — all in 29 incremental commits.
 
-By the end, you'll understand every layer that powers production Elixir web applications: the conn pipeline, macro-based routing, OTP supervision, EEx templates, middleware plugs, real-time LiveView with efficient DOM patching, and PubSub for cross-process broadcasting.
+By the end, you'll understand every layer that powers production Elixir web applications: the conn pipeline, macro-based routing, OTP supervision, EEx templates, middleware plugs, real-time LiveView with efficient DOM patching, PubSub for cross-process broadcasting, signed sessions, and presence tracking.
 
 ## Features
 
@@ -20,6 +20,7 @@ By the end, you'll understand every layer that powers production Elixir web appl
 - **Flash Messages** — `put_flash/3` + `get_flash/2` with one-time read semantics across redirects
 - **Signed Sessions** — cookie-based sessions using `Plug.Crypto.MessageVerifier` (zero new deps)
 - **Redirect Helper** — `redirect(conn, to: "/")` with 302 status and location header
+- **Presence Tracking** — GenServer-based "Who's Online" with `Process.monitor/1` auto-cleanup
 - **Error Handling** — `try/rescue` boundary catches crashes and renders 500 pages
 
 ### Real-time (LiveView)
@@ -38,10 +39,12 @@ By the end, you'll understand every layer that powers production Elixir web appl
 - **`ignite-change`** — real-time input validation (sends field name + value on every keystroke)
 - **`ignite-submit`** — form submission with all fields collected via `FormData`
 
-### PubSub
+### PubSub & Presence
 - **Process Group Broadcasting** — built on Erlang's `:pg` with zero external dependencies
 - **Topic-based Subscribe/Broadcast** — LiveViews subscribe to topics and receive broadcasts via `handle_info/2`
 - **Auto-cleanup** — dead processes are automatically removed from groups
+- **Presence Tracking** — track connected users per topic with `Process.monitor/1` for automatic disconnect handling
+- **Presence Diffs** — `{:presence_diff, %{joins, leaves}}` broadcasts on every join/leave
 
 ### Infrastructure
 - **OTP Supervision** — self-healing server with `one_for_one` strategy
@@ -65,6 +68,7 @@ By the end, you'll understand every layer that powers production Elixir web appl
 | `/streams` | Streams demo | LiveView Streams for efficient list updates |
 | `/upload` | File upload form | Multipart HTTP POST upload |
 | `/upload-demo` | LiveView uploads | Chunked WebSocket uploads + progress |
+| `/presence` | Who's Online | Presence tracking + auto-cleanup on disconnect |
 | `/users` | User list (JSON) | Resource routes + path helpers |
 | `/crash` | Error page | Error handler + 500 page |
 | `POST /users` | Create user | Flash message + redirect |
@@ -112,6 +116,7 @@ Ignite is a real framework. You can use it to build:
 | File Uploads | Multipart + LiveView uploads | 26 |
 | Routing | Path helpers + resource routes | 27 |
 | Data & State | Flash messages + sessions | 28 |
+| Real-time | Presence tracking | 29 |
 
 ## Prerequisites
 
@@ -167,6 +172,7 @@ Or follow along commit-by-commit and build everything yourself.
 | 26 | [File Uploads](tutorial/26-file-uploads.md) | Multipart + LiveView uploads | Cowboy streaming, binary WebSocket frames, chunked transfer |
 | 27 | [Path Helpers & Resource Routes](tutorial/27-path-helpers.md) | `resources` macro + generated helpers | `@before_compile`, route metadata, code generation |
 | 28 | [Flash Messages](tutorial/28-flash-messages.md) | Signed sessions + one-time notifications | `Plug.Crypto`, signed cookies, redirect, session lifecycle |
+| 29 | [Presence Tracking](tutorial/29-presence.md) | Who's Online with auto-cleanup | `Process.monitor/1`, GenServer state, presence diffs |
 
 ## Quick Start
 
@@ -194,6 +200,7 @@ iex -S mix
 # http://localhost:4000/streams      → LiveView Streams (efficient lists)
 # http://localhost:4000/upload       → File upload form (multipart POST)
 # http://localhost:4000/upload-demo  → LiveView uploads (chunked WebSocket + progress)
+# http://localhost:4000/presence    → Presence tracking (open in 2+ tabs!)
 # http://localhost:4000/users       → Resource route (JSON user list)
 # http://localhost:4000/crash      → Error handler (500 page)
 # curl -X POST -d "username=Jose" http://localhost:4000/users  → Flash + redirect
@@ -223,6 +230,7 @@ ignite/
 │   │   ├── live_view.ex       # LiveView behaviour + component helpers
 │   │   ├── live_component.ex  # LiveComponent behaviour
 │   │   ├── pub_sub.ex         # PubSub (Erlang :pg wrapper)
+│   │   ├── presence.ex        # Presence tracking (who's online)
 │   │   ├── live_view/
 │   │   │   ├── handler.ex     # WebSocket handler
 │   │   │   ├── engine.ex      # Diffing engine
@@ -285,7 +293,7 @@ Features that would bring Ignite closer to Phoenix for production use:
 ### Data & State
 - [ ] Ecto integration for database access
 - [x] ~~PubSub for broadcasting between LiveView processes~~ (Step 17)
-- [ ] Presence tracking (who's online)
+- [x] ~~Presence tracking (who's online)~~ (Step 29)
 - [x] ~~Flash messages (`put_flash(conn, :info, "Saved!")`)~~ (Step 28)
 
 ### Developer Experience

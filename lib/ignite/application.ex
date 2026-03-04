@@ -25,6 +25,7 @@ defmodule Ignite.Application do
            {"/live/hooks", Ignite.LiveView.Handler, %{view: MyApp.HooksDemoLive}},
            {"/live/streams", Ignite.LiveView.Handler, %{view: MyApp.StreamDemoLive}},
            {"/live/upload-demo", Ignite.LiveView.Handler, %{view: MyApp.UploadDemoLive}},
+           {"/live/presence", Ignite.LiveView.Handler, %{view: MyApp.PresenceDemoLive}},
            {"/assets/[...]", :cowboy_static, {:dir, "assets"}},
            {"/uploads/[...]", :cowboy_static, {:dir, "uploads"}},
            {"/[...]", Ignite.Adapters.Cowboy, []}
@@ -35,6 +36,8 @@ defmodule Ignite.Application do
       [
         # Start PubSub before Cowboy so it's available when LiveViews mount
         Ignite.PubSub,
+        # Start Presence after PubSub (it broadcasts diffs via PubSub)
+        Ignite.Presence,
 
         # Start Cowboy under our supervision tree
         %{
