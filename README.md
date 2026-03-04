@@ -82,6 +82,7 @@ iex -S mix
 # http://localhost:4000/hello      → Controller response
 # http://localhost:4000/users/42   → EEx template with dynamic params
 # http://localhost:4000/counter    → LiveView (real-time counter)
+# http://localhost:4000/register   → LiveView form with real-time validation
 # http://localhost:4000/crash      → Error handler (500 page)
 # curl -X POST -d "username=Jose" http://localhost:4000/users  → POST parsing
 ```

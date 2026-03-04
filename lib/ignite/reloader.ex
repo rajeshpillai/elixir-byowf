@@ -64,7 +64,9 @@ defmodule Ignite.Reloader do
         Logger.info("[Reloader] Recompiling: #{file}")
 
         try do
+          Code.put_compiler_option(:ignore_module_conflict, true)
           Code.compile_file(file)
+          Code.put_compiler_option(:ignore_module_conflict, false)
         rescue
           error ->
             Logger.error("[Reloader] Compile error in #{file}: #{Exception.message(error)}")
