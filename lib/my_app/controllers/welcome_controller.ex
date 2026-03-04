@@ -67,8 +67,9 @@ defmodule MyApp.WelcomeController do
     <form action="/users" method="POST" style="background:#f4f4f4;padding:1em;border-radius:6px;margin-bottom:1em;">
       <label for="username"><strong>Create User:</strong></label>
       <input type="text" name="username" id="username" placeholder="Enter username" style="padding:6px 10px;border:1px solid #ccc;border-radius:4px;margin:0 8px;">
+      <input type="email" name="email" id="email" placeholder="Email (optional)" style="padding:6px 10px;border:1px solid #ccc;border-radius:4px;margin:0 8px;">
       <button type="submit" style="padding:6px 16px;background:#007bff;color:#fff;border:none;border-radius:4px;cursor:pointer;">Create</button>
-      <small style="display:block;margin-top:6px;color:#666;">Submits POST /users → sets flash → redirects here with a success banner</small>
+      <small style="display:block;margin-top:6px;color:#666;">Submits POST /users → Ecto changeset validation → flash → redirect</small>
     </form>
     <h2>Path Helpers</h2>
     <pre style="background:#f4f4f4;padding:1em;border-radius:4px;overflow-x:auto;">    MyApp.Router.Helpers.user_path(:index)       #=&gt; "/users"

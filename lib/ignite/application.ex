@@ -34,6 +34,8 @@ defmodule Ignite.Application do
 
     children =
       [
+        # Start the database connection pool first
+        MyApp.Repo,
         # Start PubSub before Cowboy so it's available when LiveViews mount
         Ignite.PubSub,
         # Start Presence after PubSub (it broadcasts diffs via PubSub)

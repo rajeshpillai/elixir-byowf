@@ -1,6 +1,6 @@
 # Ignite — Build a Phoenix-like Web Framework from Scratch
 
-A step-by-step tutorial that teaches Elixir by building **Ignite**, a real web framework inspired by [Phoenix](https://www.phoenixframework.org/). You'll go from a raw TCP socket to a full-stack framework with LiveView, WebSockets, PubSub, Presence, and DOM diffing — all in 29 incremental commits.
+A step-by-step tutorial that teaches Elixir by building **Ignite**, a real web framework inspired by [Phoenix](https://www.phoenixframework.org/). You'll go from a raw TCP socket to a full-stack framework with LiveView, WebSockets, PubSub, Presence, and DOM diffing — all in 30 incremental commits.
 
 By the end, you'll understand every layer that powers production Elixir web applications: the conn pipeline, macro-based routing, OTP supervision, EEx templates, middleware plugs, real-time LiveView with efficient DOM patching, PubSub for cross-process broadcasting, signed sessions, and presence tracking.
 
@@ -21,6 +21,7 @@ By the end, you'll understand every layer that powers production Elixir web appl
 - **Signed Sessions** — cookie-based sessions using `Plug.Crypto.MessageVerifier` (zero new deps)
 - **Redirect Helper** — `redirect(conn, to: "/")` with 302 status and location header
 - **Presence Tracking** — GenServer-based "Who's Online" with `Process.monitor/1` auto-cleanup
+- **Ecto Database** — schema, changesets, migrations with SQLite (swappable to PostgreSQL)
 - **Error Handling** — `try/rescue` boundary catches crashes and renders 500 pages
 
 ### Real-time (LiveView)
@@ -58,7 +59,7 @@ By the end, you'll understand every layer that powers production Elixir web appl
 |-------|------|---------------|
 | `/` | Landing page | Controller + HTML response |
 | `/hello` | Text response | Plain text controller |
-| `/users/42` | User profile | EEx templates + dynamic route params |
+| `/users/42` | User profile | Ecto DB query + EEx template |
 | `/counter` | Live counter | LiveView + click events |
 | `/register` | Registration form | Real-time validation + form submit |
 | `/dashboard` | BEAM dashboard | Server-push with auto-refreshing stats |
@@ -69,9 +70,9 @@ By the end, you'll understand every layer that powers production Elixir web appl
 | `/upload` | File upload form | Multipart HTTP POST upload |
 | `/upload-demo` | LiveView uploads | Chunked WebSocket uploads + progress |
 | `/presence` | Who's Online | Presence tracking + auto-cleanup on disconnect |
-| `/users` | User list (JSON) | Resource routes + path helpers |
+| `/users` | User list (JSON) | Ecto DB query + resource routes |
 | `/crash` | Error page | Error handler + 500 page |
-| `POST /users` | Create user | Flash message + redirect |
+| `POST /users` | Create user | Ecto changeset validation + flash + redirect |
 | `PUT /users/42` | Update user | PUT/PATCH methods + JSON response |
 | `DELETE /users/42` | Delete user | DELETE method |
 | `/api/status` | API status | JSON response helper |
@@ -136,7 +137,7 @@ Each step is tagged in git. Jump to any step with `git checkout step-01`, or fol
 
 - [x] Step 28 — [Flash Messages](tutorial/28-flash-messages.md) — `Plug.Crypto`, signed cookies, session lifecycle
 - [x] Step 29 — [Presence Tracking](tutorial/29-presence.md) — `Process.monitor/1`, GenServer state, presence diffs
-- [ ] Step 30 — Ecto Integration — Database persistence with PostgreSQL
+- [x] Step 30 — [Ecto Integration](tutorial/30-ecto-integration.md) — Database persistence with SQLite (Ecto)
 
 ## Quick Start
 
@@ -147,6 +148,10 @@ cd elixir-byowf
 
 # Install dependencies
 mix deps.get
+
+# Set up the database (SQLite — no server needed)
+mix ecto.create
+mix ecto.migrate
 
 # Start the server
 iex -S mix
@@ -207,9 +212,17 @@ ignite/
 │   │   └── adapters/
 │   │       └── cowboy.ex      # Cowboy HTTP adapter
 │   └── my_app/                # Sample application
+│       ├── repo.ex            # Ecto Repo (database connection)
 │       ├── router.ex
+│       ├── schemas/
+│       │   └── user.ex        # User schema + changeset
 │       ├── controllers/
 │       └── live/
+├── config/
+│   └── config.exs             # Application config (database, etc.)
+├── priv/
+│   └── repo/
+│       └── migrations/        # Ecto database migrations
 ├── templates/                 # EEx HTML templates
 ├── assets/                    # Frontend JavaScript
 │   ├── ignite.js              # LiveView client glue
@@ -226,6 +239,7 @@ ignite/
 |-----------|---------|---------|
 | `plug_cowboy` | Step 10 | Production HTTP server |
 | `jason` | Step 12 | JSON for LiveView diffs |
+| `ecto_sql` + `ecto_sqlite3` | Step 30 | Database persistence (SQLite) |
 
 Steps 1-9 use **zero external dependencies** — only Elixir's standard library and Erlang's `:gen_tcp`.
 
@@ -255,7 +269,7 @@ Features that would bring Ignite closer to Phoenix for production use:
 - [ ] Rate limiting middleware
 
 ### Data & State
-- [ ] Ecto integration for database access
+- [x] ~~Ecto integration for database access~~ (Step 30)
 - [x] ~~PubSub for broadcasting between LiveView processes~~ (Step 17)
 - [x] ~~Presence tracking (who's online)~~ (Step 29)
 - [x] ~~Flash messages (`put_flash(conn, :info, "Saved!")`)~~ (Step 28)
