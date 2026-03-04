@@ -11,8 +11,8 @@
 <body>
   <h1>User Profile</h1>
   <div class="info">
-    <p><strong>Name:</strong> <%= @assigns[:name] %></p>
-    <p><strong>ID:</strong> <%= @assigns[:id] %></p>
+    <p><strong>Name:</strong> <%= @name %></p>
+    <p><strong>ID:</strong> <%= @id %></p>
     <p><strong>Server Time:</strong> <%= DateTime.utc_now() %></p>
   </div>
   <p><a href="/">Back to Home</a></p>
