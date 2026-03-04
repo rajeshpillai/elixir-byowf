@@ -177,6 +177,13 @@ defmodule Ignite.LiveView do
         collect_components: 1,
         sigil_L: 2
       ]
+      import Ignite.LiveView.Stream, only: [
+        stream: 3,
+        stream: 4,
+        stream_insert: 3,
+        stream_insert: 4,
+        stream_delete: 3
+      ]
     end
   end
 end

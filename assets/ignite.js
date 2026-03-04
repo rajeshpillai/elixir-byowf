@@ -10,6 +10,7 @@
  * - On update (full): server sends {d: [...dynamics]}
  * - On update (sparse): server sends {d: {"0": "new_val", "3": "changed"}}
  * - On redirect: server sends {redirect: {live_path: "/live/x", url: "/x"}}
+ * - Streams: server sends {streams: {name: {inserts: [...], deletes: [...], reset: bool}}}
  * - JS zips statics + dynamics, then morphdom patches the DOM
  *
  * Supported attributes:
@@ -213,6 +214,75 @@
     updateHooks(container);
   }
 
+  // --- Apply stream operations (insert/delete/reset) ---
+  // Streams bypass the statics/dynamics diffing — they operate directly on
+  // DOM containers marked with [ignite-stream="name"].
+  function applyStreamOps(data) {
+    if (!data.streams) return;
+
+    for (var streamName in data.streams) {
+      var ops = data.streams[streamName];
+      var container = document.querySelector(
+        '[ignite-stream="' + streamName + '"]'
+      );
+
+      if (!container) {
+        console.warn("[Ignite] Stream container not found: " + streamName);
+        continue;
+      }
+
+      // Reset: remove all children
+      if (ops.reset) {
+        while (container.firstChild) {
+          container.removeChild(container.firstChild);
+        }
+      }
+
+      // Deletes: remove elements by DOM ID
+      if (ops.deletes) {
+        for (var i = 0; i < ops.deletes.length; i++) {
+          var el = document.getElementById(ops.deletes[i]);
+          if (el) {
+            el.parentNode.removeChild(el);
+          }
+        }
+      }
+
+      // Inserts: add new elements
+      if (ops.inserts) {
+        for (var j = 0; j < ops.inserts.length; j++) {
+          var entry = ops.inserts[j];
+
+          // Parse the HTML string into a DOM element
+          var temp = document.createElement("div");
+          temp.innerHTML = entry.html.trim();
+          var newEl = temp.firstChild;
+
+          // Ensure the element has the correct ID
+          if (newEl && !newEl.id) {
+            newEl.id = entry.id;
+          }
+
+          // If element with this ID already exists, update it (morphdom or replace)
+          var existing = document.getElementById(entry.id);
+          if (existing) {
+            if (typeof morphdom === "function") {
+              morphdom(existing, newEl);
+            } else {
+              existing.parentNode.replaceChild(newEl, existing);
+            }
+          } else if (entry.at === 0) {
+            // Prepend
+            container.insertBefore(newEl, container.firstChild);
+          } else {
+            // Append (default)
+            container.appendChild(newEl);
+          }
+        }
+      }
+    }
+  }
+
   // --- WebSocket connection management ---
   function connect(livePath) {
     // Close existing connection
@@ -275,6 +345,9 @@
         var newHtml = buildHtml(statics, dynamics);
         applyUpdate(el, newHtml);
       }
+
+      // Apply stream operations (after DOM is updated so containers exist)
+      applyStreamOps(data);
     };
 
     socket.onopen = function () {

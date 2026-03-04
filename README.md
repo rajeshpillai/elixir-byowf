@@ -1,6 +1,6 @@
 # Ignite — Build a Phoenix-like Web Framework from Scratch
 
-A step-by-step tutorial that teaches Elixir by building **Ignite**, a real web framework inspired by [Phoenix](https://www.phoenixframework.org/). You'll go from a raw TCP socket to a full-stack framework with LiveView, WebSockets, PubSub, and DOM diffing — all in 24 incremental commits.
+A step-by-step tutorial that teaches Elixir by building **Ignite**, a real web framework inspired by [Phoenix](https://www.phoenixframework.org/). You'll go from a raw TCP socket to a full-stack framework with LiveView, WebSockets, PubSub, and DOM diffing — all in 25 incremental commits.
 
 By the end, you'll understand every layer that powers production Elixir web applications: the conn pipeline, macro-based routing, OTP supervision, EEx templates, middleware plugs, real-time LiveView with efficient DOM patching, and PubSub for cross-process broadcasting.
 
@@ -57,6 +57,7 @@ By the end, you'll understand every layer that powers production Elixir web appl
 | `/shared-counter` | Shared counter | PubSub broadcasting across tabs |
 | `/components` | Components demo | LiveComponents with independent state |
 | `/hooks` | JS Hooks demo | Clipboard copy, local time, pushEvent |
+| `/streams` | Streams demo | LiveView Streams for efficient list updates |
 | `/crash` | Error page | Error handler + 500 page |
 | `POST /users` | Create user | POST body parsing |
 | `PUT /users/42` | Update user | PUT/PATCH methods + JSON response |
@@ -99,6 +100,7 @@ Ignite is a real framework. You can use it to build:
 | REST | PUT/PATCH/DELETE | 22 |
 | Organization | Scoped routes | 23 |
 | Optimization | Fine-grained diffing | 24 |
+| Collections | LiveView Streams | 25 |
 
 ## Prerequisites
 
@@ -150,6 +152,7 @@ Or follow along commit-by-commit and build everything yourself.
 | 22 | [HTTP Methods](tutorial/22-http-methods.md) | PUT/PATCH/DELETE macros | REST conventions, macro reuse |
 | 23 | [Scoped Routes](tutorial/23-scoped-routes.md) | `scope "/api" do ... end` | `__CALLER__`, compile-time state, nesting |
 | 24 | [Fine-Grained Diffing](tutorial/24-fine-grained-diffing.md) | `~L` sigil + EEx engine | Custom EEx engines, compile-time splitting, sparse diffs |
+| 25 | [LiveView Streams](tutorial/25-streams.md) | Efficient list operations | Stream ops, DOM manipulation, O(1) wire updates |
 
 ## Quick Start
 
@@ -174,6 +177,7 @@ iex -S mix
 # http://localhost:4000/shared-counter → PubSub shared counter (open in 2 tabs!)
 # http://localhost:4000/components    → LiveComponents demo
 # http://localhost:4000/hooks         → JS Hooks demo (clipboard, time)
+# http://localhost:4000/streams      → LiveView Streams (efficient lists)
 # http://localhost:4000/crash      → Error handler (500 page)
 # curl -X POST -d "username=Jose" http://localhost:4000/users  → POST parsing
 # http://localhost:4000/api/status   → JSON API response
@@ -200,7 +204,10 @@ ignite/
 │   │   ├── pub_sub.ex         # PubSub (Erlang :pg wrapper)
 │   │   ├── live_view/
 │   │   │   ├── handler.ex     # WebSocket handler
-│   │   │   └── engine.ex      # Diffing engine
+│   │   │   ├── engine.ex      # Diffing engine
+│   │   │   ├── eex_engine.ex  # Custom EEx engine for ~L sigil
+│   │   │   ├── rendered.ex    # %Rendered{} struct
+│   │   │   └── stream.ex      # LiveView Streams
 │   │   ├── reloader.ex        # Hot code reloader
 │   │   └── adapters/
 │   │       └── cowboy.ex      # Cowboy HTTP adapter
@@ -242,7 +249,7 @@ Features that would bring Ignite closer to Phoenix for production use:
 - [x] ~~Fine-grained diffing (track individual dynamic expressions, not whole HTML)~~ (Step 24)
 - [x] ~~LiveView navigation (`live_redirect`, `push_patch` without full page reload)~~ (Step 18)
 - [x] ~~LiveComponents (reusable stateful components within a LiveView)~~ (Step 19)
-- [ ] Streams for large collections (append/prepend without re-rendering lists)
+- [x] ~~Streams for large collections (append/prepend without re-rendering lists)~~ (Step 25)
 - [ ] File uploads via LiveView
 - [x] ~~JS hooks (`phx-hook` equivalent for interop with JS libraries)~~ (Step 20)
 

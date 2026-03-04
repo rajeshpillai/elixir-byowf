@@ -21,6 +21,7 @@ defmodule MyApp.Router do
   get "/shared-counter", to: MyApp.WelcomeController, action: :shared_counter
   get "/components", to: MyApp.WelcomeController, action: :components
   get "/hooks", to: MyApp.WelcomeController, action: :hooks
+  get "/streams", to: MyApp.WelcomeController, action: :streams
   post "/users", to: MyApp.UserController, action: :create
   put "/users/:id", to: MyApp.UserController, action: :update
   patch "/users/:id", to: MyApp.UserController, action: :update

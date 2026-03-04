@@ -33,11 +33,19 @@ defmodule Ignite.LiveView.Handler do
         # Collect component state that was created during render
         assigns = Ignite.LiveView.collect_components(assigns)
 
+        # Extract pending stream operations (initial items from mount)
+        {streams_payload, assigns} = Ignite.LiveView.Stream.extract_stream_ops(assigns)
+
         Logger.info("[LiveView] Mounted #{inspect(view_module)}")
 
         # Store prev_dynamics for future sparse diffing
         new_state = %{view: view_module, assigns: assigns, prev_dynamics: dynamics}
-        payload = Jason.encode!(%{s: statics, d: dynamics})
+
+        # Include streams in mount payload if present
+        payload_map = %{s: statics, d: dynamics}
+        payload_map = if streams_payload, do: Map.put(payload_map, :streams, streams_payload), else: payload_map
+
+        payload = Jason.encode!(payload_map)
         {:reply, {:text, payload}, new_state}
     end
   end
@@ -66,6 +74,8 @@ defmodule Ignite.LiveView.Handler do
             send_render_update(state, clean_assigns)
 
           {redirect_info, clean_assigns} ->
+            # Clear any pending stream ops since we're redirecting
+            {_streams, clean_assigns} = Ignite.LiveView.Stream.extract_stream_ops(clean_assigns)
             new_state = %{state | assigns: clean_assigns}
             payload = Jason.encode!(%{redirect: redirect_info})
             {:reply, {:text, payload}, new_state}
@@ -112,8 +122,16 @@ defmodule Ignite.LiveView.Handler do
         prev -> Engine.diff(prev, new_dynamics)
       end
 
+    # Extract pending stream operations
+    {streams_payload, assigns} = Ignite.LiveView.Stream.extract_stream_ops(assigns)
+
     new_state = %{state | assigns: assigns, prev_dynamics: new_dynamics}
-    payload = Jason.encode!(%{d: diff_payload})
+
+    # Include streams in payload if present
+    payload_map = %{d: diff_payload}
+    payload_map = if streams_payload, do: Map.put(payload_map, :streams, streams_payload), else: payload_map
+
+    payload = Jason.encode!(payload_map)
     {:reply, {:text, payload}, new_state}
   end
 
