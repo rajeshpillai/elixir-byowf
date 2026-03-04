@@ -35,12 +35,12 @@ defmodule MyApp.RegistrationLive do
     # Update all fields from form data
     assigns = %{assigns | name: params["name"] || "", email: params["email"] || "", password: params["password"] || ""}
 
-    # Validate all fields
+    # Validate all fields (required on submit)
     errors =
       %{}
-      |> put_error("name", validate_field("name", assigns.name))
-      |> put_error("email", validate_field("email", assigns.email))
-      |> put_error("password", validate_field("password", assigns.password))
+      |> put_error("name", validate_required("name", assigns.name))
+      |> put_error("email", validate_required("email", assigns.email))
+      |> put_error("password", validate_required("password", assigns.password))
 
     if map_size(errors) == 0 do
       {:noreply, %{assigns | errors: %{}, submitted: true}}
@@ -126,6 +126,10 @@ defmodule MyApp.RegistrationLive do
   end
 
   defp validate_field(_, _), do: nil
+
+  # Like validate_field but treats empty as an error (for submit)
+  defp validate_required(_field, ""), do: "is required"
+  defp validate_required(field, value), do: validate_field(field, value) || nil
 
   # --- Helpers ---
 
