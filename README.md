@@ -1,6 +1,6 @@
 # Ignite — Build a Phoenix-like Web Framework from Scratch
 
-A step-by-step tutorial that teaches Elixir by building **Ignite**, a real web framework inspired by [Phoenix](https://www.phoenixframework.org/). You'll go from a raw TCP socket to a full-stack framework with LiveView, WebSockets, PubSub, and DOM diffing — all in 18 incremental commits.
+A step-by-step tutorial that teaches Elixir by building **Ignite**, a real web framework inspired by [Phoenix](https://www.phoenixframework.org/). You'll go from a raw TCP socket to a full-stack framework with LiveView, WebSockets, PubSub, and DOM diffing — all in 20 incremental commits.
 
 By the end, you'll understand every layer that powers production Elixir web applications: the conn pipeline, macro-based routing, OTP supervision, EEx templates, middleware plugs, real-time LiveView with efficient DOM patching, and PubSub for cross-process broadcasting.
 
@@ -22,6 +22,8 @@ By the end, you'll understand every layer that powers production Elixir web appl
 - **Statics/Dynamics Diffing** — sends only changed data over the wire
 - **Morphdom DOM Patching** — efficient client-side updates that preserve input focus and animations
 - **LiveView Navigation** — SPA-like page transitions with `ignite-navigate` and `push_redirect/2`
+- **LiveComponents** — reusable stateful components with `live_component/3`, auto-namespaced events
+- **JS Hooks** — client-side lifecycle callbacks (`mounted`, `updated`, `destroyed`) for third-party JS interop
 
 ### Frontend Events
 - **`ignite-click`** — click events with optional `ignite-value`
@@ -50,6 +52,8 @@ By the end, you'll understand every layer that powers production Elixir web appl
 | `/register` | Registration form | Real-time validation + form submit |
 | `/dashboard` | BEAM dashboard | Server-push with auto-refreshing stats |
 | `/shared-counter` | Shared counter | PubSub broadcasting across tabs |
+| `/components` | Components demo | LiveComponents with independent state |
+| `/hooks` | JS Hooks demo | Clipboard copy, local time, pushEvent |
 | `/crash` | Error page | Error handler + 500 page |
 | `POST /users` | Create user | POST body parsing |
 
@@ -82,6 +86,8 @@ Ignite is a real framework. You can use it to build:
 | UI Performance | Morphdom DOM diffing | 16 |
 | Broadcasting | PubSub | 17 |
 | Navigation | LiveView Navigation | 18 |
+| Components | LiveComponents | 19 |
+| JS Interop | JS Hooks | 20 |
 
 ## Prerequisites
 
@@ -127,6 +133,8 @@ Or follow along commit-by-commit and build everything yourself.
 | 16 | [Morphdom](tutorial/16-morphdom.md) | DOM diffing | Efficient UI updates |
 | 17 | [PubSub](tutorial/17-pubsub.md) | Cross-process broadcasting | `:pg` process groups, subscribe/broadcast |
 | 18 | [LiveView Navigation](tutorial/18-live-navigation.md) | SPA-like transitions | `history.pushState`, `ignite-navigate` |
+| 19 | [LiveComponents](tutorial/19-live-components.md) | Reusable stateful widgets | Behaviours, process dictionary, event namespacing |
+| 20 | [JS Hooks](tutorial/20-js-hooks.md) | Client-side JS interop | Lifecycle callbacks, `pushEvent`, DOM cleanup |
 
 ## Quick Start
 
@@ -149,6 +157,8 @@ iex -S mix
 # http://localhost:4000/register   → LiveView form with real-time validation
 # http://localhost:4000/dashboard  → Live BEAM dashboard (auto-refresh)
 # http://localhost:4000/shared-counter → PubSub shared counter (open in 2 tabs!)
+# http://localhost:4000/components    → LiveComponents demo
+# http://localhost:4000/hooks         → JS Hooks demo (clipboard, time)
 # http://localhost:4000/crash      → Error handler (500 page)
 # curl -X POST -d "username=Jose" http://localhost:4000/users  → POST parsing
 ```
@@ -166,7 +176,8 @@ ignite/
 │   │   ├── parser.ex          # HTTP request parser
 │   │   ├── controller.ex      # Response helpers (text, html, render)
 │   │   ├── router.ex          # Router DSL macros
-│   │   ├── live_view.ex       # LiveView behaviour
+│   │   ├── live_view.ex       # LiveView behaviour + component helpers
+│   │   ├── live_component.ex  # LiveComponent behaviour
 │   │   ├── pub_sub.ex         # PubSub (Erlang :pg wrapper)
 │   │   ├── live_view/
 │   │   │   ├── handler.ex     # WebSocket handler
@@ -181,6 +192,7 @@ ignite/
 ├── templates/                 # EEx HTML templates
 ├── assets/                    # Frontend JavaScript
 │   ├── ignite.js              # LiveView client glue
+│   ├── hooks.js               # Example JS Hooks
 │   └── morphdom.min.js        # DOM diffing library
 ├── tutorial/                  # Step-by-step tutorial docs
 ├── mix.exs                    # Project config & dependencies
@@ -210,10 +222,10 @@ Features that would bring Ignite closer to Phoenix for production use:
 ### LiveView
 - [ ] Fine-grained diffing (track individual dynamic expressions, not whole HTML)
 - [x] ~~LiveView navigation (`live_redirect`, `push_patch` without full page reload)~~ (Step 18)
-- [ ] LiveComponents (reusable stateful components within a LiveView)
+- [x] ~~LiveComponents (reusable stateful components within a LiveView)~~ (Step 19)
 - [ ] Streams for large collections (append/prepend without re-rendering lists)
 - [ ] File uploads via LiveView
-- [ ] JS hooks (`phx-hook` equivalent for interop with JS libraries)
+- [x] ~~JS hooks (`phx-hook` equivalent for interop with JS libraries)~~ (Step 20)
 
 ### Security
 - [ ] CSRF token generation and validation on forms
