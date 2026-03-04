@@ -17,8 +17,8 @@
   <div id="ignite-app" data-live-path="<%= @live_path || "/live" %>" data-live-routes='<%= @live_routes || "{}" %>'>Connecting...</div>
   <hr>
   <p><small>Powered by <a href="/">Ignite</a></small></p>
-  <script src="/assets/morphdom.min.js"></script>
-  <script src="/assets/hooks.js"></script>
-  <script src="/assets/ignite.js"></script>
+  <script src="<%= Ignite.Static.static_path("morphdom.min.js") %>"></script>
+  <script src="<%= Ignite.Static.static_path("hooks.js") %>"></script>
+  <script src="<%= Ignite.Static.static_path("ignite.js") %>"></script>
 </body>
 </html>

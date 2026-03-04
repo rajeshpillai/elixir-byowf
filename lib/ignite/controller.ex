@@ -172,6 +172,20 @@ defmodule Ignite.Controller do
   end
 
   @doc """
+  Returns a cache-busted path for a static asset file.
+
+  Delegates to `Ignite.Static.static_path/1`. The hash is computed from
+  the file's content at boot time and cached in ETS.
+
+  ## Examples
+
+      static_path("ignite.js")   #=> "/assets/ignite.js?v=a1b2c3d4"
+  """
+  def static_path(filename) do
+    Ignite.Static.static_path(filename)
+  end
+
+  @doc """
   Renders an EEx template and sets it as the HTML response.
 
   Templates are loaded from the `templates/` directory.

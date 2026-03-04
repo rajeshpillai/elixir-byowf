@@ -12,6 +12,10 @@ defmodule Ignite.Application do
   def start(_type, _args) do
     port = 4000
 
+    # Build static asset manifest (file hashes for cache-busting URLs).
+    # Must run before Cowboy starts accepting requests.
+    Ignite.Static.init()
+
     # Cowboy routing: WebSocket, static files, and HTTP
     dispatch =
       :cowboy_router.compile([

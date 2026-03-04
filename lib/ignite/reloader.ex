@@ -23,11 +23,12 @@ defmodule Ignite.Reloader do
   def init(path) do
     state = %{
       path: path,
-      mtimes: get_mtimes(path)
+      mtimes: get_mtimes(path),
+      asset_mtimes: get_asset_mtimes()
     }
 
     schedule_check()
-    Logger.info("[Reloader] Watching #{path}/ for changes...")
+    Logger.info("[Reloader] Watching #{path}/ and assets/ for changes...")
     {:ok, state}
   end
 
@@ -39,8 +40,16 @@ defmodule Ignite.Reloader do
       reload_changed(state.mtimes, new_mtimes)
     end
 
+    # Check for asset file changes and rebuild the static manifest
+    new_asset_mtimes = get_asset_mtimes()
+
+    if new_asset_mtimes != state.asset_mtimes do
+      Logger.info("[Reloader] Asset changes detected — rebuilding static manifest...")
+      Ignite.Static.rebuild()
+    end
+
     schedule_check()
-    {:noreply, %{state | mtimes: new_mtimes}}
+    {:noreply, %{state | mtimes: new_mtimes, asset_mtimes: new_asset_mtimes}}
   end
 
   # Scan lib/ for all .ex files and record their modification times.
@@ -71,6 +80,19 @@ defmodule Ignite.Reloader do
           error ->
             Logger.error("[Reloader] Compile error in #{file}: #{Exception.message(error)}")
         end
+      end
+    end)
+  end
+
+  # Scan assets/ for all files and record their modification times.
+  defp get_asset_mtimes do
+    Path.join("assets", "**/*")
+    |> Path.wildcard()
+    |> Enum.filter(&File.regular?/1)
+    |> Enum.into(%{}, fn file ->
+      case File.stat(file) do
+        {:ok, stat} -> {file, stat.mtime}
+        _ -> {file, nil}
       end
     end)
   end
