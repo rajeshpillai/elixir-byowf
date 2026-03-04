@@ -19,8 +19,31 @@ defmodule MyApp.WelcomeController do
                })
 
   def index(conn) do
+    # Build flash notification HTML (if any flash messages exist)
+    flash_html =
+      case get_flash(conn) do
+        flash when flash == %{} ->
+          ""
+
+        flash ->
+          Enum.map_join(flash, "\n", fn {type, msg} ->
+            {bg, border, color} =
+              case type do
+                "info" -> {"#d4edda", "#c3e6cb", "#155724"}
+                "error" -> {"#f8d7da", "#f5c6cb", "#721c24"}
+                _ -> {"#e2e3e5", "#d6d8db", "#383d41"}
+              end
+
+            """
+            <div style="background:#{bg};color:#{color};padding:12px 16px;border-radius:6px;margin-bottom:16px;border:1px solid #{border};">
+              #{msg}
+            </div>
+            """
+          end)
+      end
+
     html(conn, """
-    <h1>Ignite Framework</h1>
+    #{flash_html}<h1>Ignite Framework</h1>
     <p>A Phoenix-like web framework built from scratch.</p>
     <h2>Demo Routes</h2>
     <ul>

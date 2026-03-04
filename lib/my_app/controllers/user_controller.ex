@@ -16,7 +16,10 @@ defmodule MyApp.UserController do
 
   def create(conn) do
     username = conn.params["username"] || "anonymous"
-    text(conn, "User '#{username}' created successfully!", 201)
+
+    conn
+    |> put_flash(:info, "User '#{username}' created!")
+    |> redirect(to: "/")
   end
 
   def update(conn) do

@@ -18,15 +18,28 @@ defmodule Ignite.LiveView.Handler do
 
   @impl true
   def init(req, state) do
-    {:cowboy_websocket, req, state}
+    # Parse cookies from the WebSocket handshake request.
+    # WebSocket upgrades carry cookies just like normal HTTP requests,
+    # so LiveViews can access the same session data as controllers.
+    cookie_header = :cowboy_req.header("cookie", req, "")
+    cookies = Ignite.Session.parse_cookies(cookie_header)
+
+    session =
+      case Ignite.Session.decode(Map.get(cookies, Ignite.Session.cookie_name())) do
+        {:ok, data} -> data
+        :error -> %{}
+      end
+
+    {:cowboy_websocket, req, Map.put(state, :session, session)}
   end
 
   # On mount: send both statics and dynamics
   @impl true
   def websocket_init(state) do
     view_module = state.view
+    session = Map.get(state, :session, %{})
 
-    case apply(view_module, :mount, [%{}, %{}]) do
+    case apply(view_module, :mount, [%{}, session]) do
       {:ok, assigns} ->
         {statics, dynamics} = Engine.render(view_module, assigns)
 

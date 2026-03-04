@@ -21,7 +21,20 @@ defmodule Ignite.Adapters.Cowboy do
         # 2. Route through our framework
         conn = MyApp.Router.call(conn)
 
-        # 3. Send response back through Cowboy
+        # 3. Set session cookie via Cowboy's cookie API
+        #    conn.session contains only NEW flash (if put_flash was called).
+        #    Inherited flash was already popped into conn.private in cowboy_to_conn.
+        cookie_value = Ignite.Session.encode(conn.session)
+
+        req =
+          :cowboy_req.set_resp_cookie(
+            Ignite.Session.cookie_name(),
+            cookie_value,
+            req,
+            %{path: "/", http_only: true, same_site: :lax}
+          )
+
+        # 4. Send response back through Cowboy
         :cowboy_req.reply(conn.status, conn.resp_headers, conn.resp_body, req)
       rescue
         exception ->
@@ -76,11 +89,29 @@ defmodule Ignite.Adapters.Cowboy do
       req.headers
       |> Enum.into(%{}, fn {k, v} -> {String.downcase(k), v} end)
 
+    # Parse cookies from the Cookie header
+    cookies = Ignite.Session.parse_cookies(Map.get(headers, "cookie"))
+
+    # Decode session from the signed session cookie
+    raw_session =
+      case Ignite.Session.decode(Map.get(cookies, Ignite.Session.cookie_name())) do
+        {:ok, data} -> data
+        :error -> %{}
+      end
+
+    # Pop flash from session → store in private for get_flash to read.
+    # This gives us one-time semantics: the flash is available to the controller
+    # via get_flash, but won't be echoed back unless put_flash is called again.
+    {flash, session} = Map.pop(raw_session, "_flash", %{})
+
     %Ignite.Conn{
       method: req.method,
       path: req.path,
       headers: headers,
-      params: body_params
+      params: body_params,
+      cookies: cookies,
+      session: session,
+      private: %{flash: flash}
     }
   end
 

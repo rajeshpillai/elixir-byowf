@@ -1,6 +1,6 @@
 # Ignite — Build a Phoenix-like Web Framework from Scratch
 
-A step-by-step tutorial that teaches Elixir by building **Ignite**, a real web framework inspired by [Phoenix](https://www.phoenixframework.org/). You'll go from a raw TCP socket to a full-stack framework with LiveView, WebSockets, PubSub, and DOM diffing — all in 27 incremental commits.
+A step-by-step tutorial that teaches Elixir by building **Ignite**, a real web framework inspired by [Phoenix](https://www.phoenixframework.org/). You'll go from a raw TCP socket to a full-stack framework with LiveView, WebSockets, PubSub, and DOM diffing — all in 28 incremental commits.
 
 By the end, you'll understand every layer that powers production Elixir web applications: the conn pipeline, macro-based routing, OTP supervision, EEx templates, middleware plugs, real-time LiveView with efficient DOM patching, and PubSub for cross-process broadcasting.
 
@@ -17,6 +17,9 @@ By the end, you'll understand every layer that powers production Elixir web appl
 - **EEx Templates** — server-side rendering with `<%= @name %>` assigns
 - **POST Body Parsing** — form-urlencoded body parsing with `URI.decode_query/1`
 - **Multipart File Uploads** — streaming multipart parser with `%Ignite.Upload{}` struct and temp file cleanup
+- **Flash Messages** — `put_flash/3` + `get_flash/2` with one-time read semantics across redirects
+- **Signed Sessions** — cookie-based sessions using `Plug.Crypto.MessageVerifier` (zero new deps)
+- **Redirect Helper** — `redirect(conn, to: "/")` with 302 status and location header
 - **Error Handling** — `try/rescue` boundary catches crashes and renders 500 pages
 
 ### Real-time (LiveView)
@@ -64,7 +67,7 @@ By the end, you'll understand every layer that powers production Elixir web appl
 | `/upload-demo` | LiveView uploads | Chunked WebSocket uploads + progress |
 | `/users` | User list (JSON) | Resource routes + path helpers |
 | `/crash` | Error page | Error handler + 500 page |
-| `POST /users` | Create user | POST body parsing |
+| `POST /users` | Create user | Flash message + redirect |
 | `PUT /users/42` | Update user | PUT/PATCH methods + JSON response |
 | `DELETE /users/42` | Delete user | DELETE method |
 | `/api/status` | API status | JSON response helper |
@@ -108,6 +111,7 @@ Ignite is a real framework. You can use it to build:
 | Collections | LiveView Streams | 25 |
 | File Uploads | Multipart + LiveView uploads | 26 |
 | Routing | Path helpers + resource routes | 27 |
+| Data & State | Flash messages + sessions | 28 |
 
 ## Prerequisites
 
@@ -162,6 +166,7 @@ Or follow along commit-by-commit and build everything yourself.
 | 25 | [LiveView Streams](tutorial/25-streams.md) | Efficient list operations | Stream ops, DOM manipulation, O(1) wire updates |
 | 26 | [File Uploads](tutorial/26-file-uploads.md) | Multipart + LiveView uploads | Cowboy streaming, binary WebSocket frames, chunked transfer |
 | 27 | [Path Helpers & Resource Routes](tutorial/27-path-helpers.md) | `resources` macro + generated helpers | `@before_compile`, route metadata, code generation |
+| 28 | [Flash Messages](tutorial/28-flash-messages.md) | Signed sessions + one-time notifications | `Plug.Crypto`, signed cookies, redirect, session lifecycle |
 
 ## Quick Start
 
@@ -191,7 +196,7 @@ iex -S mix
 # http://localhost:4000/upload-demo  → LiveView uploads (chunked WebSocket + progress)
 # http://localhost:4000/users       → Resource route (JSON user list)
 # http://localhost:4000/crash      → Error handler (500 page)
-# curl -X POST -d "username=Jose" http://localhost:4000/users  → POST parsing
+# curl -X POST -d "username=Jose" http://localhost:4000/users  → Flash + redirect
 # http://localhost:4000/api/status   → JSON API response
 # curl -X POST -H "Content-Type: application/json" -d '{"name":"Jose"}' http://localhost:4000/api/echo
 # curl -X PUT -H "Content-Type: application/json" -d '{"username":"Updated"}' http://localhost:4000/users/42
@@ -212,6 +217,7 @@ ignite/
 │   │   ├── parser.ex          # HTTP request parser
 │   │   ├── controller.ex      # Response helpers (text, html, render)
 │   │   ├── router.ex          # Router DSL macros
+│   │   ├── session.ex         # Signed cookie session encode/decode
 │   │   ├── router/
 │   │   │   └── helpers.ex     # Path helper generation
 │   │   ├── live_view.ex       # LiveView behaviour + component helpers
@@ -272,7 +278,7 @@ Features that would bring Ignite closer to Phoenix for production use:
 
 ### Security
 - [ ] CSRF token generation and validation on forms
-- [ ] Signed/encrypted session cookies
+- [x] ~~Signed/encrypted session cookies~~ (Step 28)
 - [ ] Content Security Policy headers
 - [ ] Rate limiting middleware
 
@@ -280,7 +286,7 @@ Features that would bring Ignite closer to Phoenix for production use:
 - [ ] Ecto integration for database access
 - [x] ~~PubSub for broadcasting between LiveView processes~~ (Step 17)
 - [ ] Presence tracking (who's online)
-- [ ] Flash messages (`put_flash(conn, :info, "Saved!")`)
+- [x] ~~Flash messages (`put_flash(conn, :info, "Saved!")`)~~ (Step 28)
 
 ### Developer Experience
 - [ ] Mix tasks (`mix ignite.routes` to list all routes)

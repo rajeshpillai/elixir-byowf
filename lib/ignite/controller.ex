@@ -68,6 +68,67 @@ defmodule Ignite.Controller do
   end
 
   @doc """
+  Redirects the client to a different URL.
+
+  Sets a 302 status, the `location` header, and halts the pipeline.
+
+  ## Examples
+
+      redirect(conn, to: "/")
+      redirect(conn, to: "/users/42")
+  """
+  def redirect(conn, to: path) do
+    %Ignite.Conn{
+      conn
+      | status: 302,
+        resp_body: "",
+        resp_headers:
+          conn.resp_headers
+          |> Map.put("location", path)
+          |> Map.put("content-type", "text/html; charset=utf-8"),
+        halted: true
+    }
+  end
+
+  @doc """
+  Stores a flash message in the session.
+
+  Flash messages survive one redirect — they're read on the next
+  request and then cleared automatically.
+
+  ## Examples
+
+      conn |> put_flash(:info, "User created!") |> redirect(to: "/")
+      conn |> put_flash(:error, "Something went wrong")
+  """
+  def put_flash(conn, key, message) do
+    flash = Map.get(conn.session, "_flash", %{})
+    new_flash = Map.put(flash, to_string(key), message)
+    new_session = Map.put(conn.session, "_flash", new_flash)
+    %Ignite.Conn{conn | session: new_session}
+  end
+
+  @doc """
+  Reads flash messages from the conn.
+
+  With no key argument, returns the entire flash map.
+  With a key, returns that specific message (or nil).
+
+  ## Examples
+
+      get_flash(conn)           #=> %{"info" => "Created!"}
+      get_flash(conn, :info)    #=> "Created!"
+      get_flash(conn, :error)   #=> nil
+  """
+  def get_flash(conn) do
+    get_in(conn.private, [:flash]) || %{}
+  end
+
+  def get_flash(conn, key) do
+    conn |> get_flash() |> Map.get(to_string(key))
+  end
+
+  @doc """
   Renders an EEx template and sets it as the HTML response.
 
   Templates are loaded from the `templates/` directory.
