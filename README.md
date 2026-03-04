@@ -67,10 +67,9 @@ Or follow along commit-by-commit and build everything yourself.
 ## Quick Start
 
 ```bash
-# Clone and jump to the final step
-git clone <repo-url>
-cd elixir-byof
-git checkout step-16
+# Clone the repo (main branch has the complete framework)
+git clone https://github.com/rajeshpillai/elixir-byowf.git
+cd elixir-byowf
 
 # Install dependencies
 mix deps.get
@@ -78,8 +77,13 @@ mix deps.get
 # Start the server
 iex -S mix
 
-# Visit http://localhost:4000
-# Visit http://localhost:4000/counter for LiveView demo
+# Try these routes:
+# http://localhost:4000            → Welcome text
+# http://localhost:4000/hello      → Controller response
+# http://localhost:4000/users/42   → EEx template with dynamic params
+# http://localhost:4000/counter    → LiveView (real-time counter)
+# http://localhost:4000/crash      → Error handler (500 page)
+# curl -X POST -d "username=Jose" http://localhost:4000/users  → POST parsing
 ```
 
 ## Project Structure

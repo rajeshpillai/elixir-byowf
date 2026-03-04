@@ -6,7 +6,18 @@ defmodule MyApp.WelcomeController do
   import Ignite.Controller
 
   def index(conn) do
-    text(conn, "Welcome to Ignite!")
+    html(conn, """
+    <h1>Ignite Framework</h1>
+    <p>A Phoenix-like web framework built from scratch.</p>
+    <h2>Demo Routes</h2>
+    <ul>
+      <li><a href="/hello">/hello</a> — Controller response</li>
+      <li><a href="/users/42">/users/42</a> — EEx template with dynamic params</li>
+      <li><a href="/counter">/counter</a> — LiveView (real-time counter)</li>
+      <li><a href="/crash">/crash</a> — Error handler (500 page)</li>
+    </ul>
+    <p><small>POST example: <code>curl -X POST -d "username=Jose" http://localhost:4000/users</code></small></p>
+    """)
   end
 
   def hello(conn) do

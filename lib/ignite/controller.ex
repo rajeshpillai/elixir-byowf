@@ -40,7 +40,7 @@ defmodule Ignite.Controller do
       conn
       | status: status,
         resp_body: body,
-        resp_headers: Map.put(conn.resp_headers, "content-type", "text/html"),
+        resp_headers: Map.put(conn.resp_headers, "content-type", "text/html; charset=utf-8"),
         halted: true
     }
   end
