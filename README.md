@@ -1,6 +1,6 @@
 # Ignite — Build a Phoenix-like Web Framework from Scratch
 
-A step-by-step tutorial that teaches Elixir by building **Ignite**, a real web framework inspired by [Phoenix](https://www.phoenixframework.org/). You'll go from a raw TCP socket to a full-stack framework with LiveView, WebSockets, PubSub, Presence, and DOM diffing — all in 35 incremental commits.
+A step-by-step tutorial that teaches Elixir by building **Ignite**, a real web framework inspired by [Phoenix](https://www.phoenixframework.org/). You'll go from a raw TCP socket to a full-stack framework with LiveView, WebSockets, PubSub, Presence, and DOM diffing — all in 36 incremental commits.
 
 By the end, you'll understand every layer that powers production Elixir web applications: the conn pipeline, macro-based routing, OTP supervision, EEx templates, middleware plugs, real-time LiveView with efficient DOM patching, PubSub for cross-process broadcasting, signed sessions, presence tracking, CSRF protection, Content Security Policy, custom Mix tasks, and structured request logging with correlation IDs.
 
@@ -27,6 +27,7 @@ By the end, you'll understand every layer that powers production Elixir web appl
 - **Mix Tasks** — `mix ignite.routes` prints all registered routes in a formatted table
 - **Debug Error Page** — rich dev error page with stacktrace, request context, and session (generic in prod)
 - **Logger Metadata** — per-request ID for log correlation, response timing, `x-request-id` header
+- **Health Check** — `GET /health` returns JSON with uptime, memory, process count, scheduler info
 - **Error Handling** — `try/rescue` boundary catches crashes and renders 500 pages
 
 ### Real-time (LiveView)
@@ -80,6 +81,7 @@ By the end, you'll understand every layer that powers production Elixir web appl
 | `POST /users` | Create user | Ecto changeset validation + flash + redirect |
 | `PUT /users/42` | Update user | PUT/PATCH methods + JSON response |
 | `DELETE /users/42` | Delete user | DELETE method |
+| `/health` | Health check | BEAM runtime metrics (JSON) |
 | `/api/status` | API status | JSON response helper |
 | `POST /api/echo` | Echo API | JSON body parsing |
 
@@ -155,6 +157,10 @@ Each step is tagged in git. Jump to any step with `git checkout step-01`, or fol
 - [x] Step 34 — [Debug Error Page](tutorial/34-debug-error-page.md) — Rich dev error page, stacktrace formatting, dev/prod branching
 - [x] Step 35 — [Logger Metadata](tutorial/35-logger-metadata.md) — Request ID, response timing, `Logger.metadata`, `x-request-id` header
 
+### Production
+
+- [x] Step 36 — [Health Check](tutorial/36-health-check.md) — `/health` endpoint with BEAM runtime metrics
+
 ## Quick Start
 
 ```bash
@@ -191,6 +197,7 @@ iex -S mix
 # http://localhost:4000/presence    → Presence tracking (open in 2+ tabs!)
 # http://localhost:4000/users       → Resource route (JSON user list)
 # http://localhost:4000/crash      → Error handler (500 page)
+# http://localhost:4000/health    → Health check (JSON system metrics)
 # curl -X POST -d "username=Jose" http://localhost:4000/users  → Flash + redirect
 # http://localhost:4000/api/status   → JSON API response
 # curl -X POST -H "Content-Type: application/json" -d '{"name":"Jose"}' http://localhost:4000/api/echo
@@ -311,7 +318,7 @@ Features that would bring Ignite closer to Phoenix for production use:
 - [ ] Clustering (distributed Erlang nodes)
 - [ ] Telemetry integration for metrics
 - [ ] Deployment with `mix release`
-- [ ] Health check endpoint
+- [x] ~~Health check endpoint~~ (Step 36)
 
 ## License
 

@@ -28,6 +28,7 @@ defmodule MyApp.Router do
   post "/upload", to: MyApp.UploadController, action: :upload
   get "/upload-demo", to: MyApp.WelcomeController, action: :upload_demo
   get "/presence", to: MyApp.WelcomeController, action: :presence
+  get "/health", to: MyApp.ApiController, action: :health
 
   # Resource routes — expands into GET/POST/PUT/PATCH/DELETE for users
   resources "/users", MyApp.UserController
