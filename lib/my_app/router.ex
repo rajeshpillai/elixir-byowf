@@ -13,7 +13,6 @@ defmodule MyApp.Router do
   # Routes
   get "/", to: MyApp.WelcomeController, action: :index
   get "/hello", to: MyApp.WelcomeController, action: :hello
-  get "/users/:id", to: MyApp.UserController, action: :show
   get "/crash", to: MyApp.WelcomeController, action: :crash
   get "/counter", to: MyApp.WelcomeController, action: :counter
   get "/register", to: MyApp.WelcomeController, action: :register
@@ -25,10 +24,9 @@ defmodule MyApp.Router do
   get "/upload", to: MyApp.UploadController, action: :upload_form
   post "/upload", to: MyApp.UploadController, action: :upload
   get "/upload-demo", to: MyApp.WelcomeController, action: :upload_demo
-  post "/users", to: MyApp.UserController, action: :create
-  put "/users/:id", to: MyApp.UserController, action: :update
-  patch "/users/:id", to: MyApp.UserController, action: :update
-  delete "/users/:id", to: MyApp.UserController, action: :delete
+
+  # Resource routes — expands into GET/POST/PUT/PATCH/DELETE for users
+  resources "/users", MyApp.UserController
 
   # API routes (JSON) — grouped under /api using scope
   scope "/api" do

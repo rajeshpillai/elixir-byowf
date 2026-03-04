@@ -2,10 +2,12 @@ defmodule Ignite.Router do
   @moduledoc """
   The Router DSL — provides macros for defining routes.
 
-  Supports static routes, dynamic routes, and scoped route groups:
+  Supports static routes, dynamic routes, resource routes, and scoped
+  route groups:
 
       get "/hello", to: MyController, action: :hello
       get "/users/:id", to: UserController, action: :show
+      resources "/posts", PostController
 
       scope "/api" do
         get "/status", to: ApiController, action: :status
@@ -13,6 +15,12 @@ defmodule Ignite.Router do
 
   Routes are compiled into pattern-matching function clauses.
   Dynamic segments (`:id`) are captured into `conn.params`.
+
+  A `Helpers` submodule is automatically generated at compile time
+  with path helper functions derived from route metadata:
+
+      MyApp.Router.Helpers.user_path(:show, 42)  #=> "/users/42"
+      MyApp.Router.Helpers.post_path(:index)      #=> "/posts"
   """
 
   @doc """
@@ -25,6 +33,13 @@ defmodule Ignite.Router do
       # Accumulate plug names as a module attribute.
       # `accumulate: true` means each `@plugs :name` adds to a list.
       Module.register_attribute(__MODULE__, :plugs, accumulate: true)
+
+      # Accumulate route metadata for path helper generation.
+      # Each route definition adds {method, path, controller, action}.
+      Module.register_attribute(__MODULE__, :route_info, accumulate: true)
+
+      # Generate the Helpers submodule after all routes are defined.
+      @before_compile Ignite.Router
 
       # Entry point: run plugs first, then dispatch if not halted
       def call(conn) do
@@ -123,6 +138,73 @@ defmodule Ignite.Router do
   end
 
   @doc """
+  Defines a full set of RESTful routes for a resource.
+
+  Expands into `get`, `post`, `put`, `patch`, and `delete` route
+  definitions for the standard CRUD actions.
+
+  ## Generated Routes
+
+  | HTTP Method | Path          | Action   |
+  |-------------|---------------|----------|
+  | GET         | /users        | :index   |
+  | GET         | /users/:id    | :show    |
+  | POST        | /users        | :create  |
+  | PUT         | /users/:id    | :update  |
+  | PATCH       | /users/:id    | :update  |
+  | DELETE      | /users/:id    | :delete  |
+
+  ## Options
+
+  - `:only`   — only generate the listed actions
+  - `:except` — generate all actions except the listed ones
+
+  ## Examples
+
+      resources "/users", UserController
+      resources "/posts", PostController, only: [:index, :show]
+      resources "/comments", CommentController, except: [:delete]
+  """
+  defmacro resources(path, controller, opts \\ []) do
+    only = Keyword.get(opts, :only, nil)
+    except = Keyword.get(opts, :except, [])
+
+    all_actions = [:index, :show, :create, :update, :delete]
+
+    actions =
+      if only do
+        Enum.filter(all_actions, &(&1 in only))
+      else
+        Enum.reject(all_actions, &(&1 in except))
+      end
+
+    # Emit individual route macro calls — these integrate with scope
+    # and @route_info accumulation automatically
+    routes =
+      Enum.flat_map(actions, fn
+        :index ->
+          [quote(do: get(unquote(path), to: unquote(controller), action: :index))]
+
+        :show ->
+          [quote(do: get(unquote(path <> "/:id"), to: unquote(controller), action: :show))]
+
+        :create ->
+          [quote(do: post(unquote(path), to: unquote(controller), action: :create))]
+
+        :update ->
+          [
+            quote(do: put(unquote(path <> "/:id"), to: unquote(controller), action: :update)),
+            quote(do: patch(unquote(path <> "/:id"), to: unquote(controller), action: :update))
+          ]
+
+        :delete ->
+          [quote(do: delete(unquote(path <> "/:id"), to: unquote(controller), action: :delete))]
+      end)
+
+    {:__block__, [], routes}
+  end
+
+  @doc """
   Groups routes under a common path prefix.
 
   All routes defined inside the `do` block will have the scope's
@@ -178,6 +260,12 @@ defmodule Ignite.Router do
     {method, meta, [prefix <> path | rest]}
   end
 
+  # Resource routes: prepend prefix to the resource path
+  defp prepend_prefix({:resources, meta, [path | rest]}, prefix)
+       when is_binary(path) do
+    {:resources, meta, [prefix <> path | rest]}
+  end
+
   # Nested scope: prepend prefix to the inner scope's prefix
   defp prepend_prefix({:scope, meta, [inner_prefix | rest]}, prefix)
        when is_binary(inner_prefix) do
@@ -191,6 +279,7 @@ defmodule Ignite.Router do
 
   # Shared logic for building route function clauses.
   # Converts the path string into a list pattern that captures dynamic segments.
+  # Also accumulates route metadata for path helper generation.
   defp build_route(method, path, controller, action) do
     segments = String.split(path, "/", trim: true)
 
@@ -200,6 +289,9 @@ defmodule Ignite.Router do
     {match_pattern, param_names} = build_match_pattern(segments)
 
     quote do
+      # Accumulate route info for path helper generation
+      @route_info {unquote(method), unquote(path), unquote(controller), unquote(action)}
+
       defp dispatch(
              %Ignite.Conn{method: unquote(method)} = conn,
              unquote(match_pattern)
@@ -243,5 +335,26 @@ defmodule Ignite.Router do
       end)
 
     {:%{}, [], pairs}
+  end
+
+  # --- @before_compile: Generate Helpers Submodule ---
+
+  @doc false
+  defmacro __before_compile__(env) do
+    route_info = Module.get_attribute(env.module, :route_info) |> Enum.reverse()
+    helpers_module = Module.concat(env.module, Helpers)
+    helper_functions = Ignite.Router.Helpers.build_helper_functions(route_info)
+
+    quote do
+      defmodule unquote(helpers_module) do
+        @moduledoc """
+        Auto-generated path helpers for `#{inspect(unquote(env.module))}`.
+
+        Each function returns a URL path string for the corresponding route.
+        """
+
+        unquote_splicing(helper_functions)
+      end
+    end
   end
 end

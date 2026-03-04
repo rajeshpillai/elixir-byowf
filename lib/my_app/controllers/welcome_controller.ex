@@ -35,9 +35,15 @@ defmodule MyApp.WelcomeController do
       <li><a href="/streams">/streams</a> — LiveView Streams (efficient list updates)</li>
       <li><a href="/upload">/upload</a> — File upload (multipart HTTP POST)</li>
       <li><a href="/upload-demo">/upload-demo</a> — LiveView uploads (chunked WebSocket)</li>
+      <li><a href="/users">/users</a> — Resource route (JSON index)</li>
       <li><a href="/crash">/crash</a> — Error handler (500 page)</li>
     </ul>
     <p><small>POST example: <code>curl -X POST -d "username=Jose" http://localhost:4000/users</code></small></p>
+    <h2>Path Helpers</h2>
+    <pre style="background:#f4f4f4;padding:1em;border-radius:4px;overflow-x:auto;">    MyApp.Router.Helpers.user_path(:index)       #=&gt; "/users"
+    MyApp.Router.Helpers.user_path(:show, 42)    #=&gt; "/users/42"
+    MyApp.Router.Helpers.root_path(:index)       #=&gt; "/"
+    MyApp.Router.Helpers.api_status_path(:status) #=&gt; "/api/status"</pre>
     <h2>API Routes</h2>
     <ul>
       <li><a href="/api/status">/api/status</a> — JSON response</li>

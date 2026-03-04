@@ -5,6 +5,10 @@ defmodule MyApp.UserController do
 
   import Ignite.Controller
 
+  def index(conn) do
+    json(conn, %{users: [%{id: 1, name: "Jose"}, %{id: 2, name: "Chris"}]})
+  end
+
   def show(conn) do
     user_id = conn.params[:id]
     render(conn, "profile", name: "Elixir Enthusiast", id: user_id)

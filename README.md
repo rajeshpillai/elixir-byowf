@@ -1,6 +1,6 @@
 # Ignite — Build a Phoenix-like Web Framework from Scratch
 
-A step-by-step tutorial that teaches Elixir by building **Ignite**, a real web framework inspired by [Phoenix](https://www.phoenixframework.org/). You'll go from a raw TCP socket to a full-stack framework with LiveView, WebSockets, PubSub, and DOM diffing — all in 26 incremental commits.
+A step-by-step tutorial that teaches Elixir by building **Ignite**, a real web framework inspired by [Phoenix](https://www.phoenixframework.org/). You'll go from a raw TCP socket to a full-stack framework with LiveView, WebSockets, PubSub, and DOM diffing — all in 27 incremental commits.
 
 By the end, you'll understand every layer that powers production Elixir web applications: the conn pipeline, macro-based routing, OTP supervision, EEx templates, middleware plugs, real-time LiveView with efficient DOM patching, and PubSub for cross-process broadcasting.
 
@@ -62,6 +62,7 @@ By the end, you'll understand every layer that powers production Elixir web appl
 | `/streams` | Streams demo | LiveView Streams for efficient list updates |
 | `/upload` | File upload form | Multipart HTTP POST upload |
 | `/upload-demo` | LiveView uploads | Chunked WebSocket uploads + progress |
+| `/users` | User list (JSON) | Resource routes + path helpers |
 | `/crash` | Error page | Error handler + 500 page |
 | `POST /users` | Create user | POST body parsing |
 | `PUT /users/42` | Update user | PUT/PATCH methods + JSON response |
@@ -106,6 +107,7 @@ Ignite is a real framework. You can use it to build:
 | Optimization | Fine-grained diffing | 24 |
 | Collections | LiveView Streams | 25 |
 | File Uploads | Multipart + LiveView uploads | 26 |
+| Routing | Path helpers + resource routes | 27 |
 
 ## Prerequisites
 
@@ -159,6 +161,7 @@ Or follow along commit-by-commit and build everything yourself.
 | 24 | [Fine-Grained Diffing](tutorial/24-fine-grained-diffing.md) | `~L` sigil + EEx engine | Custom EEx engines, compile-time splitting, sparse diffs |
 | 25 | [LiveView Streams](tutorial/25-streams.md) | Efficient list operations | Stream ops, DOM manipulation, O(1) wire updates |
 | 26 | [File Uploads](tutorial/26-file-uploads.md) | Multipart + LiveView uploads | Cowboy streaming, binary WebSocket frames, chunked transfer |
+| 27 | [Path Helpers & Resource Routes](tutorial/27-path-helpers.md) | `resources` macro + generated helpers | `@before_compile`, route metadata, code generation |
 
 ## Quick Start
 
@@ -186,6 +189,7 @@ iex -S mix
 # http://localhost:4000/streams      → LiveView Streams (efficient lists)
 # http://localhost:4000/upload       → File upload form (multipart POST)
 # http://localhost:4000/upload-demo  → LiveView uploads (chunked WebSocket + progress)
+# http://localhost:4000/users       → Resource route (JSON user list)
 # http://localhost:4000/crash      → Error handler (500 page)
 # curl -X POST -d "username=Jose" http://localhost:4000/users  → POST parsing
 # http://localhost:4000/api/status   → JSON API response
@@ -208,6 +212,8 @@ ignite/
 │   │   ├── parser.ex          # HTTP request parser
 │   │   ├── controller.ex      # Response helpers (text, html, render)
 │   │   ├── router.ex          # Router DSL macros
+│   │   ├── router/
+│   │   │   └── helpers.ex     # Path helper generation
 │   │   ├── live_view.ex       # LiveView behaviour + component helpers
 │   │   ├── live_component.ex  # LiveComponent behaviour
 │   │   ├── pub_sub.ex         # PubSub (Erlang :pg wrapper)
@@ -251,8 +257,8 @@ Features that would bring Ignite closer to Phoenix for production use:
 
 ### Routing & Controllers
 - [x] ~~Scoped routes (`scope "/api" do ... end`)~~ (Step 23)
-- [ ] Path helpers (`user_path(conn, :show, 42)` generating `/users/42`)
-- [ ] Resource routes (`resources "/posts", PostController`)
+- [x] ~~Path helpers (`user_path(:show, 42)` generating `/users/42`)~~ (Step 27)
+- [x] ~~Resource routes (`resources "/posts", PostController`)~~ (Step 27)
 - [x] ~~PUT/PATCH/DELETE HTTP methods~~ (Step 22)
 - [x] ~~JSON response helper (`json(conn, %{ok: true})`)~~ (Step 21)
 
