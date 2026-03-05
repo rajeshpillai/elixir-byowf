@@ -32,7 +32,10 @@ A GenServer is a process with a well-defined lifecycle:
 start_link → init → (handle_continue) → (handle_call/handle_cast/handle_info) → ...
 ```
 
-Instead of writing raw recursive loops, you implement **callbacks**:
+When you write `use GenServer`, Elixir injects default implementations of
+all the callbacks (just like `use Ignite.Router` injected `call/1` in Step 3).
+You then override only the callbacks you need:
+
 
 ```elixir
 use GenServer
