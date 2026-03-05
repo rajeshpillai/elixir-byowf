@@ -287,6 +287,15 @@ iex -S mix
 - **Variable scoping in try/rescue** — Variables assigned inside `try` are not available in `rescue`. Move shared state before the `try` block.
 - **Self-contained error pages** — Inline all CSS/JS so the error page works even when external assets are broken.
 - **HTML escaping** — Always escape dynamic content in HTML output to prevent XSS, even in developer-only pages.
+- **`__struct__` field** — Every Elixir struct has a hidden `__struct__` key that holds the module name. We use it to display the exception type (e.g., "RuntimeError", "KeyError") in the error page header:
+  ```elixir
+  exception.__struct__  #=> RuntimeError
+  ```
+- **`~c""` charlist sigil** — Creates a **charlist** (list of character codes), which is what Erlang uses for strings. Elixir stacktraces contain charlists for file paths because they come from the Erlang runtime. Use `to_string/1` to convert a charlist to an Elixir binary string:
+  ```elixir
+  ~c"lib/my_app/controllers/welcome_controller.ex"
+  # Same as: 'lib/my_app/controllers/welcome_controller.ex'
+  ```
 
 ## Phoenix Comparison
 

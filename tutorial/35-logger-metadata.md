@@ -219,6 +219,18 @@ iex -S mix
 - **`:crypto.strong_rand_bytes/1`** — Cryptographically secure random bytes from the OS. Used for request IDs, CSRF tokens, session signing — any context where predictability would be a security risk.
 - **`x-request-id` header** — Industry convention for distributed tracing. Load balancers, API gateways, and microservices use this header to correlate requests across service boundaries.
 - **Adapter-level logging** — Logging at the Cowboy adapter captures the full request lifecycle. Plug-level logging only captures the middleware/controller portion.
+- **`cond do`** — Evaluates conditions top-to-bottom and runs the first truthy one, like an `if/else if` chain. The final `true ->` acts as a default clause:
+  ```elixir
+  cond do
+    duration < 1_000 -> "#{duration}µs"
+    duration < 1_000_000 -> "#{Float.round(duration / 1_000, 1)}ms"
+    true -> "#{Float.round(duration / 1_000_000, 2)}s"
+  end
+  ```
+- **`put_in/2`** — Sets a value at a nested path. The path uses Access syntax — `conn.private[:request_id]` navigates into `conn`, then its `private` map, then the `:request_id` key. It's a shorthand for updating nested maps without multiple `Map.put` calls:
+  ```elixir
+  conn = put_in(conn.private[:request_id], "abc-123")
+  ```
 
 ## Phoenix Comparison
 

@@ -42,6 +42,49 @@ Tab A (Process #1)          PubSub              Tab B (Process #2)
 
 This is the same foundation that Phoenix.PubSub uses (though Phoenix adds a layer for distributed clustering across nodes).
 
+## Elixir Concepts
+
+### `self()` — Current Process PID
+
+Every Elixir process has a unique PID (process identifier). `self()` returns the PID of the process calling it:
+
+```elixir
+iex> self()
+#PID<0.110.0>
+```
+
+We use `self()` in `subscribe/1` so the calling LiveView process registers itself, and in `broadcast/2` to exclude the sender.
+
+### `send/2` — Sending Messages Between Processes
+
+`send/2` delivers a message to another process's mailbox:
+
+```elixir
+send(pid, {:broadcast, "hello"})
+```
+
+This is the fundamental way processes communicate in Elixir. The message arrives in the recipient's `handle_info` callback (if it's a GenServer) or mailbox.
+
+### `for` Comprehension with Filter
+
+```elixir
+for pid <- list, pid != self() do
+  send(pid, message)
+end
+```
+
+`for` is a list comprehension. The comma-separated clause `pid != self()` is a **filter** — only elements passing this condition are processed. Unlike `Enum.each`, `for` returns a list of results (though here we use it for side effects).
+
+### `child_spec/1` Map
+
+The `%{id: ..., start: {Module, :function, [args]}}` map tells the supervisor how to start this process:
+
+```elixir
+%{id: __MODULE__, start: {__MODULE__, :start_link, [opts]}}
+```
+
+The `start:` tuple is an MFA (Module, Function, Args) — the supervisor calls `apply(Module, :start_link, [opts])` to boot the process.
+
 ## The Code
 
 ### 1. `lib/ignite/pub_sub.ex`

@@ -27,6 +27,20 @@ We follow the exact same pattern. The only difference: we use SQLite instead of 
 
 For a tutorial and small-to-medium apps, SQLite is perfect. The `ecto_sqlite3` adapter supports WAL mode for concurrent reads. To switch to Postgres later: change the adapter, swap `ecto_sqlite3` for `postgrex`, and update the config with connection details.
 
+## Concepts You'll Learn
+
+### `import Config` and the config system
+
+```elixir
+# config/config.exs
+import Config
+
+config :ignite, Ignite.Repo,
+  database: "ignite.db"
+```
+
+`config/config.exs` is a special file that Mix reads at compile time. `import Config` brings in the `config/2` and `config/3` macros. `config :app_name, key, value` stores settings that you read at runtime with `Application.get_env(:app_name, key)`. This is how we tell Ecto where to find the database.
+
 ## Implementation
 
 ### 1. Dependencies

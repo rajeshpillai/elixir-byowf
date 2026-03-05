@@ -54,6 +54,58 @@ To validate:
   xor(mask, masked) → should equal real token
 ```
 
+## Concepts You'll Learn
+
+### `with` special form
+
+```elixir
+with {:ok, token} <- decode_token(input),
+     {:ok, value} <- verify_token(token) do
+  # Both succeeded — use value
+  {:ok, value}
+else
+  :error -> {:error, "invalid"}
+  {:error, reason} -> {:error, reason}
+end
+```
+
+`with` chains multiple pattern-matched operations. If every `<-` clause matches, the `do` block runs. If any clause fails to match, execution jumps to the `else` block. It replaces deeply nested `case` statements.
+
+### `~s()` sigil
+
+```elixir
+~s(<input type="hidden" name="_csrf_token" value="abc123">)
+```
+
+Creates a string that can contain double quotes without escaping. Same as `"..."` but you don't need `\"` inside. Useful for HTML strings.
+
+### `Base.url_encode64/2` and `Base.url_decode64/2`
+
+```elixir
+Base.url_encode64("hello", padding: false)   #=> "aGVsbG8"
+Base.url_decode64!("aGVsbG8", padding: false) #=> "hello"
+```
+
+Encodes/decodes binary data as URL-safe Base64 strings. The `padding: false` option omits trailing `=` characters. Used here to convert random bytes into safe string tokens for embedding in HTML forms.
+
+### Binary pattern matching with computed sizes
+
+```elixir
+size = 16
+<<mask::binary-size(size), masked::binary-size(size)>> = token_bytes
+```
+
+`<<...>>` is Elixir's binary pattern matching syntax. `::binary-size(n)` matches exactly `n` bytes. Here we split a token into two equal halves — the mask and the masked value — for XOR unmasking.
+
+### `:binary.bin_to_list/1` and `:binary.list_to_bin/1`
+
+```elixir
+:binary.bin_to_list(<<1, 2, 3>>)  #=> [1, 2, 3]
+:binary.list_to_bin([1, 2, 3])    #=> <<1, 2, 3>>
+```
+
+Erlang functions that convert between binaries and lists of bytes. Needed here because `Bitwise.bxor/2` works on individual integers, so we convert to lists, XOR each byte pair, then convert back.
+
 ## Implementation
 
 ### 1. The CSRF Module

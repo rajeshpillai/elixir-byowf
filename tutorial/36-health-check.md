@@ -202,6 +202,15 @@ for i in $(seq 1 5); do curl -s -o /dev/null -w "%{http_code}\n" http://localhos
 - **`:erlang.system_info/1`** — Queries the BEAM runtime for process counts, scheduler info, atom table size, and version numbers. All zero-cost reads from the VM's internal counters.
 - **Health check placement** — At a top-level path (`/health`), not behind API prefixes or authentication middleware, so load balancers can always reach it.
 - **Human-readable formatting** — `format_uptime/1` shows the most meaningful time units, adapting from seconds to days as uptime grows.
+- **`div/2` and `rem/2`** — Integer division and remainder (modulo). Unlike `/` which returns a float (`10 / 3 #=> 3.333...`), `div` returns an integer. We use these for converting bytes to MB or formatting uptime:
+  ```elixir
+  div(10, 3)  #=> 3  (integer division, no decimal)
+  rem(10, 3)  #=> 1  (remainder/modulo)
+  ```
+- **`List.to_string/1`** — Converts a charlist to an Elixir string. Erlang system functions like `:erlang.system_info(:otp_release)` return charlists, so we need this conversion before using Elixir string functions:
+  ```elixir
+  List.to_string(~c"24")  #=> "24"
+  ```
 
 ## Phoenix Comparison
 

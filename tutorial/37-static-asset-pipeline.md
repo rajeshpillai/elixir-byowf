@@ -256,6 +256,10 @@ Ignite.Static.static_path("nonexistent.js")
 - **Cache busting via query string** — Appending `?v=HASH` makes each version a unique URL. Browsers treat different URLs as different resources, forcing fresh downloads when needed.
 - **`:erlang.md5/1`** — Fast hash function from the Erlang standard library. Not suitable for security, but perfect for fingerprinting file contents.
 - **`read_concurrency: true`** — ETS option that trades slightly slower writes for significantly faster concurrent reads. Ideal for data that's written once and read many times.
+- **`binary_part/3`** — Extracts a substring from a binary, starting at the given offset for the given length. We use it to take the first 8 hex characters of an MD5 hash — enough for cache busting without long URLs:
+  ```elixir
+  binary_part("abcdefghij", 0, 8)  #=> "abcdefgh"
+  ```
 
 ## Phoenix Comparison
 

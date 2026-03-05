@@ -118,6 +118,35 @@ def user_path(:delete, id), do: "/users/" <> to_string(id)
 
 PUT and PATCH both map to `:update` with the same path — the helper is deduplicated so only one clause is generated.
 
+## Concepts: Key Functions and Patterns
+
+**`unquote_splicing/1`** — Inserts a list of AST nodes as individual expressions:
+```elixir
+functions = [quote(do: def foo, do: 1), quote(do: def bar, do: 2)]
+quote do
+  unquote_splicing(functions)  # Inserts each function as a separate definition
+end
+```
+`unquote` inserts a single AST node. `unquote_splicing` takes a **list** of AST nodes and inserts them individually — like spreading an array.
+
+**`Enum.flat_map/2`** — Maps and flattens in one step:
+```elixir
+Enum.flat_map([1, 2], fn x -> [x, x * 10] end)  #=> [1, 10, 2, 20]
+```
+Like `Enum.map`, but each element can return multiple items. The results are flattened into a single list. Used here because some routes (like `:update`) generate two clauses (PUT + PATCH).
+
+**`cond do`** — An `if/else if` chain:
+```elixir
+cond do
+  x > 10 -> "big"
+  x > 0  -> "small"
+  true   -> "zero or negative"
+end
+```
+Evaluates conditions top-to-bottom and runs the first truthy one. The final `true ->` acts as the default/else clause.
+
+**`{:__block__, [], exprs}`** — This is the raw AST for a block of multiple expressions. When building macro output with multiple definitions programmatically, wrap them in `{:__block__, [], list_of_expressions}`.
+
 ## Naive Singularization
 
 Helper names use the singular form: `user_path` not `users_path`. We use a simple heuristic:

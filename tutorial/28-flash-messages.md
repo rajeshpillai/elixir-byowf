@@ -45,6 +45,29 @@ Flash messages must disappear after being read. We achieve this by:
 
 This means: set flash → redirect → show flash → next request has no flash.
 
+## Concepts: Key Functions
+
+**`Application.get_env/3`** — Reads a value from application config:
+```elixir
+Application.get_env(:ignite, :secret_key_base, "default_secret")
+```
+The three arguments are: app name, key, default value if not set. Config values come from `config/config.exs`.
+
+**`get_in/2`** — Traverses nested maps/structs using a list of keys:
+```elixir
+get_in(%{a: %{b: 42}}, [:a, :b])  #=> 42
+get_in(%{a: %{b: 42}}, [:a, :c])  #=> nil
+```
+Returns `nil` if any key in the path is missing — no `KeyError`.
+
+**`Map.pop/3`** — Removes a key and returns both the value and the remaining map:
+```elixir
+{value, rest} = Map.pop(%{a: 1, b: 2}, :a, 0)
+value  #=> 1
+rest   #=> %{b: 2}
+```
+The third argument is the default if the key doesn't exist.
+
 ## Implementation
 
 ### 1. Conn Gets Session Fields

@@ -67,6 +67,21 @@ The route map tells the client which WebSocket path corresponds to each HTTP pat
 
 This is injected as a `data-live-routes` attribute on the `#ignite-app` div by the controller.
 
+## Elixir Concepts
+
+### `Map.pop/3` — Remove and Return
+
+```elixir
+{value, remaining_map} = Map.pop(map, :key, default)
+```
+
+Removes a key from a map and returns **both** the removed value and the map without that key, as a two-element tuple. The third argument is the default if the key doesn't exist. We use this to extract `__redirect__` from assigns after `handle_event`:
+
+```elixir
+{nil, assigns}           = Map.pop(%{count: 1}, :__redirect__)
+{%{url: "/"}, assigns}   = Map.pop(%{count: 1, __redirect__: %{url: "/"}}, :__redirect__)
+```
+
 ## Key Code Changes
 
 ### `assets/ignite.js`

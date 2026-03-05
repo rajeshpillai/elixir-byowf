@@ -14,6 +14,16 @@ Phoenix.Presence is a CRDT-based system designed for distributed clusters. It tr
 
 For Ignite, we take a simpler approach: a single GenServer that uses `Process.monitor/1` to watch tracked processes. When a process dies (WebSocket disconnects), the monitor fires a `:DOWN` message, and we auto-untrack and broadcast the leave. This works perfectly for single-node deployments.
 
+## Concepts You'll Learn
+
+### `Process.demonitor/2` with `[:flush]`
+
+```elixir
+Process.demonitor(ref, [:flush])
+```
+
+Stops monitoring a process. The `[:flush]` option also removes any pending `:DOWN` message from the mailbox — without it, you might receive a stale `:DOWN` message after demonitoring. You'll see this used in `untrack` where we cancel the monitor before removing the presence entry.
+
 ## Implementation
 
 ### 1. The Presence GenServer

@@ -86,6 +86,25 @@ end
 
 In production, `Mix.env()` returns `:prod`, so the reloader isn't started.
 
+### self()
+
+`self()` returns the **PID** (Process ID) of the current process:
+
+```elixir
+self()  #=> #PID<0.123.0>
+```
+
+Every piece of Elixir code runs inside a process. `self()` lets a process refer to itself — here we use it with `Process.send_after(self(), :check, 1000)` to send a message to ourselves after a delay.
+
+### handle_info
+
+GenServer has three message handlers:
+- `handle_call` — for synchronous requests (caller waits for a reply)
+- `handle_cast` — for async fire-and-forget requests
+- `handle_info` — for **all other messages** (timers, signals, raw `send/2`)
+
+`Process.send_after` sends a raw message, so it arrives in `handle_info`, not `handle_call` or `handle_cast`.
+
 ## The Code
 
 ### `lib/ignite/reloader.ex`

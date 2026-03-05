@@ -78,6 +78,17 @@ Jason.encode!(%{html: "<h1>Hello</h1>"})  #=> "{\"html\":\"<h1>Hello</h1>\"}"
 Jason.decode!("{\"event\":\"inc\"}")        #=> %{"event" => "inc"}
 ```
 
+### @callback and Type Specs
+
+`@callback` defines a function that modules using this behaviour **must** implement. The `::` syntax describes the types:
+
+```elixir
+@callback mount(params :: map(), session :: map()) :: {:ok, map()}
+#         ^name  ^arg     ^type   ^arg      ^type    ^return type
+```
+
+Read it as: "`mount` takes two maps and must return `{:ok, map}`. Functions ending in `!` (like `Jason.encode!`) raise an exception on failure instead of returning `{:error, reason}` — this is a convention throughout Elixir.
+
 ## The Code
 
 ### `lib/ignite/live_view.ex` (The Behaviour)

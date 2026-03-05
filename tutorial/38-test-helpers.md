@@ -21,6 +21,42 @@ end
 
 Tests call `Router.call(conn)` directly, running the full plug pipeline and route dispatch — no Cowboy, no TCP, no network overhead.
 
+## Concepts You'll Use
+
+### ExUnit Basics (`use ExUnit.Case`, `test`, `assert`)
+
+```elixir
+defmodule MyTest do
+  use ExUnit.Case  # Sets up the test module with test/assert macros
+
+  test "addition works" do
+    assert 1 + 1 == 2       # Passes if the expression is truthy
+    assert "hello" =~ "ell" # =~ checks if left contains right
+  end
+end
+```
+
+ExUnit is Elixir's built-in test framework. `use ExUnit.Case` injects the `test` macro for defining test cases and the `assert` macro for checking expectations. The `=~` operator returns `true` if the left string contains the right string (or matches a regex).
+
+### `config_env/0`
+
+```elixir
+# In config/config.exs
+if config_env() == :test do
+  config :ignite, :port, 4002
+end
+```
+
+Returns the current Mix environment as an atom (`:dev`, `:test`, or `:prod`). Set via `MIX_ENV=test mix test`. Used in config files to load environment-specific settings.
+
+### `import_config/1`
+
+```elixir
+import_config "#{config_env()}.exs"
+```
+
+Loads another config file and merges its settings. Typically used at the end of `config.exs` to import `dev.exs`, `test.exs`, or `prod.exs` based on the environment.
+
 ## The Problem
 
 Before this step:

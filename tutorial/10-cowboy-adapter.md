@@ -93,6 +93,45 @@ Cowboy provides helper functions to work with requests:
 :cowboy_req.reply(200, headers, body, req)   # Send response
 ```
 
+### @behaviour
+
+`@behaviour :cowboy_handler` declares that this module implements Cowboy's handler interface. It's like `implements` in Java — the compiler checks that you define the required callbacks. `@impl true` (from Step 6) marks which functions satisfy the behaviour.
+
+```elixir
+@behaviour :cowboy_handler
+
+@impl true
+def init(req, state) do  # Required by :cowboy_handler
+  ...
+end
+```
+
+### Guards (`when`)
+
+Guards add extra conditions to pattern matching in function heads:
+
+```elixir
+defp parse_body(body, _content_type) when byte_size(body) == 0 do
+  %{}
+end
+```
+
+The `when` clause runs **after** the pattern matches but **before** the function body executes. Only a limited set of functions are allowed in guards (like `byte_size/1`, `is_binary/1`, `>`, `==`).
+
+### Child Spec Maps
+
+In Step 6, we used the shorthand `{Ignite.Server, 4000}` to tell the supervisor what to start. For Cowboy, we need the explicit map format:
+
+```elixir
+%{
+  id: :cowboy_listener,              # Unique name for the supervisor
+  start: {:cowboy, :start_clear,     # {Module, Function, Args} — called to start the process
+           [:ignite_http, [port: 4000], %{env: %{dispatch: dispatch}}]}
+}
+```
+
+The `start:` value is an **MFA tuple** (Module, Function, Arguments) — the supervisor calls `apply(module, function, args)` to start the child.
+
 ## The Code
 
 ### `lib/ignite/adapters/cowboy.ex`

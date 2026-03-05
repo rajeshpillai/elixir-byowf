@@ -34,6 +34,25 @@ Parent LiveView
 
 Components store their state as `{module, assigns}` tuples inside the parent's `__components__` key.
 
+## Elixir Concepts
+
+### Pin Operator `^` — Match Without Rebinding
+
+```elixir
+module = MyComponent
+{^module, existing} = {MyComponent, %{count: 0}}  # matches!
+{^module, existing} = {OtherModule, %{count: 0}}   # fails!
+```
+
+The pin operator `^` forces pattern matching to use the **existing value** of a variable instead of rebinding it. Without `^`, `module` would be rebound to whatever value is on the right side. With `^module`, it must match the current value of `module`. We use this in `live_component/3` to check if an existing component was created by the same module:
+
+```elixir
+case Map.get(components, id) do
+  {^module, existing_assigns} -> # same module — keep state
+  _ ->                           # new or different — mount fresh
+end
+```
+
 ## Step 1: The LiveComponent Behaviour
 
 Create `lib/ignite/live_component.ex`:

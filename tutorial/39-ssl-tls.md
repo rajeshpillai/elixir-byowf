@@ -201,6 +201,15 @@ Logger.info("Ignite is heating up on #{scheme}://localhost:#{port}")
 
 ## Concepts Learned
 
+### `Keyword.fetch!/2`
+
+```elixir
+Keyword.fetch!(ssl_opts, :certfile)  #=> "priv/ssl/cert.pem"
+Keyword.fetch!(ssl_opts, :missing)   #=> ** (KeyError)
+```
+
+The `!` (bang) version of `Keyword.fetch` — returns the value directly or **raises** an error if the key is missing. Compare with `Keyword.get/3` which returns a default instead. The bang convention (`!`) appears throughout Elixir: `Map.fetch!`, `File.read!`, `Jason.decode!` — all raise on failure.
+
 ### Erlang SSL Charlists
 
 Erlang's `:ssl` module expects file paths as charlists (single-quoted strings), not Elixir binaries. We convert with `String.to_charlist/1`:

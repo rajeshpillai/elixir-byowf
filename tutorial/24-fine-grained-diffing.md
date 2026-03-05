@@ -59,6 +59,20 @@ The `~L` sigil uses EEx syntax (`<%= %>`). At compile time, it produces a `%Rend
 }
 ```
 
+### Concepts: Key Functions Used
+
+**`Enum.zip/2`** — Pairs up elements from two lists into tuples:
+```elixir
+Enum.zip(["a", "b"], [1, 2])  #=> [{"a", 1}, {"b", 2}]
+```
+Used here to compare old and new dynamic values side by side.
+
+**`Enum.with_index/1`** — Attaches a zero-based index to each element:
+```elixir
+Enum.with_index(["a", "b", "c"])  #=> [{"a", 0}, {"b", 1}, {"c", 2}]
+```
+We use it to track which position changed.
+
 ### Custom EEx Engine
 
 Elixir's EEx module supports custom "engines" that control how templates are compiled. The default engine produces a concatenated string. Our engine produces a `%Rendered{}` struct.
@@ -133,6 +147,8 @@ defmacro sigil_L({:<<>>, _meta, [template]}, _modifiers) do
   EEx.compile_string(template, engine: Ignite.LiveView.EExEngine)
 end
 ```
+
+**Custom sigil AST**: When you define `defmacro sigil_L({:<<>>, _meta, [template]}, _modifiers)`, the first argument is the AST representation of the string inside `~L"..."`. Elixir passes string literals to sigil macros as `{:<<>>, metadata, [string_content]}` — a 3-tuple where the string content is in a list. You destructure it to get the raw template string.
 
 This calls `EEx.compile_string/2` at compile time with our custom engine. The result is AST that, when evaluated at runtime, constructs a `%Rendered{}` struct.
 

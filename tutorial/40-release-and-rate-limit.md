@@ -272,6 +272,42 @@ Override at runtime with `RATE_LIMIT_MAX` and `RATE_LIMIT_WINDOW_MS` env vars.
 
 ## Concepts Learned
 
+### `Application.ensure_all_started/1` and `Application.load/1`
+
+```elixir
+Application.ensure_all_started(:ssl)      # Starts the :ssl app and its dependencies
+Application.load(:ignite)                  # Loads config without starting the app
+```
+
+In a Mix release, your app's full supervision tree isn't running when you call `bin/ignite eval "..."`. These functions manually boot just enough of the runtime to run migrations.
+
+### `System.get_env/1`
+
+```elixir
+System.get_env("DATABASE_URL")  #=> "ecto://..." or nil
+System.get_env("PORT")          #=> "4000" (always a string, or nil)
+```
+
+Reads OS environment variables. Returns `nil` if not set. Values are always strings — use `String.to_integer/1` to convert numbers.
+
+### `config/runtime.exs`
+
+Unlike `config.exs` (which runs at **compile time**), `runtime.exs` runs at **boot time** — every time your app starts. This is the only config file included in Mix releases, making it the right place for environment variables and secrets that differ between deployments.
+
+### ETS Match Specs (Detailed)
+
+```elixir
+match_spec = [{{:_, :"$1"}, [{:<, :"$1", cutoff}], [true]}]
+:ets.select_delete(@table, match_spec)
+```
+
+Match specs are Erlang's way of querying ETS tables efficiently. The format is `[{pattern, guards, result}]`:
+- `{:_, :"$1"}` — pattern: match any key, capture the timestamp as variable `$1`
+- `[{:<, :"$1", cutoff}]` — guard: only where `$1 < cutoff`
+- `[true]` — result: return `true` (for `select_delete`, this means "delete this row")
+
+The `:"$1"` syntax is an atom that acts as a numbered variable in the match spec language.
+
 ### `config_env()` vs `Mix.env()`
 
 | | `config_env()` | `Mix.env()` |
