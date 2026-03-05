@@ -34,6 +34,21 @@ This is how we match dynamic segments. The route `/users/:id` becomes
 the pattern `["users", id]` where `id` is a variable that captures
 whatever the user typed.
 
+### Binary Pattern Matching with `<>`
+
+The `<>` operator can pattern match on the start of a string:
+
+```elixir
+":" <> name = ":id"
+name  #=> "id"
+
+":" <> name = "users"
+# ** (MatchError) — doesn't start with ":"
+```
+
+This is how the router detects dynamic segments: if a path segment
+starts with `":"`, it's dynamic; otherwise it's a literal match.
+
 ### Macro.var/2
 
 Inside macros, you can't just write a variable name — you need to create
@@ -45,6 +60,18 @@ Macro.var(:id, nil)   # Creates the variable `id` in the macro's AST
 
 This tells the compiler "create a variable called `:id` that will capture
 a value during pattern matching."
+
+### Enum.unzip/1
+
+Splits a list of two-element tuples into two separate lists:
+
+```elixir
+Enum.unzip([{"users", nil}, {id_var, :id}])
+#=> {["users", id_var], [nil, :id]}
+```
+
+We use this to separate the match patterns from the param names after
+processing each segment.
 
 ### Map.merge/2
 
@@ -97,11 +124,18 @@ Key changes:
    - Generates a pattern that captures dynamic parts as variables
    - Builds a params map from the captured variables
 
-4. **`build_match_pattern/1`** converts path segments:
+4. **`build_match_pattern/1`** converts path segments using `":" <> name`
+   pattern matching to detect dynamic parts:
    - `"users"` → literal string `"users"` (must match exactly)
-   - `":id"` → variable `id` (matches anything, captures value)
+   - `":id"` → `Macro.var(:id, nil)` (matches anything, captures value)
+   - Returns both the pattern list and the param names via `Enum.unzip/1`
 
 5. **`build_params_map/1`** generates `%{id: id}` code at compile time
+   using a raw AST tuple `{:%{}, [], pairs}` — this is how macros build
+   map literals programmatically
+
+6. **`finalize_routes/0`** also changes — the catch-all is now
+   `dispatch(conn, _segments)` (two args) instead of `dispatch(conn)`
 
 ### New UserController (`lib/my_app/controllers/user_controller.ex`)
 
