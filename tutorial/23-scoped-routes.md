@@ -62,13 +62,13 @@ Before expansion, `scope "/api" do get "/status", ... end` becomes `get "/api/st
 
 #### The `scope` Macro
 
+**Update `lib/ignite/router.ex`** — add the `scope` macro and the private `prepend_prefix` helper functions below to the module:
+
 ```elixir
 defmacro scope(prefix, do: block) do
   prepend_prefix(block, prefix)
 end
 ```
-
-#### AST Transformation Functions
 
 ```elixir
 # A block with multiple expressions: transform each one
@@ -120,6 +120,8 @@ The outer `scope` sees the inner `scope` call and prepends `/api` to its prefix 
 
 ### Router
 
+**Replace `lib/my_app/router.ex` with:**
+
 ```elixir
 defmodule MyApp.Router do
   use Ignite.Router
@@ -163,6 +165,13 @@ curl http://localhost:4000/status
 - **No runtime overhead**: This transformation happens entirely at compile time. The final compiled module has no trace of scopes — just direct dispatch function clauses with full paths.
 
 - **Why not module attributes?** Module attributes (`@scope_prefix`) seem like the right tool, but Elixir's macro expansion runs in a separate phase from module attribute evaluation. By the time `@scope_prefix` is set, the route macros inside the block have already been expanded with the old value. AST transformation avoids this by rewriting the code *before* any macros are expanded.
+
+## File Checklist
+
+| File | Status |
+|------|--------|
+| `lib/ignite/router.ex` | **Modified** — added `scope` macro and `prepend_prefix` helpers |
+| `lib/my_app/router.ex` | **Modified** — uses `scope` for API routes |
 
 ## How Phoenix Does It
 

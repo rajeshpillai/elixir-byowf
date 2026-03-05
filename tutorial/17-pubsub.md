@@ -89,6 +89,8 @@ The `start:` tuple is an MFA (Module, Function, Args) — the supervisor calls `
 
 ### 1. `lib/ignite/pub_sub.ex`
 
+**Create `lib/ignite/pub_sub.ex`:**
+
 ```elixir
 defmodule Ignite.PubSub do
   @moduledoc """
@@ -125,7 +127,7 @@ end
 
 ### 2. Add to Supervision Tree
 
-In `lib/ignite/application.ex`, add `Ignite.PubSub` **before** the Cowboy listener:
+**Update `lib/ignite/application.ex`** — add `Ignite.PubSub` to the `children` list before the Cowboy listener:
 
 ```elixir
 children = [
@@ -138,7 +140,7 @@ PubSub must be running before any LiveView tries to subscribe — ordering in th
 
 ### 3. Formalize `handle_info` in the Behaviour
 
-In `lib/ignite/live_view.ex`, add `handle_info/2` as an optional callback:
+**Update `lib/ignite/live_view.ex`** — add `handle_info/2` as an optional callback:
 
 ```elixir
 @callback handle_info(msg :: term(), assigns :: map()) :: {:noreply, map()}
@@ -148,6 +150,8 @@ In `lib/ignite/live_view.ex`, add `handle_info/2` as an optional callback:
 The handler already supports `handle_info` via `function_exported?/3` checks — this just makes the contract explicit.
 
 ### 4. The Shared Counter LiveView
+
+**Create `lib/my_app/live/shared_counter_live.ex`:**
 
 ```elixir
 defmodule MyApp.SharedCounterLive do
@@ -227,6 +231,19 @@ You could build PubSub with a `GenServer` that maintains a `%{topic => [pids]}` 
 3. Click "+" in Tab A — watch both tabs update simultaneously
 4. Click "-" in Tab B — both tabs sync again
 5. Close one tab — the other continues working normally
+
+## File Checklist
+
+| File | Status |
+|------|--------|
+| `lib/ignite/pub_sub.ex` | **New** |
+| `lib/ignite/application.ex` | **Modified** — added `Ignite.PubSub` to supervision tree |
+| `lib/ignite/live_view.ex` | **Modified** — added `handle_info/2` optional callback |
+| `lib/ignite/live_view/handler.ex` | **Modified** — dispatch `handle_info` from WebSocket messages |
+| `lib/my_app/live/shared_counter_live.ex` | **New** |
+| `lib/my_app/live/dashboard_live.ex` | **New** |
+| `lib/my_app/controllers/welcome_controller.ex` | **Modified** — added links to new LiveView pages |
+| `lib/my_app/router.ex` | **Modified** — added routes for shared counter and dashboard |
 
 ## What's Next
 

@@ -79,6 +79,8 @@ The JS is wrapped in an IIFE to avoid polluting the global scope:
 
 ### `assets/ignite.js`
 
+**Create `assets/ignite.js`:**
+
 The complete frontend glue:
 - WebSocket connection with automatic `ws:` / `wss:` protocol detection
 - Event delegation for `ignite-click` with DOM tree walking
@@ -87,6 +89,8 @@ The complete frontend glue:
 
 ### `templates/live.html.eex`
 
+**Create `templates/live.html.eex`:**
+
 A reusable template for LiveView pages:
 - Contains `#ignite-app` container div
 - Loads `ignite.js` via `<script src="/assets/ignite.js">`
@@ -94,12 +98,16 @@ A reusable template for LiveView pages:
 
 ### Updated Application
 
+**Update `lib/ignite/application.ex`** — add a static file route for `/assets/[...]` to the Cowboy dispatch rules.
+
 Cowboy routing now includes static file serving:
 ```elixir
 {"/assets/[...]", :cowboy_static, {:dir, "assets"}}
 ```
 
 ### Updated Controller
+
+**Replace `lib/my_app/controllers/welcome_controller.ex` with:**
 
 The counter action is now one line:
 ```elixir
@@ -148,6 +156,15 @@ end
    ```
    [Ignite] LiveView connected
    ```
+
+## File Checklist
+
+| File | Status |
+|------|--------|
+| `assets/ignite.js` | **New** |
+| `templates/live.html.eex` | **New** |
+| `lib/ignite/application.ex` | **Modified** |
+| `lib/my_app/controllers/welcome_controller.ex` | **Modified** |
 
 ## What's Next
 

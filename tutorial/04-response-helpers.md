@@ -93,7 +93,7 @@ The `_` matches anything — it's the default/fallback clause.
 
 ### `lib/ignite/controller.ex`
 
-Two response helpers and one serializer:
+**Create `lib/ignite/controller.ex`.** Two response helpers and one serializer:
 
 - **`text/3`** — sets plain text body, status, and content-type
 - **`html/3`** — sets HTML body, status, and content-type
@@ -105,7 +105,7 @@ and `send_resp` converts it all at the end.
 
 ### Updated controllers
 
-Controllers now import the helpers and use them:
+**Replace `lib/my_app/controllers/welcome_controller.ex` with:**
 
 ```elixir
 defmodule MyApp.WelcomeController do
@@ -118,7 +118,7 @@ end
 
 ### Updated server
 
-The server no longer builds HTTP strings itself:
+**Update `lib/ignite/server.ex`** — replace the response-building code in `serve/1` with `Ignite.Controller.send_resp/1`, and remove the `build_response/2` function. The server no longer builds HTTP strings itself:
 
 ```elixir
 response = Ignite.Controller.send_resp(conn)
@@ -172,6 +172,20 @@ iex> Ignite.Server.start()
 
 The behavior looks the same as before, but the internals are now much
 cleaner and the controller code is minimal.
+
+## File Checklist
+
+After this step, your project should have these files:
+
+| File | Status | Purpose |
+|------|--------|---------|
+| `lib/ignite/controller.ex` | **New** | Response helpers (`text/3`, `html/3`, `send_resp/1`) |
+| `lib/ignite/server.ex` | **Modified** | Uses `Ignite.Controller.send_resp/1` instead of raw HTTP strings |
+| `lib/my_app/controllers/welcome_controller.ex` | **Modified** | Now uses `import Ignite.Controller` and `text/2` helper |
+| `lib/ignite/conn.ex` | Unchanged | Conn struct (from Step 2) |
+| `lib/ignite/parser.ex` | Unchanged | HTTP parser (from Step 2) |
+| `lib/ignite/router.ex` | Unchanged | Router DSL (from Step 3) |
+| `lib/my_app/router.ex` | Unchanged | App routes (from Step 3) |
 
 ## What's Next
 

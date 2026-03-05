@@ -48,7 +48,9 @@ This means we **remove** the `log_request` plug from the router — the adapter 
 
 ### 1. Logger Configuration
 
-First, tell Elixir's Logger to include `request_id` metadata in the output format:
+First, tell Elixir's Logger to include `request_id` metadata in the output format.
+
+**Update `config/config.exs`** — add Logger console format with `request_id` metadata:
 
 ```elixir
 # config/config.exs
@@ -112,6 +114,8 @@ end
 
 ### 5. Wiring It All Together
 
+**Replace `lib/ignite/adapters/cowboy.ex` with:**
+
 ```elixir
 # lib/ignite/adapters/cowboy.ex
 def init(req, state) do
@@ -153,7 +157,9 @@ end
 
 ### 6. Removing the Router Plug
 
-Since the adapter now logs `GET /path` and `Sent 200 in 1.2ms` with metadata, the router's `log_request` plug is redundant. We remove it:
+Since the adapter now logs `GET /path` and `Sent 200 in 1.2ms` with metadata, the router's `log_request` plug is redundant. We remove it.
+
+**Update `lib/my_app/router.ex`** — remove the `plug :log_request` line:
 
 ```elixir
 # lib/my_app/router.ex
@@ -252,3 +258,9 @@ Phoenix uses the `:telemetry` library for a more extensible event system (you ca
 | `lib/ignite/adapters/cowboy.ex` | Request ID generation, `Logger.metadata`, monotonic timing, `x-request-id` header, `log_duration/1` helper |
 | `lib/my_app/router.ex` | Removed `log_request` plug (adapter handles it now) |
 | `config/config.exs` | Logger console format with `request_id` metadata |
+
+## File Checklist
+
+- **Modified** `config/config.exs` — Logger console format with `request_id` metadata
+- **Modified** `lib/ignite/adapters/cowboy.ex` — Request ID generation, Logger.metadata, monotonic timing, x-request-id header, log_duration/1 helper
+- **Modified** `lib/my_app/router.ex` — Removed `log_request` plug (adapter handles it now)

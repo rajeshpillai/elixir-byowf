@@ -38,6 +38,8 @@ We use a **separate `Ignite.DebugPage` module**. The Cowboy adapter stays focuse
 
 ### 1. The DebugPage Module
 
+**Create `lib/ignite/debug_page.ex`:**
+
 ```elixir
 # lib/ignite/debug_page.ex
 defmodule Ignite.DebugPage do
@@ -168,6 +170,8 @@ end
 ### 4. Wiring Into the Cowboy Adapter
 
 The key change: move `conn` construction **before** the `try` block so it's accessible in `rescue`.
+
+**Update `lib/ignite/adapters/cowboy.ex`** — move `conn` before `try` and replace `error_page/1` with `Ignite.DebugPage.render/3`:
 
 ```elixir
 # lib/ignite/adapters/cowboy.ex
@@ -317,3 +321,8 @@ Phoenix's `Plug.Debugger` goes further by showing actual source code lines aroun
 |------|--------|
 | `lib/ignite/debug_page.ex` | **New** — rich dev error page with stacktrace, request, session tabs |
 | `lib/ignite/adapters/cowboy.ex` | Moved `conn` before `try`, replaced `error_page/1` with `Ignite.DebugPage.render/3` |
+
+## File Checklist
+
+- [ ] `lib/ignite/debug_page.ex` — **New**
+- [ ] `lib/ignite/adapters/cowboy.ex` — **Modified** (move `conn` before `try`, use `Ignite.DebugPage.render/3`)

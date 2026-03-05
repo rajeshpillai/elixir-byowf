@@ -110,6 +110,8 @@ Erlang functions that convert between binaries and lists of bytes. Needed here b
 
 ### 1. The CSRF Module
 
+**Create `lib/ignite/csrf.ex`:**
+
 ```elixir
 # lib/ignite/csrf.ex
 defmodule Ignite.CSRF do
@@ -176,6 +178,8 @@ end
 
 ### 2. Token Generation in the Adapter
 
+**Update `lib/ignite/adapters/cowboy.ex`** — after decoding the session, ensure a CSRF token exists:
+
 ```elixir
 # lib/ignite/adapters/cowboy.ex (inside cowboy_to_conn)
 # After decoding session, ensure a CSRF token exists:
@@ -191,6 +195,8 @@ The token is generated on the first request and persists in the signed session c
 
 ### 3. Controller Helper
 
+**Update `lib/ignite/controller.ex`** — add the `csrf_token_tag/1` helper:
+
 ```elixir
 # lib/ignite/controller.ex
 def csrf_token_tag(conn) do
@@ -201,6 +207,8 @@ end
 Controllers already `import Ignite.Controller`, so `csrf_token_tag(conn)` is available everywhere.
 
 ### 4. The Verification Plug
+
+**Update `lib/my_app/router.ex`** — add the `plug :verify_csrf_token` declaration and its implementation:
 
 ```elixir
 # lib/my_app/router.ex
@@ -372,3 +380,12 @@ The approach is identical — we just implement the validation as a router plug 
 | `lib/my_app/router.ex` | Added `plug :verify_csrf_token` with exemption logic |
 | `lib/my_app/controllers/welcome_controller.ex` | Added CSRF token to create user form |
 | `lib/my_app/controllers/upload_controller.ex` | Added CSRF token to upload form |
+
+## File Checklist
+
+- [ ] `lib/ignite/csrf.ex` — **New**
+- [ ] `lib/ignite/adapters/cowboy.ex` — **Modified** (ensure CSRF token in session)
+- [ ] `lib/ignite/controller.ex` — **Modified** (add `csrf_token_tag/1` helper)
+- [ ] `lib/my_app/router.ex` — **Modified** (add `plug :verify_csrf_token` and implementation)
+- [ ] `lib/my_app/controllers/welcome_controller.ex` — **Modified** (add CSRF token to forms)
+- [ ] `lib/my_app/controllers/upload_controller.ex` — **Modified** (add CSRF token to upload form)

@@ -41,7 +41,9 @@ Every resource in the app repeats this pattern. Phoenix solves both problems, an
 
 ### Step 1: Accumulate Route Metadata
 
-Every route macro (`get`, `post`, etc.) already generates a `dispatch/2` function clause. We add one line to also record the route's metadata:
+Every route macro (`get`, `post`, etc.) already generates a `dispatch/2` function clause. We add one line to also record the route's metadata.
+
+**Update `lib/ignite/router.ex`** — add `@route_info` accumulation to `build_route/4`:
 
 ```elixir
 # In build_route/4 (inside the quote block)
@@ -63,13 +65,15 @@ The `@route_info` module attribute uses `accumulate: true`, so each route defini
 
 ### Step 2: `@before_compile` Hook
 
-We register a `@before_compile` callback in `__using__/1`:
+**Update `lib/ignite/router.ex`** — register a `@before_compile` callback in `__using__/1`:
 
 ```elixir
 @before_compile Ignite.Router
 ```
 
 Elixir calls `__before_compile__/1` *after* all module body code has been evaluated (all routes defined) but *before* the module is finalized. This is the perfect moment to read `@route_info` and generate helper functions.
+
+**Update `lib/ignite/router.ex`** — add the `__before_compile__` macro:
 
 ```elixir
 defmacro __before_compile__(env) do
@@ -89,7 +93,7 @@ This generates `MyApp.Router.Helpers` as a nested submodule with all the path fu
 
 ### Step 3: Derive Helper Names
 
-The `Ignite.Router.Helpers` module contains pure functions for deriving names from paths:
+**Create `lib/ignite/router/helpers.ex`** — this module contains pure functions for deriving names from paths and building helper function AST:
 
 ```elixir
 derive_name("/")           #=> :root_path
@@ -180,6 +184,8 @@ This handles 90%+ of English nouns used in web APIs. Phoenix uses the `Inflex` l
 
 ### The `resources/3` Macro
 
+**Update `lib/ignite/router.ex`** — add the `resources/3` macro:
+
 ```elixir
 resources "/users", MyApp.UserController
 ```
@@ -239,7 +245,9 @@ end
 
 ### Scoped Resources
 
-Resources work inside `scope` because we added a `prepend_prefix/2` clause:
+Resources work inside `scope` because we added a `prepend_prefix/2` clause.
+
+**Update `lib/ignite/router.ex`** — add a `prepend_prefix` clause for `:resources`:
 
 ```elixir
 defp prepend_prefix({:resources, meta, [path | rest]}, prefix)
@@ -262,15 +270,15 @@ Phoenix's path helpers are more sophisticated:
 
 Our implementation covers the core concept — compile-time code generation from route metadata.
 
-## Files Changed
+## File Checklist
 
-| File | Change |
+| File | Status |
 |------|--------|
-| `lib/ignite/router/helpers.ex` | New — name derivation, AST generation, singularization |
-| `lib/ignite/router.ex` | `@route_info` accumulation, `resources/3` macro, `@before_compile` hook |
-| `lib/my_app/router.ex` | User CRUD replaced with `resources "/users", MyApp.UserController` |
-| `lib/my_app/controllers/user_controller.ex` | Added `index/1` action |
-| `lib/my_app/controllers/welcome_controller.ex` | Path helper examples on index page |
+| `lib/ignite/router/helpers.ex` | **New** — name derivation, AST generation, singularization |
+| `lib/ignite/router.ex` | **Modified** — `@route_info` accumulation, `resources/3` macro, `@before_compile` hook |
+| `lib/my_app/router.ex` | **Modified** — user CRUD replaced with `resources "/users", MyApp.UserController` |
+| `lib/my_app/controllers/user_controller.ex` | **Modified** — added `index/1` action |
+| `lib/my_app/controllers/welcome_controller.ex` | **Modified** — path helper examples on index page |
 
 ## Try It
 

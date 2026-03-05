@@ -86,7 +86,7 @@ Removes a key from a map and returns **both** the removed value and the map with
 
 ### `assets/ignite.js`
 
-The WebSocket logic is refactored into a `connect(livePath)` function:
+**Update `assets/ignite.js`** — refactor the WebSocket logic into a `connect(livePath)` function and add a `navigate(url, livePath)` function. Add click interception for `ignite-navigate` links, `popstate` handling, and route-map parsing from `data-live-routes`:
 
 ```javascript
 function connect(livePath) {
@@ -109,7 +109,7 @@ function navigate(url, livePath) {
 
 ### `lib/ignite/live_view.ex`
 
-Added `push_redirect/2`:
+**Update `lib/ignite/live_view.ex`** — add the `push_redirect/2` function:
 
 ```elixir
 def push_redirect(assigns, url) do
@@ -119,7 +119,7 @@ end
 
 ### `lib/ignite/live_view/handler.ex`
 
-After `handle_event`, checks for `__redirect__` in assigns:
+**Update `lib/ignite/live_view/handler.ex`** — after `handle_event`, check for `__redirect__` in assigns and send a redirect message to the client:
 
 ```elixir
 case Map.pop(new_assigns, :__redirect__) do
@@ -127,6 +127,18 @@ case Map.pop(new_assigns, :__redirect__) do
   {redirect_info, assigns} -> # send {redirect: ...} to client
 end
 ```
+
+## File Checklist
+
+| File | Status |
+|------|--------|
+| `assets/ignite.js` | **Modified** — added `connect()`, `navigate()`, route-map parsing, `popstate` handler |
+| `lib/ignite/live_view.ex` | **Modified** — added `push_redirect/2` |
+| `lib/ignite/live_view/handler.ex` | **Modified** — added redirect detection after `handle_event` |
+| `lib/my_app/controllers/welcome_controller.ex` | **Modified** — inject `data-live-routes` route map into LiveView HTML |
+| `lib/my_app/live/counter_live.ex` | **Modified** — added navigation links to render |
+| `lib/my_app/live/dashboard_live.ex` | **Modified** — added navigation links to render |
+| `templates/live.html.eex` | **Modified** — added `data-live-routes` attribute to `#ignite-app` div |
 
 ## Try It
 

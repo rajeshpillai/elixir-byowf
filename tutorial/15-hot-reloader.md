@@ -109,6 +109,8 @@ GenServer has three message handlers:
 
 ### `lib/ignite/reloader.ex`
 
+**Create `lib/ignite/reloader.ex`:**
+
 A GenServer that:
 1. On init: scans `lib/**/*.ex` and records all file modification times
 2. Every second: re-scans and compares mtimes
@@ -116,6 +118,8 @@ A GenServer that:
 4. Errors in compilation are caught and logged (don't crash the reloader)
 
 ### Updated `lib/ignite/application.ex`
+
+**Update `lib/ignite/application.ex`** — add a `dev_children/0` helper and append it to the children list so the reloader starts in dev mode.
 
 The reloader is added as a conditional child:
 ```elixir
@@ -175,6 +179,13 @@ children = [
 
 6. If you have the `/counter` LiveView open in another tab, it still
    works with its current count — the reloader didn't affect it.
+
+## File Checklist
+
+| File | Status |
+|------|--------|
+| `lib/ignite/reloader.ex` | **New** |
+| `lib/ignite/application.ex` | **Modified** |
 
 ## What's Next
 

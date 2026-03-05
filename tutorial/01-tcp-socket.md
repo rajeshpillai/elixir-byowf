@@ -160,7 +160,7 @@ the blank line between headers and body are required by the HTTP spec.
 
 ### Complete `lib/ignite/server.ex`
 
-Here's the full module — put this in `lib/ignite/server.ex`:
+**Create `lib/ignite/server.ex`** with the following content:
 
 ```elixir
 defmodule Ignite.Server do
@@ -264,6 +264,14 @@ You should see: **Hello, Ignite!**
 ```
 
 6. Stop the server with `Ctrl+C` twice.
+
+## File Checklist
+
+After this step, your project should have these files:
+
+| File | Status | Purpose |
+|------|--------|---------|
+| `lib/ignite/server.ex` | **New** | TCP server that listens, accepts, and responds |
 
 ## What's Next
 

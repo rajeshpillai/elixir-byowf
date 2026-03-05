@@ -98,7 +98,7 @@ name |> to_string() |> String.downcase()
 
 ### `lib/ignite/conn.ex`
 
-The struct definition. Each field represents a piece of the request/response lifecycle:
+**Create `lib/ignite/conn.ex`.** The struct definition below goes inside a `defmodule Ignite.Conn do ... end` block. Each field represents a piece of the request/response lifecycle:
 
 ```elixir
 defstruct [
@@ -120,7 +120,7 @@ defstruct [
 
 ### `lib/ignite/parser.ex`
 
-The parser reads from the socket and returns a filled-in `%Conn{}`:
+**Create `lib/ignite/parser.ex`.** The parser reads from the socket and returns a filled-in `%Conn{}`. Here is the key function — see below for the complete file:
 
 ```elixir
 def parse(client_socket) do
@@ -140,7 +140,7 @@ string `"GET"`, which is easier to work with in our router.
 
 ### Updated `lib/ignite/server.ex`
 
-The server now uses the parser:
+**Update `lib/ignite/server.ex`** — replace the `serve/1` function with the version below. The server now uses the parser:
 
 ```elixir
 defp serve(client_socket) do
@@ -195,6 +195,16 @@ iex> Ignite.Server.start()
 [info] GET /
 [info] GET /fire
 ```
+
+## File Checklist
+
+After this step, your project should have these files:
+
+| File | Status | Purpose |
+|------|--------|---------|
+| `lib/ignite/conn.ex` | **New** | `%Ignite.Conn{}` struct for request/response data |
+| `lib/ignite/parser.ex` | **New** | Reads TCP socket and fills in a `%Conn{}` |
+| `lib/ignite/server.ex` | **Modified** | Now uses `Ignite.Parser` instead of raw reads |
 
 ## What's Next
 

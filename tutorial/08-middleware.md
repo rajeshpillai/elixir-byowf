@@ -86,6 +86,8 @@ end
 
 ### Updated Router (`lib/ignite/router.ex`)
 
+**Update `lib/ignite/router.ex`** — add the `plug` macro and update the `call/1` function with the two additions below:
+
 Two new additions:
 
 1. **`plug` macro** — registers a function name in `@plugs`:
@@ -114,6 +116,8 @@ Two new additions:
    ```
 
 ### Updated App Router (`lib/my_app/router.ex`)
+
+**Update `lib/my_app/router.ex`** — add the `plug` calls and their implementations:
 
 ```elixir
 plug :log_request
@@ -170,6 +174,25 @@ If a plug halts:
    - Look for `x-powered-by: Ignite`
 
 4. Every request — even 404s — goes through the plugs first.
+
+## File Checklist
+
+All files in the project after completing Step 8:
+
+| File | Status |
+|------|--------|
+| `mix.exs` | Unchanged |
+| `lib/ignite.ex` | Unchanged |
+| `lib/ignite/application.ex` | Unchanged |
+| `lib/ignite/server.ex` | Unchanged |
+| `lib/ignite/conn.ex` | Unchanged |
+| `lib/ignite/parser.ex` | Unchanged |
+| `lib/ignite/router.ex` | **Modified** — added `plug` macro and updated `call/1` for pipeline |
+| `lib/ignite/controller.ex` | Unchanged |
+| `lib/my_app/router.ex` | **Modified** — added `plug` calls and plug functions |
+| `lib/my_app/controllers/welcome_controller.ex` | Unchanged |
+| `lib/my_app/controllers/user_controller.ex` | Unchanged |
+| `templates/profile.html.eex` | Unchanged |
 
 ## What's Next
 

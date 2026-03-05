@@ -80,6 +80,8 @@ content types like `application/x-www-form-urlencoded; charset=UTF-8`.
 
 ### Updated Parser (`lib/ignite/parser.ex`)
 
+**Update `lib/ignite/parser.ex`** — add the `read_body/2` and `parse_body/2` functions, and call `read_body` from your existing parse logic:
+
 New `read_body/2` function:
 
 1. Check if `content-length` header exists
@@ -105,12 +107,15 @@ end
 
 ### Updated Router
 
-Added a POST route:
+**Update `lib/my_app/router.ex`** — add this POST route:
+
 ```elixir
 post "/users", to: MyApp.UserController, action: :create
 ```
 
 ### Updated UserController
+
+**Update `lib/my_app/controllers/user_controller.ex`** — add this `create/1` function:
 
 ```elixir
 def create(conn) do
@@ -160,6 +165,25 @@ curl -X POST http://localhost:4000/users \
 ```
 
 4. GET routes still work: http://localhost:4000/users/42
+
+## File Checklist
+
+All files in the project after completing Step 9:
+
+| File | Status |
+|------|--------|
+| `mix.exs` | Unchanged |
+| `lib/ignite.ex` | Unchanged |
+| `lib/ignite/application.ex` | Unchanged |
+| `lib/ignite/server.ex` | Unchanged |
+| `lib/ignite/conn.ex` | Unchanged |
+| `lib/ignite/parser.ex` | **Modified** — added `read_body/2` and `parse_body/2` for POST bodies |
+| `lib/ignite/router.ex` | Unchanged |
+| `lib/ignite/controller.ex` | Unchanged |
+| `lib/my_app/router.ex` | **Modified** — added POST `/users` route |
+| `lib/my_app/controllers/welcome_controller.ex` | Unchanged |
+| `lib/my_app/controllers/user_controller.ex` | **Modified** — added `create/1` action |
+| `templates/profile.html.eex` | Unchanged |
 
 ## What's Next
 

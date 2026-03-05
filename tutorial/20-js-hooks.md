@@ -52,6 +52,8 @@ Requirements:
 
 ## Step 2: The Hook Registry (ignite.js)
 
+**Update `assets/ignite.js`** — add the hook lifecycle system (`createHookInstance`, `mountHooks`, `updateHooks`, `cleanupHooks`, `destroyAllHooks`) and integrate it with `applyUpdate` and `connect`. The key pieces are shown below:
+
 The hook system lives entirely in `assets/ignite.js`. Here's how it works:
 
 ### Global Registry
@@ -145,6 +147,8 @@ This lets you send client-only data (clipboard results, geolocation, screen size
 
 ## Step 4: Example Hooks
 
+**Create `assets/hooks.js`** with the following hook definitions:
+
 ### CopyToClipboard
 
 Uses the browser's Clipboard API and reports success/failure to the server:
@@ -203,6 +207,8 @@ window.IgniteHooks.LocalTime = {
 ```
 
 ## Step 5: The Server Side
+
+**Create `lib/my_app/live/hooks_demo_live.ex`:**
 
 The server doesn't need any special code for hooks. Events pushed via `pushEvent` arrive at `handle_event/3` like any other event:
 
@@ -277,6 +283,15 @@ iex -S mix
 - Check the Hook Events Log for pushEvent messages
 - Open browser console to see `[Hook] mounted/updated/destroyed` logs
 - Navigate to another LiveView — hooks are destroyed and cleaned up
+
+## File Checklist
+
+| File | Status |
+|------|--------|
+| `assets/hooks.js` | **New** — CopyToClipboard and LocalTime hook definitions |
+| `assets/ignite.js` | **Modified** — added hook lifecycle system (mount, update, cleanup, destroy) |
+| `lib/my_app/live/hooks_demo_live.ex` | **New** |
+| `templates/live.html.eex` | **Modified** — added `<script>` tag to load `hooks.js` |
 
 ## What's Next?
 

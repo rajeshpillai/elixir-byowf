@@ -72,7 +72,7 @@ The third argument is the default if the key doesn't exist.
 
 ### 1. Conn Gets Session Fields
 
-We add four fields to `%Ignite.Conn{}`:
+**Update `lib/ignite/conn.ex`** — add four new fields to the struct:
 
 ```elixir
 # lib/ignite/conn.ex
@@ -89,10 +89,11 @@ The `private` map stores framework-internal state. The adapter uses `private.fla
 
 ### 2. The Session Module
 
-`Ignite.Session` handles encoding, decoding, and cookie operations:
+`Ignite.Session` handles encoding, decoding, and cookie operations.
+
+**Create `lib/ignite/session.ex`:**
 
 ```elixir
-# lib/ignite/session.ex
 defmodule Ignite.Session do
   @default_secret "ignite-secret-key-change-in-prod-min-64-bytes-long-for-security!!"
   @cookie_name "_ignite_session"
@@ -147,11 +148,9 @@ Key details:
 
 ### 3. Controller Helpers
 
-Three new helpers in `Ignite.Controller`:
+**Update `lib/ignite/controller.ex`** — add `redirect/2`, `put_flash/3`, and `get_flash/1,2`:
 
 ```elixir
-# lib/ignite/controller.ex
-
 def redirect(conn, to: path) do
   %Ignite.Conn{
     conn
@@ -186,6 +185,8 @@ end
 ### 4. Cowboy Adapter Wiring
 
 The adapter handles cookies on both sides of the request. The key insight: flash is **popped from the session on request** (moved to `private.flash`), so it won't be echoed back unless `put_flash` explicitly adds new flash.
+
+**Update `lib/ignite/adapters/cowboy.ex`** — add cookie parsing on request and session cookie on response.
 
 **On request** (`cowboy_to_conn/1`):
 ```elixir
@@ -228,10 +229,11 @@ Note: Cowboy requires cookies to be set via `:cowboy_req.set_resp_cookie/4` — 
 
 ### 5. LiveView Gets Session Access
 
-The WebSocket handshake carries cookies, so LiveViews can read the session too:
+The WebSocket handshake carries cookies, so LiveViews can read the session too.
+
+**Update `lib/ignite/live_view/handler.ex`** — parse session from cookies during WebSocket handshake:
 
 ```elixir
-# lib/ignite/live_view/handler.ex
 def init(req, state) do
   cookie_header = :cowboy_req.header("cookie", req, "")
   cookies = Ignite.Session.parse_cookies(cookie_header)
@@ -257,7 +259,8 @@ end
 
 ### 6. Demo: Flash on User Creation
 
-**UserController** — set flash and redirect:
+**Update `lib/my_app/controllers/user_controller.ex`** — set flash and redirect on create:
+
 ```elixir
 def create(conn) do
   username = conn.params["username"] || "anonymous"
@@ -268,7 +271,8 @@ def create(conn) do
 end
 ```
 
-**WelcomeController** — display flash on index:
+**Update `lib/my_app/controllers/welcome_controller.ex`** — display flash messages on index:
+
 ```elixir
 def index(conn) do
   flash_html =
@@ -353,14 +357,14 @@ Or just use a browser: `curl -X POST -d "username=Jose" http://localhost:4000/us
 | Flash clear | Adapter clears on response | `Plug.Session` + `Phoenix.Controller.fetch_flash` |
 | Cookie flags | HttpOnly, SameSite=Lax | HttpOnly, SameSite=Lax, Secure |
 
-## Files Changed
+## File Checklist
 
-| File | Change |
+| File | Status |
 |------|--------|
-| `lib/ignite/conn.ex` | Added `cookies`, `session`, `resp_cookies` fields |
 | `lib/ignite/session.ex` | **New** — signed cookie encode/decode |
-| `lib/ignite/controller.ex` | Added `redirect/2`, `put_flash/3`, `get_flash/1,2` |
-| `lib/ignite/adapters/cowboy.ex` | Cookie parsing on request, session cookie on response |
-| `lib/ignite/live_view/handler.ex` | Pass session to LiveView mount |
-| `lib/my_app/controllers/user_controller.ex` | Flash + redirect on create |
-| `lib/my_app/controllers/welcome_controller.ex` | Flash display on index |
+| `lib/ignite/conn.ex` | **Modified** — added `cookies`, `session`, `resp_cookies`, `private` fields |
+| `lib/ignite/controller.ex` | **Modified** — added `redirect/2`, `put_flash/3`, `get_flash/1,2` |
+| `lib/ignite/adapters/cowboy.ex` | **Modified** — cookie parsing on request, session cookie on response |
+| `lib/ignite/live_view/handler.ex` | **Modified** — pass session to LiveView mount |
+| `lib/my_app/controllers/user_controller.ex` | **Modified** — flash + redirect on create |
+| `lib/my_app/controllers/welcome_controller.ex` | **Modified** — flash display on index |

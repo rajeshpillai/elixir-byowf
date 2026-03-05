@@ -43,6 +43,8 @@ Libraries like `plug_checkup` provide a structured approach, but the BEAM alread
 
 ### 1. Adding the Route
 
+**Update `lib/my_app/router.ex`** — add the health check route:
+
 ```elixir
 # lib/my_app/router.ex
 get "/health", to: MyApp.ApiController, action: :health
@@ -51,6 +53,8 @@ get "/health", to: MyApp.ApiController, action: :health
 The health check is a top-level route, not scoped under `/api`. This is intentional — load balancers typically expect health checks at a well-known path like `/health` or `/healthz`, not behind API prefixes.
 
 ### 2. The Health Action
+
+**Update `lib/my_app/controllers/api_controller.ex`** — add the `health/1` action and `format_uptime/1` helper:
 
 ```elixir
 # lib/my_app/controllers/api_controller.ex
@@ -231,3 +235,8 @@ A production health check might also verify database connectivity (`Repo.query!(
 |------|--------|
 | `lib/my_app/router.ex` | Added `get "/health"` route |
 | `lib/my_app/controllers/api_controller.ex` | Added `health/1` action with system metrics, `format_uptime/1` helper |
+
+## File Checklist
+
+- **Modified** `lib/my_app/controllers/api_controller.ex` — Added `health/1` action and `format_uptime/1` helper
+- **Modified** `lib/my_app/router.ex` — Added `get "/health"` route

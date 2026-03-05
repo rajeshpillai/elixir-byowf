@@ -38,7 +38,9 @@ Each "part" is separated by a boundary string. Parts can be regular fields (just
 
 ### Cowboy's Multipart API
 
-Instead of parsing multipart ourselves, we use Cowboy's streaming API:
+Instead of parsing multipart ourselves, we use Cowboy's streaming API.
+
+**Update `lib/ignite/adapters/cowboy.ex`** — add multipart parsing to handle `multipart/form-data` requests:
 
 ```elixir
 # Read the next part's headers
@@ -53,6 +55,8 @@ Instead of parsing multipart ourselves, we use Cowboy's streaming API:
 The `read_part`/`read_part_body` loop reads one part at a time without loading the entire request into memory.
 
 ### The Upload Struct
+
+**Create `lib/ignite/upload.ex`:**
 
 ```elixir
 defmodule Ignite.Upload do
@@ -116,6 +120,8 @@ Files are sent as **binary chunks over the existing WebSocket connection**. The 
 
 ### Upload Configuration
 
+**Update `lib/ignite/live_view.ex`** — add the `allow_upload` and `consume_uploaded_entries` functions.
+
 In `mount/2`, configure what uploads are allowed:
 
 ```elixir
@@ -138,6 +144,8 @@ Options:
 - `:auto_upload` — start uploading as soon as files are selected
 
 ### The Upload Structs
+
+**Create `lib/ignite/live_view/upload.ex`:**
 
 ```elixir
 # Stored in assigns.__uploads__[name]
@@ -282,7 +290,7 @@ The chunker uses `setTimeout(sendNextChunk, 10)` between chunks to avoid floodin
 
 ### HTTP Upload (`/upload`)
 
-A standard form with `enctype="multipart/form-data"`:
+**Create `lib/my_app/controllers/upload_controller.ex`:**
 
 ```elixir
 def upload_form(conn) do
@@ -301,6 +309,8 @@ end
 ```
 
 ### LiveView Upload (`/upload-demo`)
+
+**Create `lib/my_app/live/upload_demo_live.ex`:**
 
 ```elixir
 defmodule MyApp.UploadDemoLive do
@@ -369,6 +379,23 @@ curl -F "file=@photo.jpg" -F "description=My photo" http://localhost:4000/upload
   This extracts a 2-byte integer, a variable-length string, and the remaining bytes — all in one expression.
 
 - **State accumulation in assigns**: Like Streams, upload state lives in `assigns.__uploads__`. Each `receive_chunk` call returns new assigns with updated progress. The handler coordinates between binary frames and render cycles.
+
+## File Checklist
+
+| File | Status |
+|------|--------|
+| `lib/ignite/upload.ex` | **New** — `%Ignite.Upload{}` struct for HTTP uploads |
+| `lib/ignite/live_view/upload.ex` | **New** — `%Upload{}` and `%UploadEntry{}` structs for LiveView uploads |
+| `lib/my_app/controllers/upload_controller.ex` | **New** — HTTP upload form and handler |
+| `lib/my_app/live/upload_demo_live.ex` | **New** — LiveView upload demo with progress |
+| `uploads/.gitkeep` | **New** — directory for saved uploads |
+| `lib/ignite/adapters/cowboy.ex` | **Modified** — multipart form-data parsing |
+| `lib/ignite/application.ex` | **Modified** — register upload routes |
+| `lib/ignite/live_view.ex` | **Modified** — added `allow_upload`, `consume_uploaded_entries` |
+| `lib/ignite/live_view/handler.ex` | **Modified** — handle binary upload frames and upload events |
+| `lib/my_app/router.ex` | **Modified** — added `/upload` and `/upload-demo` routes |
+| `lib/my_app/controllers/welcome_controller.ex` | **Modified** — added upload links |
+| `assets/ignite.js` | **Modified** — file input handling, chunked upload, drag-and-drop |
 
 ## How Phoenix Does It
 

@@ -78,6 +78,8 @@ and around the dynamic values).
 
 ### `lib/ignite/live_view/engine.ex` (New)
 
+**Create `lib/ignite/live_view/engine.ex`:**
+
 The engine provides two functions:
 - `render/2` — returns `{statics, dynamics}` (used on mount)
 - `render_dynamics/2` — returns only dynamics (used on updates)
@@ -87,6 +89,8 @@ chunk. A production engine would parse the EEx template at compile time
 to track each interpolation point separately.
 
 ### Updated Handler
+
+**Replace `lib/ignite/live_view/handler.ex` with:**
 
 ```elixir
 # Mount: send statics + dynamics
@@ -99,6 +103,8 @@ payload = Jason.encode!(%{d: dynamics})
 ```
 
 ### Updated `assets/ignite.js`
+
+**Replace `assets/ignite.js` with:**
 
 The JS now:
 1. Saves statics from the first message
@@ -133,6 +139,14 @@ Click +1:
 
 5. The counter still works exactly the same — the optimization is
    transparent to the user.
+
+## File Checklist
+
+| File | Status |
+|------|--------|
+| `lib/ignite/live_view/engine.ex` | **New** |
+| `lib/ignite/live_view/handler.ex` | **Modified** |
+| `assets/ignite.js` | **Modified** |
 
 ## What's Next
 

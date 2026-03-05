@@ -16,7 +16,9 @@ Until now, Ignite has been serving everything over plain HTTP. That's fine for l
 
 ### Config-Driven: HTTP vs HTTPS
 
-The decision is made entirely by the `:ssl` key in application config:
+The decision is made entirely by the `:ssl` key in application config.
+
+**Create `config/prod.exs`:**
 
 ```elixir
 # config/prod.exs
@@ -49,6 +51,8 @@ When `:ssl` is set, it returns:
 The `tls_opts` include `port`, `certfile`, and `keyfile` — converted to charlists because Erlang's `:ssl` module expects them that way.
 
 ### The Full `child_spec/2`
+
+**Create `lib/ignite/ssl.ex`:**
 
 ```elixir
 # lib/ignite/ssl.ex
@@ -120,7 +124,9 @@ GET http://localhost:4080/hello?name=Jose
 → 301 Location: https://localhost:4443/hello?name=Jose
 ```
 
-The `RedirectHandler` is a minimal `:cowboy_handler` that preserves path and query string:
+The `RedirectHandler` is a minimal `:cowboy_handler` that preserves path and query string.
+
+**Create `lib/ignite/ssl/redirect_handler.ex`:**
 
 ```elixir
 defp build_https_url(host, 443, path, ""), do: "https://#{host}#{path}"
@@ -142,13 +148,15 @@ config :ignite,
   hsts_max_age: 31_536_000   # 1 year
 ```
 
-The `Ignite.HSTS` module adds the header:
+**Create `lib/ignite/hsts.ex`** — the `Ignite.HSTS` module adds the header:
 
 ```
 strict-transport-security: max-age=31536000; includeSubDomains
 ```
 
-It's registered as a plug in the router:
+It's registered as a plug in the router.
+
+**Update `lib/my_app/router.ex`** — add the HSTS plug:
 
 ```elixir
 plug :set_hsts_header
@@ -160,7 +168,7 @@ In dev/test (where `:hsts` config is not set), it's a no-op — the function ret
 
 ### Self-Signed Certificate Generator
 
-For local HTTPS testing, run:
+**Create `lib/mix/tasks/ignite.gen.cert.ex`** — for local HTTPS testing, run:
 
 ```bash
 $ mix ignite.gen.cert
@@ -179,7 +187,7 @@ The task also prints the exact config snippet to add to `config/prod.exs`.
 
 ### Application Boot Changes
 
-`Ignite.Application` now delegates Cowboy child spec creation to `Ignite.SSL`:
+**Update `lib/ignite/application.ex`** — delegate Cowboy child spec creation to `Ignite.SSL` and add the redirect listener:
 
 ```elixir
 # Before (hardcoded HTTP):
@@ -296,3 +304,14 @@ iex -S mix
 | `lib/mix/tasks/ignite.gen.cert.ex` | **New** — `mix ignite.gen.cert` task |
 | `lib/my_app/router.ex` | Added `plug :set_hsts_header` |
 | `.gitignore` | Added `priv/ssl/` |
+
+## File Checklist
+
+- **New** `lib/ignite/ssl.ex` — SSL config and Cowboy child spec builder
+- **New** `lib/ignite/ssl/redirect_handler.ex` — HTTP-to-HTTPS 301 redirect handler
+- **New** `lib/ignite/hsts.ex` — HSTS header plug
+- **New** `config/prod.exs` — Production config (SSL, HSTS, DB, logging)
+- **New** `lib/mix/tasks/ignite.gen.cert.ex` — `mix ignite.gen.cert` task
+- **Modified** `lib/ignite/application.ex` — Rewired to use `Ignite.SSL.child_spec/2`, added redirect listener
+- **Modified** `lib/my_app/router.ex` — Added `plug :set_hsts_header`
+- **Modified** `mix.exs` — Added `:ssl`, `:public_key` to `extra_applications`

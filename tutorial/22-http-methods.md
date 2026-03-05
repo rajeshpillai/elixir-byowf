@@ -23,6 +23,8 @@ Since we already have a `build_route/4` helper that generates pattern-matching d
 
 ### New Macros in `Ignite.Router`
 
+**Update `lib/ignite/router.ex`** — add `put`, `patch`, and `delete` macros:
+
 ```elixir
 defmacro put(path, to: controller, action: action) do
   build_route("PUT", path, controller, action)
@@ -59,6 +61,8 @@ DELETE requests typically don't carry a body, but if one is present, it will be 
 
 ### Router
 
+**Update `lib/my_app/router.ex`** — add the new REST routes:
+
 ```elixir
 get "/users/:id", to: UserController, action: :show
 post "/users", to: UserController, action: :create
@@ -68,6 +72,8 @@ delete "/users/:id", to: UserController, action: :delete
 ```
 
 ### Controller
+
+**Update `lib/my_app/controllers/user_controller.ex`** — add `update/1` and `delete/1` actions:
 
 ```elixir
 def update(conn) do
@@ -107,3 +113,11 @@ curl -X DELETE http://localhost:4000/users/42
 - **Same path, different methods**: Elixir's pattern matching naturally handles `PUT /users/42` vs `GET /users/42` vs `DELETE /users/42` as separate function clauses. The BEAM's pattern matching engine picks the right one in constant time.
 
 - **PUT vs PATCH convention**: PUT means "replace the entire resource" while PATCH means "update specific fields." In practice, many apps route both to the same controller action (as we do here), but the distinction matters for API design.
+
+## File Checklist
+
+| File | Status |
+|------|--------|
+| `lib/ignite/router.ex` | **Modified** — added `put`, `patch`, and `delete` macros |
+| `lib/my_app/router.ex` | **Modified** — added PUT/PATCH/DELETE routes for users |
+| `lib/my_app/controllers/user_controller.ex` | **Modified** — added `update/1` and `delete/1` actions |

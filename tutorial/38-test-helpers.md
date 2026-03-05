@@ -118,7 +118,9 @@ conn =
 
 ### Configurable Port for Tests
 
-The application now reads the port from config:
+The application now reads the port from config.
+
+**Update `lib/ignite/application.ex`** — read port from config instead of hardcoding 4000:
 
 ```elixir
 # lib/ignite/application.ex
@@ -149,6 +151,9 @@ end
 ```
 
 **After (fixed):**
+
+**Update `lib/ignite/router.ex`** — move `call/1` to `@before_compile` so plugs execute correctly:
+
 ```elixir
 defmacro __before_compile__(env) do
   plugs = Module.get_attribute(env.module, :plugs) |> Enum.reverse()
@@ -169,6 +174,8 @@ This means the `x-powered-by` header, CSP headers, and CSRF validation are now p
 ## Implementation
 
 ### 1. The ConnTest Module
+
+**Create `lib/ignite/conn_test.ex`:**
 
 ```elixir
 # lib/ignite/conn_test.ex
@@ -240,6 +247,8 @@ end
 
 ### 4. Test Configuration
 
+**Update `config/config.exs`** — add `:port` config and env-specific config import:
+
 ```elixir
 # config/config.exs — now imports env-specific config
 config :ignite, port: 4000
@@ -249,12 +258,16 @@ if File.exists?("config/#{config_env()}.exs") do
 end
 ```
 
+**Create `config/test.exs`:**
+
 ```elixir
 # config/test.exs
 config :ignite, port: 4002
 config :ignite, MyApp.Repo, database: "ignite_test.db"
 config :logger, level: :warning
 ```
+
+**Update `test/test_helper.exs`** — run migrations automatically before tests:
 
 ```elixir
 # test/test_helper.exs
@@ -326,3 +339,16 @@ Phoenix uses `Ecto.Adapters.SQL.Sandbox` for test isolation (each test runs in a
 | `test/controllers/welcome_controller_test.exs` | **New** — Welcome controller tests |
 | `test/controllers/api_controller_test.exs` | **New** — API controller tests |
 | `test/controllers/user_controller_test.exs` | **New** — User controller tests with CSRF |
+
+## File Checklist
+
+- **New** `lib/ignite/conn_test.ex` — Test helper module with dispatch and assertion functions
+- **New** `config/test.exs` — Test environment config (port 4002, test DB, reduced logging)
+- **New** `test/controllers/welcome_controller_test.exs` — Welcome controller tests
+- **New** `test/controllers/api_controller_test.exs` — API controller tests
+- **New** `test/controllers/user_controller_test.exs` — User controller tests with CSRF
+- **Modified** `lib/ignite/router.ex` — Moved `call/1` to `@before_compile` so plugs execute
+- **Modified** `lib/ignite/application.ex` — Read port from config instead of hardcoding 4000
+- **Modified** `config/config.exs` — Added `:port` config and env-specific config import
+- **Modified** `test/test_helper.exs` — Run migrations automatically before tests
+- **Modified** `test/ignite_test.exs` — Replaced empty module with ConnTest helper tests

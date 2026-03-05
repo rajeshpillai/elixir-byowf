@@ -125,7 +125,7 @@ way to make dynamic function calls.
 
 ### `lib/ignite/router.ex`
 
-One built-in callback and two custom macros work together:
+**Create `lib/ignite/router.ex`.** One built-in callback and two custom macros work together:
 
 1. **`__using__/1`** — a special Elixir callback macro, automatically invoked when someone writes `use Ignite.Router`. Every module that wants to support `use` must define this.
 2. **`get/2`** — a custom macro we define. Generates a `dispatch` clause for each GET route.
@@ -147,7 +147,7 @@ defp dispatch(conn), do: %Conn{conn | status: 404, ...}
 
 ### `lib/my_app/router.ex`
 
-This is what a **user** of the framework writes:
+**Create `lib/my_app/router.ex`.** This is what a **user** of the framework writes:
 
 ```elixir
 defmodule MyApp.Router do
@@ -164,7 +164,7 @@ Clean, declarative, and readable. The macros do all the heavy lifting.
 
 ### `lib/my_app/controllers/welcome_controller.ex`
 
-Controllers receive a conn and return a modified conn:
+**Create `lib/my_app/controllers/welcome_controller.ex`.** Controllers receive a conn and return a modified conn:
 
 ```elixir
 def index(conn) do
@@ -178,7 +178,7 @@ the `resp_body` field updated. The original conn is never modified
 
 ### Updated `lib/ignite/server.ex`
 
-The server now follows: **Parse → Route → Respond**:
+**Update `lib/ignite/server.ex`** — replace the `serve/1` function with the version below. The server now follows: **Parse → Route → Respond**:
 
 ```elixir
 conn = Ignite.Parser.parse(client_socket)    # 1. Parse
@@ -228,6 +228,19 @@ iex> Ignite.Server.start()
 4. Visit http://localhost:4000/anything → "404 — Not Found"
 
 The router pattern-matches each request to the right controller automatically.
+
+## File Checklist
+
+After this step, your project should have these files:
+
+| File | Status | Purpose |
+|------|--------|---------|
+| `lib/ignite/router.ex` | **New** | Router DSL with `get` macro and `finalize_routes` |
+| `lib/my_app/router.ex` | **New** | App-level route definitions |
+| `lib/my_app/controllers/welcome_controller.ex` | **New** | Welcome page controller |
+| `lib/ignite/server.ex` | **Modified** | Now delegates to the router |
+| `lib/ignite/conn.ex` | Unchanged | Conn struct (from Step 2) |
+| `lib/ignite/parser.ex` | Unchanged | HTTP parser (from Step 2) |
 
 ## What's Next
 

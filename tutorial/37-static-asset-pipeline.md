@@ -54,6 +54,8 @@ We use **query string versioning** because:
 
 ### 1. The Static Module
 
+**Create `lib/ignite/static.ex`:**
+
 ```elixir
 # lib/ignite/static.ex
 defmodule Ignite.Static do
@@ -131,6 +133,8 @@ end
 
 ### 4. Boot-Time Initialization
 
+**Update `lib/ignite/application.ex`** — call `Ignite.Static.init()` at the top of `start/2`:
+
 ```elixir
 # lib/ignite/application.ex
 def start(_type, _args) do
@@ -146,6 +150,8 @@ end
 `init/1` must run before Cowboy accepts any requests. Since it's called at the top of `start/2`, before `Supervisor.start_link/2`, this is guaranteed.
 
 ### 5. Template Usage
+
+**Update `templates/live.html.eex`** — replace hardcoded asset paths with `static_path/1` calls:
 
 ```html
 <!-- Before: hardcoded, no cache busting -->
@@ -165,6 +171,8 @@ Cowboy's `:cowboy_static` handler ignores query parameters — it serves the fil
 
 ### 6. Controller Convenience
 
+**Update `lib/ignite/controller.ex`** — add a `static_path/1` convenience delegate:
+
 ```elixir
 # lib/ignite/controller.ex
 def static_path(filename) do
@@ -175,6 +183,8 @@ end
 Controllers that `import Ignite.Controller` can call `static_path("app.css")` directly, just like Phoenix's `Routes.static_path(@conn, "/assets/app.css")`.
 
 ### 7. Hot Reloader Integration
+
+**Update `lib/ignite/reloader.ex`** — watch `assets/` directory and rebuild manifest on changes:
 
 ```elixir
 # lib/ignite/reloader.ex — in handle_info(:check, state)
@@ -284,3 +294,11 @@ Phoenix's approach is more production-optimized (filename fingerprinting works w
 | `lib/ignite/controller.ex` | Added `static_path/1` convenience delegate |
 | `templates/live.html.eex` | Use `Ignite.Static.static_path/1` in script tags |
 | `lib/ignite/reloader.ex` | Watch `assets/` directory, rebuild manifest on changes |
+
+## File Checklist
+
+- **New** `lib/ignite/static.ex` — ETS manifest with `init/1`, `rebuild/1`, `static_path/1`
+- **Modified** `lib/ignite/application.ex` — Call `Ignite.Static.init()` at boot
+- **Modified** `lib/ignite/controller.ex` — Added `static_path/1` convenience delegate
+- **Modified** `lib/ignite/reloader.ex` — Watch `assets/` directory, rebuild manifest on changes
+- **Modified** `templates/live.html.eex` — Use `Ignite.Static.static_path/1` in script tags

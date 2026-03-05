@@ -128,6 +128,8 @@ crashes. This leads to simpler, cleaner code.
 
 ### `lib/ignite/server.ex` (Rewritten as GenServer)
 
+**Replace `lib/ignite/server.ex` with** the GenServer-based version shown below.
+
 The server is now split into two parts:
 
 1. **Client API** (`start_link/1`) — how the supervisor starts us
@@ -143,7 +145,9 @@ Key changes:
 ### `mix.exs` (Tell OTP About Our Application)
 
 For the supervisor to start automatically, you must add `mod:` to the
-`application/0` function in `mix.exs`:
+`application/0` function in `mix.exs`.
+
+**Update `mix.exs`** — add `mod: {Ignite.Application, []}` to the `application/0` function:
 
 ```elixir
 def application do
@@ -159,6 +163,8 @@ The `mod:` option tells the BEAM: "When this app starts, call
 automatically.
 
 ### `lib/ignite/application.ex` (The Supervisor)
+
+**Replace `lib/ignite/application.ex` with:**
 
 ```elixir
 defmodule Ignite.Application do
@@ -229,6 +235,25 @@ Process.whereis(Ignite.Server)
 4. Visit http://localhost:4000/ again — it still works!
 
 The server crashed and restarted in milliseconds, with zero user impact.
+
+## File Checklist
+
+All files in the project after completing Step 6:
+
+| File | Status |
+|------|--------|
+| `mix.exs` | **Modified** — added `mod:` to `application/0` |
+| `lib/ignite.ex` | Unchanged |
+| `lib/ignite/application.ex` | **Modified** — now starts `Ignite.Server` under a supervisor |
+| `lib/ignite/server.ex` | **Modified** — rewritten as a GenServer |
+| `lib/ignite/conn.ex` | Unchanged |
+| `lib/ignite/parser.ex` | Unchanged |
+| `lib/ignite/router.ex` | Unchanged |
+| `lib/ignite/controller.ex` | Unchanged |
+| `lib/my_app/router.ex` | Unchanged |
+| `lib/my_app/controllers/welcome_controller.ex` | Unchanged |
+| `lib/my_app/controllers/user_controller.ex` | Unchanged |
+| `templates/` | Unchanged |
 
 ## What's Next
 

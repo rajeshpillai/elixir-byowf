@@ -84,10 +84,14 @@ function applyUpdate(container, newHtml) {
 
 ### `assets/morphdom.min.js` (New)
 
+**Create `assets/morphdom.min.js`:**
+
 The morphdom library (~12KB minified). Loaded via a `<script>` tag
 before `ignite.js` so it's available as a global function.
 
 ### Updated `assets/ignite.js`
+
+**Replace `assets/ignite.js` with:**
 
 New `applyUpdate()` function replaces the old `innerHTML` assignment:
 
@@ -112,6 +116,8 @@ function applyUpdate(container, newHtml) {
 ```
 
 ### Updated `templates/live.html.eex`
+
+**Replace `templates/live.html.eex` with:**
 
 Loads morphdom before ignite.js:
 ```html
@@ -158,6 +164,14 @@ Loads morphdom before ignite.js:
 6. The real benefit shows when you have inputs. If you add a text
    input to your LiveView template, typing in it won't be interrupted
    by server updates.
+
+## File Checklist
+
+| File | Status |
+|------|--------|
+| `assets/morphdom.min.js` | **New** |
+| `assets/ignite.js` | **Modified** |
+| `templates/live.html.eex` | **Modified** |
 
 ## The Framework Is Complete!
 

@@ -32,6 +32,8 @@ Stops monitoring a process. The `[:flush]` option also removes any pending `:DOW
 - `presences`: `%{topic => %{key => %{pid, meta, ref}}}` — who's tracked where
 - `refs`: `%{monitor_ref => {topic, key}}` — reverse lookup for `:DOWN` handling
 
+**Create `lib/ignite/presence.ex`:**
+
 ```elixir
 # lib/ignite/presence.ex
 defmodule Ignite.Presence do
@@ -99,7 +101,7 @@ defmodule Ignite.Presence do
 
 ### 2. Process Monitoring
 
-When `track/3` is called, the GenServer monitors the caller:
+When `track/3` is called, the GenServer monitors the caller. Add these private functions and the `:DOWN` handler to the same `lib/ignite/presence.ex` file:
 
 ```elixir
   defp do_track(state, topic, key, meta, pid) do
@@ -170,7 +172,9 @@ Note: For `:DOWN` handling, we send directly rather than using `PubSub.broadcast
 
 ### 4. Supervision
 
-Presence starts after PubSub in the supervision tree:
+Presence starts after PubSub in the supervision tree.
+
+**Update `lib/ignite/application.ex`** — add `Ignite.Presence` to the children list after `Ignite.PubSub`:
 
 ```elixir
 # lib/ignite/application.ex
@@ -183,7 +187,7 @@ children = [
 
 ### 5. Demo: Who's Online
 
-The `PresenceDemoLive` view:
+**Create `lib/my_app/live/presence_demo_live.ex`** with the `PresenceDemoLive` module. The key parts:
 
 ```elixir
 def mount(_params, _session) do
@@ -253,3 +257,11 @@ Tab 2 closes
 | `lib/my_app/live/presence_demo_live.ex` | **New** — "Who's Online" demo LiveView |
 | `lib/my_app/router.ex` | Added `GET /presence` route |
 | `lib/my_app/controllers/welcome_controller.ex` | Added `presence/1` action + link on index |
+
+## File Checklist
+
+- [ ] `lib/ignite/presence.ex` — **New**
+- [ ] `lib/ignite/application.ex` — **Modified** (add `Ignite.Presence` to children)
+- [ ] `lib/my_app/live/presence_demo_live.ex` — **New**
+- [ ] `lib/my_app/router.ex` — **Modified** (add `GET /presence` route)
+- [ ] `lib/my_app/controllers/welcome_controller.ex` — **Modified** (add `presence/1` action + link)

@@ -55,7 +55,7 @@ end
 
 ## Step 1: The LiveComponent Behaviour
 
-Create `lib/ignite/live_component.ex`:
+**Create `lib/ignite/live_component.ex`:**
 
 ```elixir
 defmodule Ignite.LiveComponent do
@@ -81,7 +81,7 @@ Key differences from `Ignite.LiveView`:
 
 ## Step 2: The `live_component/3` Helper
 
-In `lib/ignite/live_view.ex`, we add a function that LiveViews call during render:
+**Update `lib/ignite/live_view.ex`** — add the `live_component/3` function and the `collect_components/1` helper:
 
 ```elixir
 def live_component(parent_assigns, module, opts) do
@@ -136,7 +136,7 @@ This pattern is similar to what Phoenix LiveView does internally — it uses pro
 
 ## Step 3: Handler Event Routing
 
-The WebSocket handler needs to detect component events and route them to the right module. Component events use the format `"component_id:event_name"`:
+**Update `lib/ignite/live_view/handler.ex`** — add a `handle_possible_component_event/3` function to detect and route component events using the `"component_id:event_name"` format:
 
 ```elixir
 defp handle_possible_component_event(event, params, state) do
@@ -166,7 +166,7 @@ After updating component state, the handler re-renders the **entire parent LiveV
 
 ## Step 4: JavaScript Event Namespacing
 
-On the client side, we add a `resolveEvent` function that checks if a clicked element is inside a component wrapper:
+**Update `assets/ignite.js`** — add a `resolveEvent` function that prefixes event names with the component ID when the target is inside a component wrapper:
 
 ```javascript
 function resolveEvent(eventName, target) {
@@ -186,7 +186,7 @@ This is called for all event types (click, change, submit). A button inside `<di
 
 ## Step 5: Building a Component
 
-Here's a complete notification badge component:
+**Create `lib/my_app/live/components/notification_badge.ex`:**
 
 ```elixir
 defmodule MyApp.Components.NotificationBadge do
@@ -226,7 +226,7 @@ end
 
 ## Step 6: A Reusable Toggle Button
 
-`lib/my_app/live/components/toggle_button.ex` — a simple on/off switch:
+**Create `lib/my_app/live/components/toggle_button.ex`:**
 
 ```elixir
 defmodule MyApp.Components.ToggleButton do
@@ -260,6 +260,8 @@ end
 ```
 
 ## Step 7: Using Components in a LiveView
+
+**Create `lib/my_app/live/components_demo_live.ex`:**
 
 ```elixir
 defmodule MyApp.ComponentsDemoLive do
@@ -339,6 +341,21 @@ iex -S mix
 - Click "Dismiss" on a notification — only that badge updates
 - Toggle switches — each toggle has independent state
 - The parent and all components coexist with isolated state
+
+## File Checklist
+
+| File | Status |
+|------|--------|
+| `lib/ignite/live_component.ex` | **New** |
+| `lib/ignite/live_view.ex` | **Modified** — added `live_component/3` and `collect_components/1` |
+| `lib/ignite/live_view/handler.ex` | **Modified** — added component event routing |
+| `lib/ignite/application.ex` | **Modified** — no functional change, cleanup only |
+| `assets/ignite.js` | **Modified** — added `resolveEvent` for component event namespacing |
+| `lib/my_app/live/components/notification_badge.ex` | **New** |
+| `lib/my_app/live/components/toggle_button.ex` | **New** |
+| `lib/my_app/live/components_demo_live.ex` | **New** |
+| `lib/my_app/controllers/welcome_controller.ex` | **Modified** — added link to components demo |
+| `lib/my_app/router.ex` | **Modified** — added `/components` route |
 
 ## What's Next?
 

@@ -73,7 +73,7 @@ worrying about error handling.
 
 ### Updated `lib/ignite/adapters/cowboy.ex`
 
-The `init/2` function now wraps the entire request pipeline in try/rescue:
+**Update `lib/ignite/adapters/cowboy.ex`** — replace the `init/2` function and add `error_page/1` and `html_escape/1`:
 
 ```elixir
 def init(req, state) do
@@ -127,12 +127,18 @@ page that hides the exception details.
 
 ### Test Route
 
-We added a `/crash` route that intentionally raises:
+**Update `lib/my_app/controllers/welcome_controller.ex`** — add this `crash/1` function:
 
 ```elixir
 def crash(_conn) do
   raise "This is a test crash!"
 end
+```
+
+**Update `lib/my_app/router.ex`** — add a route for the crash test:
+
+```elixir
+get "/crash", to: MyApp.WelcomeController, action: :crash
 ```
 
 ## Try It Out
@@ -153,6 +159,27 @@ You should see a styled error page with the message "This is a test crash!"
 
 4. Visit http://localhost:4000/ — the server is still running!
    The crash was contained to that single request.
+
+## File Checklist
+
+All files in the project after completing Step 11:
+
+| File | Status |
+|------|--------|
+| `mix.exs` | Unchanged |
+| `mix.lock` | Unchanged |
+| `lib/ignite.ex` | Unchanged |
+| `lib/ignite/application.ex` | Unchanged |
+| `lib/ignite/server.ex` | Unchanged |
+| `lib/ignite/conn.ex` | Unchanged |
+| `lib/ignite/parser.ex` | Unchanged |
+| `lib/ignite/router.ex` | Unchanged |
+| `lib/ignite/controller.ex` | Unchanged |
+| `lib/ignite/adapters/cowboy.ex` | **Modified** — added `try/rescue` error handling, `error_page/1`, and `html_escape/1` |
+| `lib/my_app/router.ex` | **Modified** — added `/crash` test route |
+| `lib/my_app/controllers/welcome_controller.ex` | **Modified** — added `crash/1` action |
+| `lib/my_app/controllers/user_controller.ex` | Unchanged |
+| `templates/profile.html.eex` | Unchanged |
 
 ## What's Next
 

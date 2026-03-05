@@ -90,7 +90,7 @@ Path.join("templates", "profile.html.eex")
 
 ### Updated `lib/ignite/controller.ex`
 
-New `render/3` function:
+**Update `lib/ignite/controller.ex`** — add this `render/3` function:
 
 ```elixir
 def render(conn, template_name, assigns \\ []) do
@@ -107,7 +107,7 @@ The flow:
 
 ### `templates/profile.html.eex`
 
-A simple HTML page that uses assigns:
+**Create `templates/profile.html.eex`:**
 
 ```html
 <h1>User Profile</h1>
@@ -121,6 +121,8 @@ The `@name` syntax is EEx's built-in shortcut — it expands to `assigns[:name]`
 This is the same syntax Phoenix uses in its templates.
 
 ### Updated UserController
+
+**Update `lib/my_app/controllers/user_controller.ex`** — replace the `show/1` function with:
 
 ```elixir
 def show(conn) do
@@ -163,6 +165,25 @@ You should see a styled HTML page with:
 3. Right-click → "View Page Source" to see the full HTML that was generated.
 
 4. Visit http://localhost:4000/users/99 — same page, but ID shows 99.
+
+## File Checklist
+
+All files in the project after completing Step 7:
+
+| File | Status |
+|------|--------|
+| `mix.exs` | Unchanged |
+| `lib/ignite.ex` | Unchanged |
+| `lib/ignite/application.ex` | Unchanged |
+| `lib/ignite/server.ex` | Unchanged |
+| `lib/ignite/conn.ex` | Unchanged |
+| `lib/ignite/parser.ex` | Unchanged |
+| `lib/ignite/router.ex` | Unchanged |
+| `lib/ignite/controller.ex` | **Modified** — added `render/3` function |
+| `lib/my_app/router.ex` | Unchanged |
+| `lib/my_app/controllers/welcome_controller.ex` | Unchanged |
+| `lib/my_app/controllers/user_controller.ex` | **Modified** — `show/1` now uses `render/3` |
+| `templates/profile.html.eex` | **New** — EEx template for user profile page |
 
 ## What's Next
 

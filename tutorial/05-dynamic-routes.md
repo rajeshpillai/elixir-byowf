@@ -108,7 +108,7 @@ The `["users", id]` pattern matches any two-segment path starting with
 
 ### Updated Router (`lib/ignite/router.ex`)
 
-Key changes:
+**Update `lib/ignite/router.ex`** — add the `build_route/4`, `build_match_pattern/1`, and `build_params_map/1` private functions, update `__using__/1` so `call/1` splits the path into segments, change `dispatch` to accept two arguments, and update `finalize_routes/0` accordingly. Key changes:
 
 1. **`call/1` splits the path** into segments before dispatching:
    ```elixir
@@ -137,7 +137,9 @@ Key changes:
 6. **`finalize_routes/0`** also changes — the catch-all is now
    `dispatch(conn, _segments)` (two args) instead of `dispatch(conn)`
 
-### New UserController (`lib/my_app/controllers/user_controller.ex`)
+### New UserController
+
+**Create `lib/my_app/controllers/user_controller.ex`:**
 
 ```elixir
 def show(conn) do
@@ -147,6 +149,8 @@ end
 ```
 
 ### Updated Router (`lib/my_app/router.ex`)
+
+**Update `lib/my_app/router.ex`** — add the following route:
 
 ```elixir
 get "/users/:id", to: MyApp.UserController, action: :show
@@ -191,6 +195,21 @@ iex> Ignite.Server.start()
 5. The static routes still work:
    - http://localhost:4000/ → "Welcome to Ignite!"
    - http://localhost:4000/hello → "Hello from the Controller!"
+
+## File Checklist
+
+After this step, your project should have these files:
+
+| File | Status | Purpose |
+|------|--------|---------|
+| `lib/ignite/router.ex` | **Modified** | Now supports dynamic segments (`:id`) with `build_route/4` |
+| `lib/my_app/controllers/user_controller.ex` | **New** | Handles `/users/:id` with params |
+| `lib/my_app/router.ex` | **Modified** | Added `/users/:id` route |
+| `lib/ignite/conn.ex` | Unchanged | Conn struct (from Step 2) |
+| `lib/ignite/parser.ex` | Unchanged | HTTP parser (from Step 2) |
+| `lib/ignite/server.ex` | Unchanged | TCP server (from Step 4) |
+| `lib/ignite/controller.ex` | Unchanged | Response helpers (from Step 4) |
+| `lib/my_app/controllers/welcome_controller.ex` | Unchanged | Welcome controller (from Step 4) |
 
 ## What's Next
 

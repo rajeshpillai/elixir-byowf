@@ -45,7 +45,7 @@ config :ignite, Ignite.Repo,
 
 ### 1. Dependencies
 
-Two new packages in `mix.exs`:
+**Update `mix.exs`** — add `ecto_sql` and `ecto_sqlite3` to the `deps` function:
 
 ```elixir
 defp deps do
@@ -61,6 +61,8 @@ end
 `ecto_sql` provides the core infrastructure (Repo, migrations, query DSL). `ecto_sqlite3` is the adapter that talks to SQLite via `exqlite` (a NIF binding to SQLite3).
 
 ### 2. Configuration
+
+**Create `config/config.exs`:**
 
 ```elixir
 # config/config.exs
@@ -78,6 +80,8 @@ SQLite only needs a file path — no hostname, port, username, or password. The 
 
 ### 3. The Repo
 
+**Create `lib/my_app/repo.ex`:**
+
 ```elixir
 # lib/my_app/repo.ex
 defmodule MyApp.Repo do
@@ -90,6 +94,8 @@ end
 `use Ecto.Repo` generates all the query functions: `all/1`, `get/2`, `insert/1`, `update/1`, `delete/1`, etc. The `otp_app: :ignite` tells Ecto to read config from `Application.get_env(:ignite, MyApp.Repo)`.
 
 ### 4. The User Schema & Changeset
+
+**Create `lib/my_app/schemas/user.ex`:**
 
 ```elixir
 # lib/my_app/schemas/user.ex
@@ -119,6 +125,8 @@ end
 
 ### 5. The Migration
 
+**Create `priv/repo/migrations/20260304000001_create_users.exs`:**
+
 ```elixir
 # priv/repo/migrations/20260304000001_create_users.exs
 defmodule MyApp.Repo.Migrations.CreateUsers do
@@ -140,6 +148,8 @@ The `change/0` function is reversible — Ecto can derive the "down" migration a
 
 ### 6. Supervision Tree
 
+**Update `lib/ignite/application.ex`** — add `MyApp.Repo` as the first child in the supervision tree:
+
 ```elixir
 # lib/ignite/application.ex
 children = [
@@ -154,7 +164,7 @@ The Repo must start before Cowboy so database connections are available when the
 
 ### 7. Controller Updates
 
-Each action moves from hardcoded data to real Ecto queries:
+**Update `lib/my_app/controllers/user_controller.ex`** — rewrite all 5 actions to use Ecto queries instead of hardcoded data:
 
 **index** — fetch all users:
 ```elixir
@@ -318,3 +328,15 @@ Ecto is the same library — the integration pattern is identical to Phoenix.
 | `templates/profile.html.eex` | Added email field |
 | `lib/my_app/controllers/welcome_controller.ex` | Added email input to create form |
 | `.gitignore` | Added `*.db` patterns |
+
+## File Checklist
+
+- [ ] `mix.exs` — **Modified** (add `ecto_sql` and `ecto_sqlite3` deps)
+- [ ] `config/config.exs` — **New**
+- [ ] `lib/my_app/repo.ex` — **New**
+- [ ] `lib/my_app/schemas/user.ex` — **New**
+- [ ] `priv/repo/migrations/20260304000001_create_users.exs` — **New**
+- [ ] `lib/ignite/application.ex` — **Modified** (add `MyApp.Repo` to children)
+- [ ] `lib/my_app/controllers/user_controller.ex` — **Modified** (rewrite actions to use Ecto)
+- [ ] `lib/my_app/controllers/welcome_controller.ex` — **Modified** (add email input to create form)
+- [ ] `templates/profile.html.eex` — **Modified** (add email field)

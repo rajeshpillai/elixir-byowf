@@ -46,6 +46,8 @@ We use **nonces** — the same approach recommended by Google and used in produc
 
 ### 1. The CSP Module
 
+**Create `lib/ignite/csp.ex`:**
+
 ```elixir
 # lib/ignite/csp.ex
 defmodule Ignite.CSP do
@@ -145,6 +147,8 @@ Forms can only submit to the same origin. Prevents form action hijacking.
 
 ### 3. Router Plug
 
+**Update `lib/my_app/router.ex`** — add `plug :set_csp_headers` and its implementation:
+
 ```elixir
 # lib/my_app/router.ex
 plug :set_csp_headers
@@ -157,6 +161,8 @@ end
 The plug runs before CSRF validation, so the nonce is available to all controllers.
 
 ### 4. Controller Helpers
+
+**Update `lib/ignite/controller.ex`** — add `csp_nonce/1` and `csp_script_tag/2` helpers:
 
 ```elixir
 # lib/ignite/controller.ex
@@ -276,3 +282,10 @@ Phoenix doesn't include CSP by default — developers add it themselves. Our imp
 | `lib/ignite/controller.ex` | Added `csp_nonce/1` and `csp_script_tag/2` helpers |
 | `lib/my_app/router.ex` | Added `plug :set_csp_headers` with implementation |
 | `lib/my_app/controllers/welcome_controller.ex` | Added `nonce="..."` to inline `<script>` tag |
+
+## File Checklist
+
+- [ ] `lib/ignite/csp.ex` — **New**
+- [ ] `lib/ignite/controller.ex` — **Modified** (add `csp_nonce/1` and `csp_script_tag/2`)
+- [ ] `lib/my_app/router.ex` — **Modified** (add `plug :set_csp_headers`)
+- [ ] `lib/my_app/controllers/welcome_controller.ex` — **Modified** (add nonce to inline scripts)

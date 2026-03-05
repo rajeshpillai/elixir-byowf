@@ -55,6 +55,8 @@ We use **runtime introspection**. The router already accumulates `{method, path,
 
 The router's `@before_compile` hook already iterates over `@route_info` to generate path helpers. We add a `__routes__/0` function in the same hook.
 
+**Update `lib/ignite/router.ex`** — modify the `__before_compile__/1` macro to also generate `__routes__/0`:
+
 ```elixir
 # lib/ignite/router.ex — inside __before_compile__/1
 defmacro __before_compile__(env) do
@@ -96,6 +98,8 @@ MyApp.Router.__routes__()
 ```
 
 ### 2. The Mix Task
+
+**Create `lib/mix/tasks/ignite.routes.ex`:**
 
 ```elixir
 # lib/mix/tasks/ignite.routes.ex
@@ -266,3 +270,8 @@ Phoenix's `mix phx.routes` also displays the generated path helper name (e.g., `
 |------|--------|
 | `lib/ignite/router.ex` | Added `__routes__/0` generation in `@before_compile` hook |
 | `lib/mix/tasks/ignite.routes.ex` | **New** — Mix task for printing route table |
+
+## File Checklist
+
+- [ ] `lib/ignite/router.ex` — **Modified** (add `__routes__/0` generation in `__before_compile__`)
+- [ ] `lib/mix/tasks/ignite.routes.ex` — **New**

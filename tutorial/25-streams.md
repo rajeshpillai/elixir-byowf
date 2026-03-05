@@ -34,6 +34,8 @@ The entire `messages_html` string is one entry in `dynamics[]`. Adding one new m
 
 ### Stream API
 
+**Update `lib/ignite/live_view.ex`** — add the `stream`, `stream_insert`, and `stream_delete` functions:
+
 ```elixir
 # Initialize a stream with a render function
 assigns = stream(assigns, :events, initial_items,
@@ -57,6 +59,8 @@ assigns = stream(assigns, :events, new_items, reset: true)
 ```
 
 ### The `%Stream{}` Struct
+
+**Create `lib/ignite/live_view/stream.ex`:**
 
 ```elixir
 defstruct [
@@ -150,7 +154,7 @@ The container starts empty. Stream operations populate and manage its children. 
 
 ### Frontend Changes
 
-The JavaScript client handles stream operations after morphdom updates:
+**Update `assets/ignite.js`** — add the `applyStreamOps` function and call it after morphdom updates:
 
 ```javascript
 function applyStreamOps(data) {
@@ -205,6 +209,8 @@ Stream operations are only included in the payload when a LiveView uses streams.
 ## Using It
 
 ### The StreamDemoLive Example
+
+**Create `lib/my_app/live/stream_demo_live.ex`:**
 
 ```elixir
 defmodule MyApp.StreamDemoLive do
@@ -286,6 +292,19 @@ The savings grow linearly with list size. Stream operations are always O(1) rega
 - **Functional accumulation**: Each `stream_insert` call returns new assigns with the operation appended. The handler drains all accumulated operations in one batch via `extract_stream_ops/1`.
 
 - **Separation of concerns**: The `render_fn` stored in the stream struct cleanly separates "what an item looks like" (defined once in mount) from "when items are added" (handle_event/handle_info). The handler orchestrates the rendering without knowing about the item structure.
+
+## File Checklist
+
+| File | Status |
+|------|--------|
+| `lib/ignite/live_view/stream.ex` | **New** — `%Stream{}` struct and stream operations |
+| `lib/my_app/live/stream_demo_live.ex` | **New** — demo LiveView using streams |
+| `lib/ignite/live_view.ex` | **Modified** — added `stream`, `stream_insert`, `stream_delete` API |
+| `lib/ignite/live_view/handler.ex` | **Modified** — extract and send stream ops in payloads |
+| `lib/ignite/application.ex` | **Modified** — register StreamDemoLive route |
+| `lib/my_app/router.ex` | **Modified** — added `/streams` route |
+| `lib/my_app/controllers/welcome_controller.ex` | **Modified** — added streams link |
+| `assets/ignite.js` | **Modified** — added `applyStreamOps` for client-side stream handling |
 
 ## How Phoenix Does It
 

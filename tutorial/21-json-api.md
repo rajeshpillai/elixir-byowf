@@ -23,7 +23,7 @@ Similarly, when clients POST JSON bodies, our adapter stores the raw string as `
 
 ### 1. `json/3` Controller Helper
 
-We add a `json/3` function to `Ignite.Controller` that follows the same pattern as `text/3` and `html/3`:
+**Update `lib/ignite/controller.ex`** — add the `json/3` function:
 
 ```elixir
 def json(conn, data, status \\ 200) do
@@ -44,7 +44,7 @@ end
 
 ### 2. JSON Body Parsing
 
-In `Ignite.Adapters.Cowboy`, we add a new clause to `parse_body/2`:
+**Update `lib/ignite/adapters/cowboy.ex`** — add a new `parse_body/2` clause for JSON content type:
 
 ```elixir
 defp parse_body(body, "application/json" <> _) when byte_size(body) > 0 do
@@ -67,6 +67,8 @@ The `<> _` in the pattern match handles content types with extra parameters like
 
 ### API Controller
 
+**Create `lib/my_app/controllers/api_controller.ex`:**
+
 ```elixir
 defmodule MyApp.ApiController do
   import Ignite.Controller
@@ -86,6 +88,8 @@ end
 ```
 
 ### Router
+
+**Update `lib/my_app/router.ex`** — add the API routes:
 
 ```elixir
 get "/api/status", to: MyApp.ApiController, action: :status
@@ -127,3 +131,13 @@ Response:        200 OK  Content-Type: application/json
 - **Pattern matching on strings**: `"application/json" <> _` matches any string starting with `"application/json"`, ignoring trailing characters like `; charset=utf-8`
 - **Guard clauses**: `when byte_size(body) > 0` prevents parsing empty bodies
 - **`Jason.decode` vs `Jason.decode!`**: The non-bang version returns `{:ok, result}` or `{:error, reason}` — perfect for graceful error handling. The bang version raises on error — good for encoding where we control the input.
+
+## File Checklist
+
+| File | Status |
+|------|--------|
+| `lib/ignite/controller.ex` | **Modified** — added `json/3` response helper |
+| `lib/ignite/adapters/cowboy.ex` | **Modified** — added JSON body parsing in `parse_body/2` |
+| `lib/my_app/controllers/api_controller.ex` | **New** |
+| `lib/my_app/controllers/welcome_controller.ex` | **Modified** — added link to API status page |
+| `lib/my_app/router.ex` | **Modified** — added `/api/status` and `/api/echo` routes |

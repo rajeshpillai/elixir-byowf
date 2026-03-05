@@ -77,8 +77,9 @@ We use it to track which position changed.
 
 Elixir's EEx module supports custom "engines" that control how templates are compiled. The default engine produces a concatenated string. Our engine produces a `%Rendered{}` struct.
 
-First, define the struct that holds the split template in
-`lib/ignite/live_view/rendered.ex`:
+First, define the struct that holds the split template.
+
+**Create `lib/ignite/live_view/rendered.ex`:**
 
 ```elixir
 defmodule Ignite.LiveView.Rendered do
@@ -86,7 +87,9 @@ defmodule Ignite.LiveView.Rendered do
 end
 ```
 
-Then the engine in `lib/ignite/live_view/eex_engine.ex`:
+Then the engine.
+
+**Create `lib/ignite/live_view/eex_engine.ex`:**
 
 ```elixir
 defmodule Ignite.LiveView.EExEngine do
@@ -142,6 +145,8 @@ Result: `statics = ["<h1>Count: ", "</h1>"]`, `dynamics = [to_string(assigns.cou
 
 ### The `sigil_L` Macro
 
+**Update `lib/ignite/live_view.ex`** — add the `sigil_L` macro to the module:
+
 ```elixir
 defmacro sigil_L({:<<>>, _meta, [template]}, _modifiers) do
   EEx.compile_string(template, engine: Ignite.LiveView.EExEngine)
@@ -156,7 +161,7 @@ This calls `EEx.compile_string/2` at compile time with our custom engine. The re
 
 ### Sparse Diffing
 
-The engine compares old and new dynamics index-by-index:
+**Update `lib/ignite/live_view/engine.ex`** — replace the `diff` function with index-by-index comparison:
 
 ```elixir
 def diff(old_dynamics, new_dynamics) do
@@ -195,7 +200,7 @@ end
 
 ### Frontend Changes
 
-The JavaScript client stores both `statics` and `dynamics`. On sparse updates, it patches individual indices:
+**Update `assets/ignite.js`** — update the WebSocket message handler to support sparse dynamic updates:
 
 ```javascript
 if (Array.isArray(data.d)) {
@@ -211,7 +216,9 @@ applyUpdate(el, newHtml);      // morphdom patches the DOM
 
 ### Backward Compatibility
 
-If a LiveView's `render/1` returns a plain string (not `%Rendered{}`), the engine wraps it as a single dynamic — exactly like before:
+If a LiveView's `render/1` returns a plain string (not `%Rendered{}`), the engine wraps it as a single dynamic — exactly like before.
+
+**Update `lib/ignite/live_view/handler.ex`** — add a `normalize` clause for plain strings:
 
 ```elixir
 defp normalize(html) when is_binary(html) do
@@ -225,7 +232,9 @@ This means existing LiveViews (like RegistrationLive with conditional branches) 
 
 ### Convert a LiveView to `~L`
 
-Replace `#{}` interpolation with `<%= %>` and add `~L` prefix:
+Replace `#{}` interpolation with `<%= %>` and add `~L` prefix.
+
+**Update `lib/my_app/live/counter_live.ex`** — switch `render/1` to use the `~L` sigil:
 
 ```elixir
 defmodule MyApp.CounterLive do
@@ -309,6 +318,22 @@ Schedulers (index 6) and OTP release (index 7) never change → never sent.
 - **Sigils as macros**: A sigil like `~L"""..."""` is just syntactic sugar for calling `sigil_L/2`. Since it's a macro, we can do arbitrary compile-time work — in our case, compiling an EEx template with a custom engine.
 
 - **Sparse data structures**: Instead of always sending a list, we send a map with only the changed keys. This is a common pattern in real-time systems — send the diff, not the snapshot.
+
+## File Checklist
+
+| File | Status |
+|------|--------|
+| `lib/ignite/live_view/rendered.ex` | **New** — `%Rendered{}` struct for statics/dynamics |
+| `lib/ignite/live_view/eex_engine.ex` | **New** — custom EEx engine producing `%Rendered{}` |
+| `lib/ignite/live_view.ex` | **Modified** — added `sigil_L` macro |
+| `lib/ignite/live_view/engine.ex` | **Modified** — sparse index-by-index diffing |
+| `lib/ignite/live_view/handler.ex` | **Modified** — handle `%Rendered{}` and plain string normalization |
+| `assets/ignite.js` | **Modified** — sparse dynamic updates on the client |
+| `lib/my_app/live/counter_live.ex` | **Modified** — converted to `~L` sigil |
+| `lib/my_app/live/dashboard_live.ex` | **Modified** — converted to `~L` sigil |
+| `lib/my_app/live/hooks_demo_live.ex` | **Modified** — converted to `~L` sigil |
+| `lib/my_app/live/shared_counter_live.ex` | **Modified** — converted to `~L` sigil |
+| `lib/my_app/controllers/welcome_controller.ex` | **Modified** — updated links/references |
 
 ## How Phoenix Does It
 

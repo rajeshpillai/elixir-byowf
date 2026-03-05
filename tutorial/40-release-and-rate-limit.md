@@ -33,14 +33,18 @@ The `mix.exs` line `start_permanent: Mix.env() == :prod` is fine — it runs at 
 
 ### The Fix: `config_env()` + Application Config
 
-We store the environment at compile time using `config_env()`:
+We store the environment at compile time using `config_env()`.
+
+**Update `config/config.exs`** — add `env: config_env()`:
 
 ```elixir
 # config/config.exs
 config :ignite, env: config_env()
 ```
 
-Then read it at runtime:
+Then read it at runtime.
+
+**Update `lib/ignite/application.ex`** and **Update `lib/ignite/debug_page.ex`** — replace `Mix.env()` with config lookup:
 
 ```elixir
 # Instead of Mix.env() == :dev
@@ -51,7 +55,9 @@ This works everywhere — in `iex -S mix`, in `MIX_ENV=prod mix run`, and in rel
 
 ### `config/runtime.exs`
 
-This file runs at boot time in both `iex -S mix` and releases. It reads environment variables:
+This file runs at boot time in both `iex -S mix` and releases. It reads environment variables.
+
+**Create `config/runtime.exs`:**
 
 ```elixir
 if config_env() == :prod do
@@ -80,7 +86,9 @@ Optional:
 
 ### Configurable Session Secret
 
-The session module previously had a hardcoded `@secret`. Now it reads from config with a dev fallback:
+The session module previously had a hardcoded `@secret`. Now it reads from config with a dev fallback.
+
+**Update `lib/ignite/session.ex`** — replace hardcoded secret with configurable secret:
 
 ```elixir
 @default_secret "ignite-secret-key-change-in-prod-min-64-bytes-long-for-security!!"
@@ -94,7 +102,9 @@ In dev/test, the default is used automatically. In production (via `runtime.exs`
 
 ### Release Migration Tasks
 
-In a release, `mix ecto.migrate` doesn't exist. `Ignite.Release` provides the same functionality:
+In a release, `mix ecto.migrate` doesn't exist. `Ignite.Release` provides the same functionality.
+
+**Create `lib/ignite/release.ex`:**
 
 ```elixir
 # lib/ignite/release.ex
@@ -133,7 +143,7 @@ bin/ignite eval "Ignite.Release.rollback(MyApp.Repo, 20240301120000)"
 
 ### Release Configuration
 
-Added to `mix.exs`:
+**Update `mix.exs`** — add release configuration:
 
 ```elixir
 releases: [
@@ -166,7 +176,7 @@ Why sliding window over fixed buckets? Fixed windows have a burst problem at bou
 
 ### Client IP Extraction
 
-The Cowboy adapter now extracts the peer IP:
+**Update `lib/ignite/adapters/cowboy.ex`** — extract the peer IP:
 
 ```elixir
 {peer_ip_tuple, _peer_port} = :cowboy_req.peer(req)
@@ -206,6 +216,8 @@ content-type: application/json
 ```
 
 ### The RateLimiter GenServer
+
+**Create `lib/ignite/rate_limiter.ex`:**
 
 ```elixir
 # lib/ignite/rate_limiter.ex
@@ -258,6 +270,8 @@ match_spec = [{{:_, :"$1"}, [{:<, :"$1", cutoff}], [true]}]
 This prevents unbounded memory growth. The cleanup runs every `window_ms` milliseconds (or every 60 seconds, whichever is smaller).
 
 ### Configuration
+
+**Update `config/config.exs`** — add rate limit defaults:
 
 ```elixir
 # config/config.exs (defaults)
@@ -387,3 +401,18 @@ PORT=4000 \
 | `lib/my_app/router.ex` | Added `plug :rate_limit` as first middleware |
 | `mix.exs` | Added release configuration |
 | `lib/ignite/release.ex` | **New** — release migration tasks |
+
+## File Checklist
+
+- **New** `config/runtime.exs` — Runtime env var config for releases
+- **New** `lib/ignite/rate_limiter.ex` — ETS sliding window rate limiter with GenServer cleanup
+- **New** `lib/ignite/release.ex` — Release migration tasks
+- **Modified** `config/config.exs` — Added `env: config_env()` and `rate_limit` config
+- **Modified** `config/prod.exs` — Updated DB config comment
+- **Modified** `lib/ignite/adapters/cowboy.ex` — Extract peer IP via `:cowboy_req.peer/1`
+- **Modified** `lib/ignite/application.ex` — Fixed `Mix.env()`, added RateLimiter to supervision tree
+- **Modified** `lib/ignite/controller.ex` — Added 429 status text
+- **Modified** `lib/ignite/debug_page.ex` — Fixed `Mix.env()` to use config-based environment check
+- **Modified** `lib/ignite/session.ex` — Configurable secret key (reads from config)
+- **Modified** `lib/my_app/router.ex` — Added `plug :rate_limit` as first middleware
+- **Modified** `mix.exs` — Added release configuration
