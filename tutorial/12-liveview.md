@@ -95,6 +95,26 @@ Read it as: "`mount` takes two maps and must return `{:ok, map}`. Functions endi
 
 **Create `lib/ignite/live_view.ex`:**
 
+```elixir
+defmodule Ignite.LiveView do
+  @doc "Called when the LiveView process starts. Returns initial assigns."
+  @callback mount(params :: map(), session :: map()) :: {:ok, map()}
+
+  @doc "Called when the browser sends an event (click, form submit, etc.)."
+  @callback handle_event(event :: String.t(), params :: map(), assigns :: map()) ::
+              {:noreply, map()}
+
+  @doc "Returns the HTML string for the current assigns."
+  @callback render(assigns :: map()) :: String.t()
+
+  defmacro __using__(_opts) do
+    quote do
+      @behaviour Ignite.LiveView
+    end
+  end
+end
+```
+
 Defines the three callbacks every LiveView must implement:
 - `mount/2` — initialize state (called once on connect)
 - `handle_event/3` — process browser events (called on each interaction)
@@ -103,6 +123,53 @@ Defines the three callbacks every LiveView must implement:
 ### `lib/ignite/live_view/handler.ex` (WebSocket Handler)
 
 **Create `lib/ignite/live_view/handler.ex`:**
+
+```elixir
+defmodule Ignite.LiveView.Handler do
+  @behaviour :cowboy_websocket
+
+  require Logger
+
+  @impl true
+  def init(req, state) do
+    {:cowboy_websocket, req, state}
+  end
+
+  # On connect: call mount, render, send initial HTML
+  @impl true
+  def websocket_init(state) do
+    view_module = state.view
+
+    case apply(view_module, :mount, [%{}, %{}]) do
+      {:ok, assigns} ->
+        html = apply(view_module, :render, [assigns])
+        Logger.info("[LiveView] Mounted #{inspect(view_module)}")
+        payload = Jason.encode!(%{html: html})
+        {:reply, {:text, payload}, %{view: view_module, assigns: assigns}}
+    end
+  end
+
+  # On event: call handle_event, re-render, send new HTML
+  @impl true
+  def websocket_handle({:text, json}, state) do
+    case Jason.decode!(json) do
+      %{"event" => event, "params" => params} ->
+        case apply(state.view, :handle_event, [event, params, state.assigns]) do
+          {:noreply, new_assigns} ->
+            html = apply(state.view, :render, [new_assigns])
+            payload = Jason.encode!(%{html: html})
+            {:reply, {:text, payload}, %{state | assigns: new_assigns}}
+        end
+    end
+  end
+
+  @impl true
+  def websocket_handle(_frame, state), do: {:ok, state}
+
+  @impl true
+  def websocket_info(_msg, state), do: {:ok, state}
+end
+```
 
 The lifecycle:
 
@@ -120,21 +187,50 @@ The lifecycle:
 **Create `lib/my_app/live/counter_live.ex`:**
 
 ```elixir
-def mount(_params, _session), do: {:ok, %{count: 0}}
+defmodule MyApp.CounterLive do
+  use Ignite.LiveView
 
-def handle_event("increment", _params, assigns) do
-  {:noreply, %{assigns | count: assigns.count + 1}}
-end
+  @impl true
+  def mount(_params, _session), do: {:ok, %{count: 0}}
 
-def render(assigns) do
-  "<h1>Count: #{assigns.count}</h1>
-   <button ignite-click=\"increment\">+1</button>"
+  @impl true
+  def handle_event("increment", _params, assigns) do
+    {:noreply, %{assigns | count: assigns.count + 1}}
+  end
+
+  @impl true
+  def handle_event("decrement", _params, assigns) do
+    {:noreply, %{assigns | count: assigns.count - 1}}
+  end
+
+  @impl true
+  def render(assigns) do
+    """
+    <div id="counter">
+      <h1>Live Counter</h1>
+      <p style="font-size: 3em; margin: 20px 0;">#{assigns.count}</p>
+      <button ignite-click="decrement" style="font-size: 1.5em; padding: 10px 20px;">-</button>
+      <button ignite-click="increment" style="font-size: 1.5em; padding: 10px 20px;">+</button>
+    </div>
+    """
+  end
 end
 ```
 
 ### Application Changes
 
-**Update `lib/ignite/application.ex`** — add a `/live` WebSocket route to the Cowboy dispatch rules.
+**Update `lib/ignite/application.ex`** — add a `/live` WebSocket route to the Cowboy dispatch rules:
+
+```elixir
+dispatch =
+  :cowboy_router.compile([
+    {:_,
+     [
+       {"/live", Ignite.LiveView.Handler, %{view: MyApp.CounterLive}},
+       {"/[...]", Ignite.Adapters.Cowboy, []}
+     ]}
+  ])
+```
 
 Cowboy routing now has two entries:
 - `/live` → `Ignite.LiveView.Handler` (WebSocket)
@@ -142,11 +238,50 @@ Cowboy routing now has two entries:
 
 ### The Host Page
 
-**Update `lib/my_app/controllers/welcome_controller.ex`** — add a `counter` action that serves an HTML page with inline JavaScript.
+**Update `mix.exs`** — add `{:jason, "~> 1.4"}` to the deps list, then run `mix deps.get`.
 
-**Update `lib/my_app/router.ex`** — add a `get "/counter"` route pointing to the new action.
+**Update `lib/my_app/router.ex`** — add a route for the counter page:
 
-**Update `mix.exs`** — add `{:jason, "~> 1.4"}` to the deps list.
+```elixir
+get "/counter", to: MyApp.WelcomeController, action: :counter
+```
+
+**Update `lib/my_app/controllers/welcome_controller.ex`** — add a `counter` action that serves an HTML page with inline JavaScript:
+
+```elixir
+def counter(conn) do
+  html(conn, """
+  <!DOCTYPE html>
+  <html>
+  <head><title>Live Counter</title></head>
+  <body style="font-family: sans-serif; text-align: center; margin-top: 50px;">
+    <div id="ignite-app">Connecting...</div>
+    <script>
+      var socket = new WebSocket("ws://" + location.host + "/live");
+      var container = document.getElementById("ignite-app");
+
+      socket.onmessage = function(event) {
+        var data = JSON.parse(event.data);
+        if (data.html) container.innerHTML = data.html;
+      };
+
+      document.addEventListener("click", function(e) {
+        var target = e.target;
+        while (target && target !== document) {
+          var eventName = target.getAttribute("ignite-click");
+          if (eventName) {
+            socket.send(JSON.stringify({event: eventName, params: {}}));
+            return;
+          }
+          target = target.parentElement;
+        }
+      });
+    </script>
+  </body>
+  </html>
+  """)
+end
+```
 
 The `/counter` route serves an HTML page with inline JavaScript that:
 1. Opens a WebSocket to `/live`

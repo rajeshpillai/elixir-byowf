@@ -86,23 +86,106 @@ Removes a key from a map and returns **both** the removed value and the map with
 
 ### `assets/ignite.js`
 
-**Update `assets/ignite.js`** — refactor the WebSocket logic into a `connect(livePath)` function and add a `navigate(url, livePath)` function. Add click interception for `ignite-navigate` links, `popstate` handling, and route-map parsing from `data-live-routes`:
+**Update `assets/ignite.js`** — refactor the WebSocket logic into a `connect(livePath)` function, add `navigate(url, livePath)`, and intercept `ignite-navigate` link clicks:
 
 ```javascript
+// Route mapping: HTTP path → WebSocket live_path (injected by server)
+var liveRoutes = {};
+
 function connect(livePath) {
-  if (socket) { socket.close(); }
-  statics = null;
-  socket = new WebSocket(protocol + "//" + host + livePath);
-  socket.onmessage = function(event) { /* handle messages */ };
+  // Close existing connection
+  if (socket) {
+    socket.onclose = null;  // prevent disconnect log
+    socket.close();
+  }
+  statics = null;  // New view has different statics
+
+  var protocol = location.protocol === "https:" ? "wss:" : "ws:";
+  socket = new WebSocket(protocol + "//" + location.host + livePath);
+
+  socket.onopen = function () {
+    console.log("[Ignite] LiveView connected to " + livePath);
+  };
+
+  socket.onmessage = function (event) {
+    var el = document.getElementById(APP_CONTAINER_ID);
+    var data = JSON.parse(event.data);
+
+    // Handle server-initiated redirect
+    if (data.redirect) {
+      var url = data.redirect.url;
+      var targetPath = data.redirect.live_path || liveRoutes[url];
+      if (targetPath) {
+        navigate(url, targetPath);
+      }
+      return;
+    }
+
+    if (data.s) statics = data.s;
+    if (data.d && statics) {
+      var html = buildHtml(statics, data.d);
+      applyUpdate(el, html);
+    }
+  };
+
+  socket.onclose = function () {
+    console.log("[Ignite] LiveView disconnected");
+  };
+}
+
+function navigate(url, livePath) {
+  if (!livePath) livePath = liveRoutes[url];
+  if (!livePath) return;
+  history.pushState({ url: url, livePath: livePath }, "", url);
+  connect(livePath);
 }
 ```
 
-The `navigate(url, livePath)` function orchestrates the transition:
+Add `ignite-navigate` click interception to the event delegation handler:
 
 ```javascript
-function navigate(url, livePath) {
-  if (!livePath) livePath = liveRoutes[url];
-  history.pushState({url: url, livePath: livePath}, "", url);
+document.addEventListener("click", function (e) {
+  var target = e.target;
+  while (target && target !== document) {
+    // Check for ignite-navigate first (link navigation)
+    var navPath = target.getAttribute("ignite-navigate");
+    if (navPath) {
+      e.preventDefault();
+      navigate(navPath, liveRoutes[navPath]);
+      return;
+    }
+    // ... existing ignite-click handling ...
+    target = target.parentElement;
+  }
+});
+```
+
+Add `popstate` handler for browser back/forward:
+
+```javascript
+window.addEventListener("popstate", function (e) {
+  if (e.state && e.state.livePath) {
+    connect(e.state.livePath);
+  }
+});
+```
+
+On initial load, parse the route map from `data-live-routes` and store the initial history state:
+
+```javascript
+function init() {
+  var container = document.getElementById(APP_CONTAINER_ID);
+  if (!container) return;
+
+  // Parse route map from data attribute
+  var routeData = container.dataset.liveRoutes;
+  if (routeData) {
+    try { liveRoutes = JSON.parse(routeData); } catch (e) {}
+  }
+
+  var livePath = container.dataset.livePath || "/live";
+  // Save initial state for popstate
+  history.replaceState({ url: location.pathname, livePath: livePath }, "");
   connect(livePath);
 }
 ```
@@ -117,14 +200,59 @@ def push_redirect(assigns, url) do
 end
 ```
 
+Also add `push_redirect: 2` to the `import` list in `__using__/1`.
+
 ### `lib/ignite/live_view/handler.ex`
 
-**Update `lib/ignite/live_view/handler.ex`** — after `handle_event`, check for `__redirect__` in assigns and send a redirect message to the client:
+**Update `lib/ignite/live_view/handler.ex`** — after `handle_event`, check for `__redirect__` in assigns and send a redirect message instead of a render update:
 
 ```elixir
-case Map.pop(new_assigns, :__redirect__) do
-  {nil, assigns} -> # normal render
-  {redirect_info, assigns} -> # send {redirect: ...} to client
+case apply(state.view, :handle_event, [event, params, state.assigns]) do
+  {:noreply, new_assigns} ->
+    case Map.pop(new_assigns, :__redirect__) do
+      {nil, assigns} ->
+        # Normal render update
+        dynamics = Engine.render_dynamics(state.view, assigns)
+        payload = Jason.encode!(%{d: dynamics})
+        {:reply, {:text, payload}, %{state | assigns: assigns}}
+
+      {redirect_info, assigns} ->
+        # Send redirect to client
+        payload = Jason.encode!(%{redirect: redirect_info})
+        {:reply, {:text, payload}, %{state | assigns: assigns}}
+    end
+end
+```
+
+### `templates/live.html.eex`
+
+**Update `templates/live.html.eex`** — add `data-live-routes` to the container div:
+
+```html
+<div id="ignite-app"
+     data-live-path="<%= @live_path || "/live" %>"
+     data-live-routes='<%= @live_routes || "{}" %>'>
+  Connecting...
+</div>
+```
+
+### `lib/my_app/controllers/welcome_controller.ex`
+
+**Update all LiveView controller actions** — pass the `live_routes` map so the JS knows which paths map to which WebSocket endpoints:
+
+```elixir
+@live_routes Jason.encode!(%{
+  "/counter" => "/live",
+  "/dashboard" => "/live/dashboard",
+  "/shared-counter" => "/live/shared-counter"
+})
+
+def counter(conn) do
+  render(conn, "live", title: "Live Counter — Ignite", live_routes: @live_routes)
+end
+
+def dashboard(conn) do
+  render(conn, "live", title: "Dashboard — Ignite", live_path: "/live/dashboard", live_routes: @live_routes)
 end
 ```
 

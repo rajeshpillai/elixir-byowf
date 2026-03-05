@@ -111,21 +111,104 @@ GenServer has three message handlers:
 
 **Create `lib/ignite/reloader.ex`:**
 
-A GenServer that:
+```elixir
+defmodule Ignite.Reloader do
+  use GenServer
+  require Logger
+
+  @check_interval 1_000
+
+  def start_link(opts \\ []) do
+    path = Keyword.get(opts, :path, "lib")
+    GenServer.start_link(__MODULE__, path, name: __MODULE__)
+  end
+
+  @impl true
+  def init(path) do
+    state = %{
+      path: path,
+      mtimes: get_mtimes(path)
+    }
+
+    schedule_check()
+    Logger.info("[Reloader] Watching #{path}/ for changes...")
+    {:ok, state}
+  end
+
+  @impl true
+  def handle_info(:check, state) do
+    new_mtimes = get_mtimes(state.path)
+
+    if new_mtimes != state.mtimes do
+      reload_changed(state.mtimes, new_mtimes)
+    end
+
+    schedule_check()
+    {:noreply, %{state | mtimes: new_mtimes}}
+  end
+
+  # Scan lib/ for all .ex files and record their modification times.
+  defp get_mtimes(path) do
+    Path.join(path, "**/*.ex")
+    |> Path.wildcard()
+    |> Enum.into(%{}, fn file ->
+      case File.stat(file) do
+        {:ok, stat} -> {file, stat.mtime}
+        _ -> {file, nil}
+      end
+    end)
+  end
+
+  # Find files that changed and recompile them.
+  defp reload_changed(old_mtimes, new_mtimes) do
+    Enum.each(new_mtimes, fn {file, mtime} ->
+      old_mtime = Map.get(old_mtimes, file)
+
+      if mtime != old_mtime do
+        Logger.info("[Reloader] Recompiling: #{file}")
+
+        try do
+          Code.put_compiler_option(:ignore_module_conflict, true)
+          Code.compile_file(file)
+          Code.put_compiler_option(:ignore_module_conflict, false)
+        rescue
+          error ->
+            Logger.error("[Reloader] Compile error in #{file}: #{Exception.message(error)}")
+        end
+      end
+    end)
+  end
+
+  defp schedule_check do
+    Process.send_after(self(), :check, @check_interval)
+  end
+end
+```
+
+The GenServer:
 1. On init: scans `lib/**/*.ex` and records all file modification times
 2. Every second: re-scans and compares mtimes
 3. If a file changed: calls `Code.compile_file/1` to hot-swap it
-4. Errors in compilation are caught and logged (don't crash the reloader)
+4. Compilation errors are caught with `try/rescue` — don't crash the reloader
 
 ### Updated `lib/ignite/application.ex`
 
-**Update `lib/ignite/application.ex`** — add a `dev_children/0` helper and append it to the children list so the reloader starts in dev mode.
+**Update `lib/ignite/application.ex`** — add a `dev_children/0` helper and append it to the children list:
 
-The reloader is added as a conditional child:
 ```elixir
 children = [
-  # ... cowboy ...
+  %{id: :cowboy_listener, start: {:cowboy, :start_clear, [...]}}
 ] ++ dev_children()
+
+# ...
+
+defp dev_children do
+  if Mix.env() == :dev do
+    [{Ignite.Reloader, [path: "lib"]}]
+  else
+    []
+  end
+end
 ```
 
 ## How It Works

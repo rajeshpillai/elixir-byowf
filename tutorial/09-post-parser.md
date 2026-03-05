@@ -80,14 +80,30 @@ content types like `application/x-www-form-urlencoded; charset=UTF-8`.
 
 ### Updated Parser (`lib/ignite/parser.ex`)
 
-**Update `lib/ignite/parser.ex`** — add the `read_body/2` and `parse_body/2` functions, and call `read_body` from your existing parse logic:
+**Update `lib/ignite/parser.ex`** — add `read_body/2` and `parse_body/2`, and update `parse/1` to call `read_body` after reading headers:
 
-New `read_body/2` function:
+First, update your existing `parse/1` to read the body and store it in params:
 
-1. Check if `content-length` header exists
-2. If yes, switch socket to raw mode and read that many bytes
-3. Parse the body based on content-type
-4. Return params map
+```elixir
+def parse(client_socket) do
+  {method, path} = read_request_line(client_socket)
+  headers = read_headers(client_socket)
+
+  # Parse body for POST/PUT/PATCH requests
+  body_params = read_body(client_socket, headers)
+
+  %Conn{
+    method: to_string(method),
+    path: path,
+    headers: headers,
+    params: body_params
+  }
+end
+```
+
+Then add these two private functions at the bottom of the module:
+
+`read_body/2` checks for a Content-Length header, switches the socket from HTTP packet mode to raw binary mode, reads the body bytes, and delegates to `parse_body/2`:
 
 ```elixir
 defp read_body(socket, headers) do
@@ -102,6 +118,20 @@ defp read_body(socket, headers) do
         _ -> %{}
       end
   end
+end
+```
+
+`parse_body/2` uses pattern matching on the content-type string to decide how to parse. For form data, it uses `URI.decode_query/1`. For anything else, it returns the raw body:
+
+```elixir
+# Parses "username=jose&password=secret" into %{"username" => "jose", ...}
+defp parse_body(body, "application/x-www-form-urlencoded" <> _) do
+  URI.decode_query(body)
+end
+
+# Unknown content type — return body as-is under "_body" key
+defp parse_body(body, _content_type) do
+  %{"_body" => body}
 end
 ```
 

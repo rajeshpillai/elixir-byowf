@@ -81,6 +81,81 @@ The JS is wrapped in an IIFE to avoid polluting the global scope:
 
 **Create `assets/ignite.js`:**
 
+```javascript
+/**
+ * Ignite.js — Frontend glue for Ignite LiveView.
+ *
+ * Protocol:
+ * - On mount: server sends {html: "<div>...</div>"}
+ * - On update: server sends {html: "<div>...</div>"}
+ * - JS replaces #ignite-app innerHTML with server HTML
+ *
+ * Supported attributes:
+ * - ignite-click="event" — sends event on click
+ * - ignite-value="val"   — optional static value sent with click events
+ */
+(function () {
+  "use strict";
+
+  var APP_CONTAINER_ID = "ignite-app";
+  var socket = null;
+
+  function connect() {
+    var container = document.getElementById(APP_CONTAINER_ID);
+    if (!container) return;
+
+    var livePath = container.dataset.livePath || "/live";
+    var protocol = location.protocol === "https:" ? "wss:" : "ws:";
+    var host = location.host;
+
+    socket = new WebSocket(protocol + "//" + host + livePath);
+
+    socket.onopen = function () {
+      console.log("[Ignite] LiveView connected");
+    };
+
+    socket.onmessage = function (event) {
+      var data = JSON.parse(event.data);
+      if (data.html) {
+        container.innerHTML = data.html;
+      }
+    };
+
+    socket.onclose = function () {
+      console.log("[Ignite] LiveView disconnected");
+    };
+  }
+
+  // --- Event delegation ---
+  // One listener on the document catches all ignite-click events,
+  // even on elements added dynamically by LiveView.
+  document.addEventListener("click", function (e) {
+    var target = e.target;
+    while (target && target !== document) {
+      var eventName = target.getAttribute("ignite-click");
+      if (eventName) {
+        e.preventDefault();
+        var params = {};
+        var value = target.getAttribute("ignite-value");
+        if (value) params.value = value;
+        if (socket && socket.readyState === WebSocket.OPEN) {
+          socket.send(JSON.stringify({ event: eventName, params: params }));
+        }
+        return;
+      }
+      target = target.parentElement;
+    }
+  });
+
+  // Connect when DOM is ready
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", connect);
+  } else {
+    connect();
+  }
+})();
+```
+
 The complete frontend glue:
 - WebSocket connection with automatic `ws:` / `wss:` protocol detection
 - Event delegation for `ignite-click` with DOM tree walking
@@ -91,30 +166,65 @@ The complete frontend glue:
 
 **Create `templates/live.html.eex`:**
 
+```html
+<!DOCTYPE html>
+<html>
+<head>
+  <title><%= @title || "Ignite LiveView" %></title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      text-align: center;
+      margin-top: 50px;
+      color: #333;
+    }
+    button { cursor: pointer; margin: 5px; }
+    #ignite-app { min-height: 100px; }
+  </style>
+</head>
+<body>
+  <div id="ignite-app" data-live-path="<%= @live_path || "/live" %>">Connecting...</div>
+  <hr>
+  <p><small>Powered by <a href="/">Ignite</a></small></p>
+  <script src="/assets/ignite.js"></script>
+</body>
+</html>
+```
+
 A reusable template for LiveView pages:
-- Contains `#ignite-app` container div
+- Contains `#ignite-app` container div with a `data-live-path` attribute
 - Loads `ignite.js` via `<script src="/assets/ignite.js">`
-- Accepts `title` assign for the page title
+- Accepts `title` and `live_path` assigns
 
 ### Updated Application
 
-**Update `lib/ignite/application.ex`** — add a static file route for `/assets/[...]` to the Cowboy dispatch rules.
+**Update `lib/ignite/application.ex`** — add a static file route for `/assets/[...]` to the Cowboy dispatch rules:
 
-Cowboy routing now includes static file serving:
 ```elixir
-{"/assets/[...]", :cowboy_static, {:dir, "assets"}}
+dispatch =
+  :cowboy_router.compile([
+    {:_,
+     [
+       {"/live", Ignite.LiveView.Handler, %{view: MyApp.CounterLive}},
+       {"/assets/[...]", :cowboy_static, {:dir, "assets"}},
+       {"/[...]", Ignite.Adapters.Cowboy, []}
+     ]}
+  ])
 ```
+
+Note: the `/assets/[...]` route must come **before** the `"/[...]"` catch-all, otherwise Cowboy would never match it.
 
 ### Updated Controller
 
-**Replace `lib/my_app/controllers/welcome_controller.ex` with:**
+**Update `lib/my_app/controllers/welcome_controller.ex`** — replace the inline-JS `counter` action with:
 
-The counter action is now one line:
 ```elixir
 def counter(conn) do
   render(conn, "live", title: "Live Counter — Ignite")
 end
 ```
+
+The inline JavaScript from Step 12 is replaced by the external `ignite.js` file.
 
 ## How It Works
 

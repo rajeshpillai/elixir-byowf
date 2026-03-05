@@ -181,7 +181,7 @@ function applyStreamOps(data) {
       }
     }
 
-    // Inserts: add new elements
+    // Inserts: add new elements (or upsert existing ones)
     if (ops.inserts) {
       for (var j = 0; j < ops.inserts.length; j++) {
         var entry = ops.inserts[j];
@@ -189,7 +189,11 @@ function applyStreamOps(data) {
         temp.innerHTML = entry.html.trim();
         var newEl = temp.firstChild;
 
-        if (entry.at === 0) {
+        // Upsert: if element with this ID already exists, update it in-place
+        var existing = document.getElementById(entry.id);
+        if (existing) {
+          morphdom(existing, newEl);
+        } else if (entry.at === 0) {
           container.insertBefore(newEl, container.firstChild);  // Prepend
         } else {
           container.appendChild(newEl);                          // Append
@@ -200,7 +204,31 @@ function applyStreamOps(data) {
 }
 ```
 
-Order matters: `applyUpdate` (morphdom) runs first to ensure the stream container exists in the DOM, then `applyStreamOps` manipulates its children.
+### Protecting Stream Children from Morphdom
+
+There's a subtle but critical interaction between morphdom and streams. The template renders the stream container as **empty**:
+
+```html
+<div ignite-stream="events"></div>
+```
+
+But at runtime, `applyStreamOps` has populated it with children. When morphdom runs on the next update, it compares the current DOM (with children) against the new HTML (empty container) and **removes all children** — wiping out the stream items.
+
+The fix: tell morphdom to skip stream containers entirely in `applyUpdate`:
+
+```javascript
+morphdom(container, wrapper, {
+  onBeforeElUpdated: function (fromEl, toEl) {
+    // Skip stream containers — their children are managed by applyStreamOps
+    if (fromEl.hasAttribute("ignite-stream")) {
+      return false;
+    }
+    // ... other checks
+  }
+});
+```
+
+Order matters: `applyUpdate` (morphdom) runs first to ensure the stream container exists in the DOM, then `applyStreamOps` manipulates its children. The `onBeforeElUpdated` guard ensures morphdom doesn't destroy the children that `applyStreamOps` manages.
 
 ### Backward Compatibility
 
@@ -221,6 +249,7 @@ defmodule MyApp.StreamDemoLive do
 
     assigns = %{event_count: 0}
     assigns = stream(assigns, :events, [],
+      limit: 20,
       render: fn event ->
         ~s(<div id="events-#{event.id}">[#{event.type}] #{event.message}</div>)
       end
@@ -228,9 +257,10 @@ defmodule MyApp.StreamDemoLive do
     {:ok, assigns}
   end
 
+  # Auto-generate a random event every 2 seconds (prepend)
   def handle_info(:generate_event, assigns) do
     Process.send_after(self(), :generate_event, 2000)
-    event = %{id: assigns.event_count + 1, type: "info", message: "..."}
+    event = %{id: assigns.event_count + 1, type: "info", message: "Auto event"}
 
     assigns = assigns
       |> Map.put(:event_count, assigns.event_count + 1)
@@ -239,6 +269,43 @@ defmodule MyApp.StreamDemoLive do
     {:noreply, assigns}
   end
 
+  # Prepend: insert at the top of the list
+  def handle_event("add_event", _params, assigns) do
+    event = %{id: assigns.event_count + 1, type: "info",
+              message: "Manual event (prepended to top)", time: "..."}
+
+    assigns = assigns
+      |> Map.put(:event_count, assigns.event_count + 1)
+      |> stream_insert(:events, event, at: 0)
+
+    {:noreply, assigns}
+  end
+
+  # Append: insert at the bottom of the list (default behavior)
+  def handle_event("append_event", _params, assigns) do
+    event = %{id: assigns.event_count + 1, type: "debug",
+              message: "Manual event (appended to bottom)", time: "..."}
+
+    assigns = assigns
+      |> Map.put(:event_count, assigns.event_count + 1)
+      |> stream_insert(:events, event)
+
+    {:noreply, assigns}
+  end
+
+  # Upsert: re-insert an item with the same ID — updates in-place
+  def handle_event("update_latest", _params, assigns) do
+    if assigns.event_count > 0 do
+      updated = %{id: assigns.event_count, type: "warning",
+                  message: "UPDATED — modified in-place via upsert", time: "..."}
+      assigns = stream_insert(assigns, :events, updated, at: 0)
+      {:noreply, assigns}
+    else
+      {:noreply, assigns}
+    end
+  end
+
+  # Reset: clear all items
   def handle_event("clear_log", _params, assigns) do
     assigns = assigns
       |> Map.put(:event_count, 0)
@@ -262,10 +329,21 @@ Every 2 seconds, a new event appears:
 {"d": {"0": "3"}, "streams": {"events": {"inserts": [{"id": "events-3", "at": 0, "html": "<div id=\"events-3\">...</div>"}]}}}
 ```
 
-Click "Add Event":
+Click "Prepend Event" (inserts at top with `at: 0`):
 ```json
 {"d": {"0": "4"}, "streams": {"events": {"inserts": [{"id": "events-4", "at": 0, "html": "<div id=\"events-4\">...</div>"}]}}}
 ```
+
+Click "Append Event" (inserts at bottom, no `at` field):
+```json
+{"d": {"0": "5"}, "streams": {"events": {"inserts": [{"id": "events-5", "html": "<div id=\"events-5\">...</div>"}]}}}
+```
+
+Click "Update Latest" (upsert — same ID as latest event, updates in-place):
+```json
+{"d": {}, "streams": {"events": {"inserts": [{"id": "events-5", "at": 0, "html": "<div id=\"events-5\">UPDATED...</div>"}]}}}
+```
+Notice the `d` is empty (`{}`) — the event count didn't change, so the sparse diff sends nothing for dynamics.
 
 Click "Clear Log":
 ```json

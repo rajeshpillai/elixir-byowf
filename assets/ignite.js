@@ -368,6 +368,10 @@
       morphdom(container, wrapper, {
         // Preserve focused input elements
         onBeforeElUpdated: function (fromEl, toEl) {
+          // Skip stream containers — their children are managed by applyStreamOps
+          if (fromEl.hasAttribute("ignite-stream")) {
+            return false;
+          }
           // Skip file inputs — browsers don't allow setting their value
           if (fromEl.type === "file") {
             return false;

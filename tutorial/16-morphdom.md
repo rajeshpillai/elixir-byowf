@@ -84,27 +84,42 @@ function applyUpdate(container, newHtml) {
 
 ### `assets/morphdom.min.js` (New)
 
-**Create `assets/morphdom.min.js`:**
+**Download morphdom** from the npm package and place it at `assets/morphdom.min.js`:
 
-The morphdom library (~12KB minified). Loaded via a `<script>` tag
-before `ignite.js` so it's available as a global function.
+```bash
+curl -o assets/morphdom.min.js https://unpkg.com/morphdom@2.7.4/dist/morphdom-umd.min.js
+```
+
+Alternatively, install via npm and copy the UMD bundle:
+```bash
+npm install morphdom
+cp node_modules/morphdom/dist/morphdom-umd.min.js assets/morphdom.min.js
+```
+
+The morphdom library (~12KB minified) is loaded via a `<script>` tag
+before `ignite.js` so it's available as a global `morphdom` function.
 
 ### Updated `assets/ignite.js`
 
-**Replace `assets/ignite.js` with:**
-
-New `applyUpdate()` function replaces the old `innerHTML` assignment:
+**Update `assets/ignite.js`** — add the `applyUpdate()` function and replace the `container.innerHTML = html` call in `socket.onmessage` with `applyUpdate(container, html)`:
 
 ```javascript
+// --- Apply update to DOM ---
+// Uses morphdom if available, falls back to innerHTML
 function applyUpdate(container, newHtml) {
   if (typeof morphdom === "function") {
     var wrapper = document.createElement("div");
     wrapper.id = APP_CONTAINER_ID;
     wrapper.innerHTML = newHtml;
     morphdom(container, wrapper, {
-      onBeforeElUpdated: function(fromEl, toEl) {
-        if (fromEl === document.activeElement && fromEl.tagName === "INPUT") {
-          toEl.value = fromEl.value;
+      onBeforeElUpdated: function (fromEl, toEl) {
+        // Skip file inputs — browsers don't allow setting their value
+        if (fromEl.type === "file") return false;
+        // Don't overwrite value if user is actively typing
+        if (fromEl === document.activeElement) {
+          if (fromEl.tagName === "INPUT" || fromEl.tagName === "TEXTAREA") {
+            toEl.value = fromEl.value;
+          }
         }
         return true;
       }
@@ -114,6 +129,17 @@ function applyUpdate(container, newHtml) {
   }
 }
 ```
+
+Then in the `socket.onmessage` handler, replace:
+```javascript
+container.innerHTML = html;
+```
+with:
+```javascript
+applyUpdate(container, html);
+```
+
+The key change: instead of `container.innerHTML = html` (which destroys and recreates all elements), we call `applyUpdate` which uses morphdom to diff and patch only the changed elements.
 
 ### Updated `templates/live.html.eex`
 

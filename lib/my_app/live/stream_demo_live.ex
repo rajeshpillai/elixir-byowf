@@ -65,7 +65,7 @@ defmodule MyApp.StreamDemoLive do
     event = %{
       id: assigns.event_count + 1,
       type: "info",
-      message: "Manual event from user",
+      message: "Manual event (prepended to top)",
       time: format_time()
     }
 
@@ -73,6 +73,23 @@ defmodule MyApp.StreamDemoLive do
       assigns
       |> Map.put(:event_count, assigns.event_count + 1)
       |> stream_insert(:events, event, at: 0)
+
+    {:noreply, assigns}
+  end
+
+  @impl true
+  def handle_event("append_event", _params, assigns) do
+    event = %{
+      id: assigns.event_count + 1,
+      type: "debug",
+      message: "Manual event (appended to bottom)",
+      time: format_time()
+    }
+
+    assigns =
+      assigns
+      |> Map.put(:event_count, assigns.event_count + 1)
+      |> stream_insert(:events, event)
 
     {:noreply, assigns}
   end
@@ -118,7 +135,12 @@ defmodule MyApp.StreamDemoLive do
         <button ignite-click="add_event"
                 style="padding: 8px 16px; background: #3498db; color: white;
                        border: none; border-radius: 6px; cursor: pointer;">
-          Add Event
+          Prepend Event
+        </button>
+        <button ignite-click="append_event"
+                style="padding: 8px 16px; background: #2ecc71; color: white;
+                       border: none; border-radius: 6px; cursor: pointer;">
+          Append Event
         </button>
         <button ignite-click="update_latest"
                 style="padding: 8px 16px; background: #f39c12; color: white;
@@ -148,8 +170,9 @@ defmodule MyApp.StreamDemoLive do
           <li>The wire sends <code>{"streams": {"events": {"inserts": [...]}}}</code></li>
           <li>The event count uses normal diffing: <code>{"d": {"0": "5"}}</code></li>
           <li>Open DevTools Network tab (WS) to see the tiny payloads</li>
+          <li>"Prepend Event" inserts at top (<code>at: 0</code>), "Append Event" inserts at bottom (default)</li>
           <li>"Update Latest" demonstrates <strong>upsert</strong> — same ID updates in-place</li>
-          <li>Stream has <code>limit: 20</code> — older items are auto-pruned from the bottom</li>
+          <li>Stream has <code>limit: 20</code> — older items are auto-pruned from the opposite end</li>
           <li>"Clear Log" sends a <code>reset</code> operation — clears all items at once</li>
         </ul>
       </div>

@@ -232,17 +232,135 @@ You could build PubSub with a `GenServer` that maintains a `%{topic => [pids]}` 
 4. Click "-" in Tab B — both tabs sync again
 5. Close one tab — the other continues working normally
 
+### 5. `websocket_info` in the Handler
+
+**Update `lib/ignite/live_view/handler.ex`** — add `websocket_info/2` to dispatch `handle_info` for Erlang messages (PubSub broadcasts, timers, etc.):
+
+```elixir
+# Server-push: handle messages sent to this process (e.g. PubSub, timers)
+@impl true
+def websocket_info(msg, state) do
+  if function_exported?(state.view, :handle_info, 2) do
+    case apply(state.view, :handle_info, [msg, state.assigns]) do
+      {:noreply, new_assigns} ->
+        dynamics = Engine.render_dynamics(state.view, new_assigns)
+        payload = Jason.encode!(%{d: dynamics})
+        {:reply, {:text, payload}, %{state | assigns: new_assigns}}
+
+      _ ->
+        {:ok, state}
+    end
+  else
+    {:ok, state}
+  end
+end
+```
+
+This uses `function_exported?/3` to check if the LiveView defines `handle_info/2` — if it doesn't, we silently ignore the message. This way, existing LiveViews (like `CounterLive`) work fine without implementing `handle_info`.
+
+### 6. The Dashboard LiveView
+
+**Create `lib/my_app/live/dashboard_live.ex`:**
+
+```elixir
+defmodule MyApp.DashboardLive do
+  use Ignite.LiveView
+
+  def mount(_params, _session) do
+    Process.send_after(self(), :tick, 1000)
+    {:ok, gather_stats()}
+  end
+
+  def handle_info(:tick, _assigns) do
+    Process.send_after(self(), :tick, 1000)
+    {:noreply, gather_stats()}
+  end
+
+  def handle_event("gc", _params, assigns) do
+    :erlang.garbage_collect()
+    {:noreply, assigns}
+  end
+
+  def render(assigns) do
+    """
+    <div id="dashboard" style="max-width: 600px; margin: 0 auto;">
+      <h1>BEAM Dashboard</h1>
+      <p style="color: #888;">Auto-refreshes every second via handle_info</p>
+      <p>Uptime: #{assigns.uptime}</p>
+      <p>Processes: #{assigns.process_count}</p>
+      <p>Memory: #{assigns.total_memory} MB</p>
+      <button ignite-click="gc">Run GC</button>
+    </div>
+    """
+  end
+
+  defp gather_stats do
+    memory = :erlang.memory()
+    {uptime_ms, _} = :erlang.statistics(:wall_clock)
+
+    %{
+      uptime: format_uptime(uptime_ms),
+      process_count: :erlang.system_info(:process_count),
+      total_memory: Float.round(memory[:total] / 1_048_576, 1)
+    }
+  end
+
+  defp format_uptime(ms) do
+    total_seconds = div(ms, 1000)
+    hours = div(total_seconds, 3600)
+    minutes = div(rem(total_seconds, 3600), 60)
+    seconds = rem(total_seconds, 60)
+
+    cond do
+      hours > 0 -> "#{hours}h #{minutes}m #{seconds}s"
+      minutes > 0 -> "#{minutes}m #{seconds}s"
+      true -> "#{seconds}s"
+    end
+  end
+end
+```
+
+The dashboard demonstrates **server-push** — the server sends updates to the browser via `handle_info` without any user interaction. `Process.send_after(self(), :tick, 1000)` schedules a message to itself, and the handler dispatches it to `handle_info/2`.
+
+### 7. Application and Router Updates
+
+**Update `lib/ignite/application.ex`** — add WebSocket routes for the new LiveViews:
+
+```elixir
+{"/live/dashboard", Ignite.LiveView.Handler, %{view: MyApp.DashboardLive}},
+{"/live/shared-counter", Ignite.LiveView.Handler, %{view: MyApp.SharedCounterLive}},
+```
+
+**Update `lib/my_app/router.ex`** — add HTTP routes:
+
+```elixir
+get "/dashboard", to: MyApp.WelcomeController, action: :dashboard
+get "/shared-counter", to: MyApp.WelcomeController, action: :shared_counter
+```
+
+**Update `lib/my_app/controllers/welcome_controller.ex`** — add controller actions:
+
+```elixir
+def dashboard(conn) do
+  render(conn, "live", title: "Dashboard — Ignite", live_path: "/live/dashboard")
+end
+
+def shared_counter(conn) do
+  render(conn, "live", title: "Shared Counter — Ignite", live_path: "/live/shared-counter")
+end
+```
+
 ## File Checklist
 
 | File | Status |
 |------|--------|
 | `lib/ignite/pub_sub.ex` | **New** |
-| `lib/ignite/application.ex` | **Modified** — added `Ignite.PubSub` to supervision tree |
+| `lib/ignite/application.ex` | **Modified** — added `Ignite.PubSub` to supervision tree, new LiveView routes |
 | `lib/ignite/live_view.ex` | **Modified** — added `handle_info/2` optional callback |
-| `lib/ignite/live_view/handler.ex` | **Modified** — dispatch `handle_info` from WebSocket messages |
+| `lib/ignite/live_view/handler.ex` | **Modified** — added `websocket_info/2` dispatch |
 | `lib/my_app/live/shared_counter_live.ex` | **New** |
 | `lib/my_app/live/dashboard_live.ex` | **New** |
-| `lib/my_app/controllers/welcome_controller.ex` | **Modified** — added links to new LiveView pages |
+| `lib/my_app/controllers/welcome_controller.ex` | **Modified** — added dashboard and shared_counter actions |
 | `lib/my_app/router.ex` | **Modified** — added routes for shared counter and dashboard |
 
 ## What's Next
