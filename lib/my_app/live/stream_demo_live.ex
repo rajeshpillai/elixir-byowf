@@ -20,11 +20,12 @@ defmodule MyApp.StreamDemoLive do
 
     assigns = %{event_count: 0}
 
-    # Initialize the stream with a render function — this defines how each
-    # item looks. The render function is called by the handler when building
-    # the wire payload. Items are freed from memory after being sent.
+    # Initialize the stream with a render function and a limit of 20.
+    # :limit caps the client-side DOM — older items are auto-pruned when
+    # new ones arrive. The render function defines how each item looks.
     assigns =
       stream(assigns, :events, [],
+        limit: 20,
         render: fn event ->
           color = event_color(event.type)
 
@@ -77,6 +78,24 @@ defmodule MyApp.StreamDemoLive do
   end
 
   @impl true
+  def handle_event("update_latest", _params, assigns) do
+    # Upsert: re-insert an item with the same ID — updates in-place on the client
+    if assigns.event_count > 0 do
+      updated_event = %{
+        id: assigns.event_count,
+        type: "warning",
+        message: "UPDATED — this event was modified in-place via upsert",
+        time: format_time()
+      }
+
+      assigns = stream_insert(assigns, :events, updated_event, at: 0)
+      {:noreply, assigns}
+    else
+      {:noreply, assigns}
+    end
+  end
+
+  @impl true
   def handle_event("clear_log", _params, assigns) do
     assigns =
       assigns
@@ -101,6 +120,11 @@ defmodule MyApp.StreamDemoLive do
                        border: none; border-radius: 6px; cursor: pointer;">
           Add Event
         </button>
+        <button ignite-click="update_latest"
+                style="padding: 8px 16px; background: #f39c12; color: white;
+                       border: none; border-radius: 6px; cursor: pointer;">
+          Update Latest
+        </button>
         <button ignite-click="clear_log"
                 style="padding: 8px 16px; background: #e74c3c; color: white;
                        border: none; border-radius: 6px; cursor: pointer;">
@@ -124,6 +148,8 @@ defmodule MyApp.StreamDemoLive do
           <li>The wire sends <code>{"streams": {"events": {"inserts": [...]}}}</code></li>
           <li>The event count uses normal diffing: <code>{"d": {"0": "5"}}</code></li>
           <li>Open DevTools Network tab (WS) to see the tiny payloads</li>
+          <li>"Update Latest" demonstrates <strong>upsert</strong> — same ID updates in-place</li>
+          <li>Stream has <code>limit: 20</code> — older items are auto-pruned from the bottom</li>
           <li>"Clear Log" sends a <code>reset</code> operation — clears all items at once</li>
         </ul>
       </div>

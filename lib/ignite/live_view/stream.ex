@@ -10,10 +10,13 @@ defmodule Ignite.LiveView.Stream do
 
   1. Initialize a stream with `stream/4` — provide a name, initial items,
      and a `:render` function that converts each item to HTML.
-  2. Insert items with `stream_insert/3,4` — appends by default, or
-     prepends with `at: 0`.
+  2. Insert or update items with `stream_insert/3,4` — appends by default,
+     prepends with `at: 0`, or updates in-place if the item already exists
+     (upsert by DOM ID).
   3. Delete items with `stream_delete/3`.
   4. Reset the entire stream with `stream/4` and `reset: true`.
+  5. Limit client-side items with `stream/4` and `limit: N` — excess items
+     are automatically pruned from the opposite end of insertion.
 
   Stream state is stored in `assigns.__streams__` and processed by the
   handler after each render cycle. Items are freed from server memory
@@ -44,8 +47,10 @@ defmodule Ignite.LiveView.Stream do
     :render_fn,   # fn(item) -> html_string
     :dom_prefix,  # string — prefix for DOM IDs (e.g., "events")
     :id_fn,       # fn(item) -> string — extracts unique ID from item
+    :limit,       # nil | pos_integer — max items on client (nil = unlimited)
     ops: [],      # pending operations queue
-    items: %{}    # %{dom_id => true} — tracks existing DOM IDs
+    items: %{},   # %{dom_id => true} — tracks existing DOM IDs
+    order: []     # list of dom_ids in insertion order (for limit pruning)
   ]
 
   @doc """
@@ -58,6 +63,8 @@ defmodule Ignite.LiveView.Stream do
     - `:dom_prefix` — string prefix for DOM IDs (default: stream name as string)
     - `:reset` — if `true`, clears all existing items before inserting
     - `:at` — insertion position for items: `-1` for append (default), `0` for prepend
+    - `:limit` — max number of items on the client. When exceeded, items are
+      pruned from the opposite end (prepend with limit prunes from the end)
 
   ## Examples
 
@@ -93,44 +100,68 @@ defmodule Ignite.LiveView.Stream do
 
     reset? = Keyword.get(opts, :reset, false)
     at = Keyword.get(opts, :at, -1)
+    limit = Keyword.get(opts, :limit) || (existing && existing.limit)
 
-    # Start with existing ops or empty
+    # Start with existing ops/items/order or empty
     base_ops = if existing && !reset?, do: existing.ops, else: []
     base_items = if existing && !reset?, do: existing.items, else: %{}
+    base_order = if existing && !reset?, do: existing.order, else: []
 
     # Add reset op if requested
     ops = if reset?, do: base_ops ++ [{:reset}], else: base_ops
 
-    # Add insert ops for all provided items
-    {ops, items_map} =
-      Enum.reduce(items, {ops, base_items}, fn item, {acc_ops, acc_items} ->
+    # Add insert ops for all provided items (with upsert detection)
+    {ops, items_map, order} =
+      Enum.reduce(items, {ops, base_items, base_order}, fn item, {acc_ops, acc_items, acc_order} ->
         dom_id = dom_prefix <> "-" <> id_fn.(item)
-        {acc_ops ++ [{:insert, item, dom_id, [at: at]}], Map.put(acc_items, dom_id, true)}
+        is_update = Map.has_key?(acc_items, dom_id)
+
+        new_order =
+          if is_update do
+            acc_order
+          else
+            if at == 0, do: [dom_id | acc_order], else: acc_order ++ [dom_id]
+          end
+
+        {acc_ops ++ [{:insert, item, dom_id, [at: at]}],
+         Map.put(acc_items, dom_id, true),
+         new_order}
       end)
+
+    # Apply limit — prune excess items from the opposite end
+    {ops, items_map, order} = apply_limit(ops, items_map, order, limit, at)
 
     stream_struct = %__MODULE__{
       name: name,
       render_fn: render_fn,
       id_fn: id_fn,
       dom_prefix: dom_prefix,
+      limit: limit,
       ops: ops,
-      items: items_map
+      items: items_map,
+      order: order
     }
 
     Map.put(assigns, :__streams__, Map.put(streams, name, stream_struct))
   end
 
   @doc """
-  Inserts an item into a stream.
+  Inserts or updates an item in a stream (upsert).
+
+  If an item with the same DOM ID already exists, it is updated in-place
+  (the client replaces the existing element). If it's new, it is inserted
+  at the specified position.
 
   ## Options
 
     - `:at` — position to insert. Default is `-1` (append). Use `0` to prepend.
+      Ignored for updates (existing items stay in their current position).
 
   ## Examples
 
       assigns = stream_insert(assigns, :events, new_event)
       assigns = stream_insert(assigns, :events, new_event, at: 0)  # prepend
+      assigns = stream_insert(assigns, :events, updated_event)     # upsert
   """
   def stream_insert(assigns, name, item, opts \\ []) do
     streams = Map.get(assigns, :__streams__, %{})
@@ -140,11 +171,25 @@ defmodule Ignite.LiveView.Stream do
 
     dom_id = stream.dom_prefix <> "-" <> stream.id_fn.(item)
     position = Keyword.get(opts, :at, -1)
+    is_update = Map.has_key?(stream.items, dom_id)
+
+    # Track insertion order (only for new items)
+    new_order =
+      if is_update do
+        stream.order
+      else
+        if position == 0, do: [dom_id | stream.order], else: stream.order ++ [dom_id]
+      end
 
     updated = %{stream |
       ops: stream.ops ++ [{:insert, item, dom_id, [at: position]}],
-      items: Map.put(stream.items, dom_id, true)
+      items: Map.put(stream.items, dom_id, true),
+      order: new_order
     }
+
+    # Apply limit after insert
+    {ops, items, order} = apply_limit(updated.ops, updated.items, updated.order, stream.limit, position)
+    updated = %{updated | ops: ops, items: items, order: order}
 
     Map.put(assigns, :__streams__, Map.put(streams, name, updated))
   end
@@ -168,7 +213,8 @@ defmodule Ignite.LiveView.Stream do
 
     updated = %{stream |
       ops: stream.ops ++ [{:delete, dom_id}],
-      items: Map.delete(stream.items, dom_id)
+      items: Map.delete(stream.items, dom_id),
+      order: List.delete(stream.order, dom_id)
     }
 
     Map.put(assigns, :__streams__, Map.put(streams, name, updated))
@@ -210,6 +256,32 @@ defmodule Ignite.LiveView.Stream do
       end
     end
   end
+
+  # Prunes excess items when a limit is set.
+  # If inserting at the front (at: 0), prune from the end (oldest at bottom).
+  # If appending (at: -1), prune from the front (oldest at top).
+  defp apply_limit(ops, items, order, nil, _at), do: {ops, items, order}
+
+  defp apply_limit(ops, items, order, limit, at) when length(order) > limit do
+    excess = length(order) - limit
+
+    # Prune from the opposite end of where inserts happen
+    {to_prune, to_keep} =
+      if at == 0 do
+        # Inserting at front → prune from end
+        {Enum.take(order, -excess), Enum.drop(order, -excess)}
+      else
+        # Appending → prune from front
+        {Enum.take(order, excess), Enum.drop(order, excess)}
+      end
+
+    prune_ops = Enum.map(to_prune, fn dom_id -> {:delete, dom_id} end)
+    pruned_items = Enum.reduce(to_prune, items, fn dom_id, acc -> Map.delete(acc, dom_id) end)
+
+    {ops ++ prune_ops, pruned_items, to_keep}
+  end
+
+  defp apply_limit(ops, items, order, _limit, _at), do: {ops, items, order}
 
   # Converts the ops queue into a wire-ready map:
   # %{"reset" => true, "inserts" => [...], "deletes" => [...]}

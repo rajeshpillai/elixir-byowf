@@ -142,11 +142,11 @@ Ignite is a real framework. You can use it to build:
 - **IoT control panels** — live device status with server-push updates
 - **Prototypes** — quickly test ideas with minimal dependencies
 
-## Curriculum — 40 Steps, 8 Modules
+## Curriculum — 41 Steps, 9 Modules
 
 Each step is a git tag with a detailed tutorial in `tutorial/`. Estimated times assume you're reading the explanation, writing the code, and verifying it works.
 
-> **Total estimated time: ~40–50 hours**
+> **Total estimated time: ~41–52 hours**
 
 ---
 
@@ -156,7 +156,7 @@ Build a web server from scratch — raw TCP, then a proper Conn pipeline with ro
 
 | Step | Tutorial | Topics | Est. |
 |------|----------|--------|------|
-| 0 | Project Setup | Mix, project structure | 30m |
+| 0 | [Project Setup](tutorial/00-project-setup.md) | Mix, project structure | 30m |
 | 1 | [TCP Socket Foundation](tutorial/01-tcp-socket.md) | Modules, functions, `:gen_tcp`, processes | 1h |
 | 2 | [Conn Struct & Parser](tutorial/02-conn-struct.md) | Structs, pattern matching, HTTP parsing | 1h |
 | 3 | [Router DSL](tutorial/03-router-dsl.md) | Macros, `quote`/`unquote`, metaprogramming | 1.5h |
@@ -276,6 +276,20 @@ Health checks, SSL/TLS, rate limiting, and `mix release` for deployment.
 | 40 | [Deployment & Rate Limiting](tutorial/40-release-and-rate-limit.md) | `mix release`, `runtime.exs`, ETS rate limiter, release migration tasks | 1.5h |
 
 **Milestone:** Framework is production-deployable — HTTPS, rate-limited, health-monitored, and packaged as a release.
+
+---
+
+### Module 9: Optimizations *(~1 hour)*
+
+Close the remaining gaps with Phoenix's stream system.
+
+| Step | Tutorial | Topics | Est. |
+|------|----------|--------|------|
+| 41 | [Stream Upsert & Limit](tutorial/41-stream-upsert-limit.md) | Upsert by DOM ID, `:limit` for bounded lists, order tracking | 1h |
+
+**Milestone:** Streams support upsert (update-in-place) and bounded lists — matching Phoenix's core stream features.
+
+---
 
 ## Quick Start
 
