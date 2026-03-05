@@ -336,6 +336,61 @@ iex -S mix
 # curl -X DELETE http://localhost:4000/users/42
 ```
 
+## Running Tests
+
+The project includes **180 tests** covering both framework internals and application routes.
+
+```bash
+# Run all tests
+mix test
+
+# Run step-wise framework tests (TDD specs for each tutorial step)
+mix test test/steps/
+
+# Run a specific step's tests
+mix test test/steps/step_14_diffing_test.exs
+
+# Run with verbose output
+mix test test/steps/ --trace
+
+# Run application-level tests (controllers, ConnTest)
+mix test test/controllers/ test/ignite_test.exs
+```
+
+### Test Organization
+
+```
+test/
+├── steps/                              # Step-wise TDD specs (framework internals)
+│   ├── step_02_conn_parser_test.exs    # Conn struct defaults & updates
+│   ├── step_03_router_test.exs         # Static route matching, 404 fallback
+│   ├── step_04_controller_test.exs     # text/html/redirect/send_resp helpers
+│   ├── step_05_dynamic_routes_test.exs # :param capture, multi-segment routes
+│   ├── step_08_middleware_test.exs     # Plug pipeline ordering, halt behavior
+│   ├── step_09_post_parser_test.exs   # URL-encoded body parsing
+│   ├── step_14_diffing_test.exs       # Sparse diffs, %Rendered{} normalization
+│   ├── step_17_pubsub_test.exs        # Subscribe/broadcast, self-exclusion
+│   ├── step_21_json_api_test.exs      # json/2,3, content-type, encoding
+│   ├── step_22_http_methods_test.exs  # PUT/PATCH/DELETE, resources macro
+│   ├── step_23_scoped_routes_test.exs # scope prefix, nested scopes
+│   ├── step_25_streams_test.exs       # Stream init/insert/delete/reset/limit
+│   ├── step_27_path_helpers_test.exs  # derive_name, singularize, generated helpers
+│   ├── step_28_session_test.exs       # Encode/decode, cookie parsing, flash
+│   ├── step_29_presence_test.exs      # Track/untrack, auto-cleanup on death
+│   ├── step_31_csrf_test.exs          # Token masking, BREACH resistance
+│   ├── step_32_csp_test.exs           # Nonce generation, CSP header building
+│   ├── step_34_debug_page_test.exs    # Dev vs prod error pages, XSS safety
+│   └── step_40_rate_limiter_test.exs  # Rate counting, 429, x-forwarded-for
+├── controllers/                        # Application-level route tests
+│   ├── welcome_controller_test.exs
+│   ├── api_controller_test.exs
+│   └── user_controller_test.exs
+├── ignite_test.exs                     # ConnTest helper tests
+└── test_helper.exs                     # ExUnit setup + DB migration
+```
+
+Each step-wise test file is designed as a **TDD spec** — it tests only the module introduced in that step and reads as a specification of the expected behavior.
+
 ## Project Structure
 
 ```
