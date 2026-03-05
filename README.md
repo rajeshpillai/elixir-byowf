@@ -459,6 +459,56 @@ Features that would bring Ignite closer to Phoenix for production use:
 - [x] ~~Deployment with `mix release`~~ (Step 40)
 - [x] ~~Health check endpoint~~ (Step 36)
 
+## Using Ignite for New Projects (Future)
+
+Currently, Ignite is a monolithic project where the framework (`lib/ignite/`) and the sample app (`lib/my_app/`) live in the same repo. To use Ignite as a standalone framework for new projects, there are two planned steps:
+
+### Step 1: Publish as a Hex Package
+
+Extract `lib/ignite/` into its own repo and publish to Hex. New projects would add it as a dependency:
+
+```elixir
+# New project's mix.exs
+defp deps do
+  [{:ignite, "~> 0.1"}]
+end
+```
+
+Then users write their own router, controllers, and LiveViews — exactly like they do with Phoenix.
+
+### Step 2: Project Generator (`mix ignite.new`)
+
+Create a `mix ignite.new` task (like `mix phx.new`) that scaffolds a new project:
+
+```bash
+mix archive.install hex ignite_new
+mix ignite.new my_blog
+cd my_blog
+mix deps.get
+iex -S mix
+```
+
+This would generate:
+
+```
+my_blog/
+├── mix.exs              # with {:ignite, "~> 0.1"} dep
+├── lib/my_blog/
+│   ├── router.ex        # use Ignite.Router
+│   ├── application.ex   # OTP Application
+│   ├── controllers/
+│   └── live/
+├── templates/
+├── assets/
+│   └── ignite.js
+├── config/
+│   ├── config.exs
+│   └── runtime.exs
+└── test/
+```
+
+This is the same pattern Phoenix uses — `phx_new` is a separate package that generates the scaffolding.
+
 ## License
 
 This project is licensed under the **GNU Affero General Public License v3.0 (AGPL-3.0)**. See [LICENSE](LICENSE) for the full text.
