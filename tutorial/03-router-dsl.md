@@ -125,11 +125,11 @@ way to make dynamic function calls.
 
 ### `lib/ignite/router.ex`
 
-Three macros that work together:
+One built-in callback and two custom macros work together:
 
-1. **`__using__/1`** — injected when you write `use Ignite.Router`
-2. **`get/2`** — generates a `dispatch` clause for each GET route
-3. **`finalize_routes/0`** — generates a catch-all 404 clause
+1. **`__using__/1`** — a special Elixir callback macro, automatically invoked when someone writes `use Ignite.Router`. Every module that wants to support `use` must define this.
+2. **`get/2`** — a custom macro we define. Generates a `dispatch` clause for each GET route.
+3. **`finalize_routes/0`** — a custom macro we define. Generates a catch-all 404 clause.
 
 The key insight: each `get` call **defines a function clause**. Elixir
 functions can have multiple clauses, and the VM tries them in order:
