@@ -100,16 +100,26 @@ After `use Ignite.Router`, your module has:
 
 ### apply/3
 
-`apply(module, function_name, args)` calls a function dynamically:
+In many languages you can call a method dynamically with `object.method()`.
+Elixir modules aren't objects — you can't write `controller.action(conn)`.
+Instead, Elixir provides `apply/3`, a built-in function that calls any
+function when you have the module and function name as variables:
 
 ```elixir
 apply(MyApp.WelcomeController, :index, [conn])
-# Same as:
+# Same as calling directly:
 MyApp.WelcomeController.index(conn)
 ```
 
-We use `apply` because the module and function come from macro arguments
-— they aren't known until compile time.
+The three arguments are:
+1. **Module** — the module that defines the function (e.g. `MyApp.WelcomeController`)
+2. **Function name** — an atom (e.g. `:index`)
+3. **Arguments** — a list of arguments to pass (e.g. `[conn]`)
+
+We need `apply` in the router because the module and function come from
+macro arguments — they're variables, not hardcoded names. You can't write
+`unquote(controller).unquote(action)(conn)` in Elixir; `apply/3` is the
+way to make dynamic function calls.
 
 ## The Code
 
