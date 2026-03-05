@@ -62,6 +62,21 @@ We convert keyword lists to maps with `Enum.into/2`:
 #=> %{name: "Rajesh", id: 42}
 ```
 
+### Default Arguments (`\\\\`)
+
+Elixir uses `\\\\` to set default parameter values:
+
+```elixir
+def render(conn, template_name, assigns \\ []) do
+```
+
+This means you can call `render` two ways:
+- `render(conn, "profile", name: "Rajesh")` — passes assigns
+- `render(conn, "profile")` — assigns defaults to `[]`
+
+Under the hood, Elixir generates two function clauses: a 2-arity one
+that calls the 3-arity one with the default value.
+
 ### Path.join/2
 
 Builds file paths safely across operating systems:
