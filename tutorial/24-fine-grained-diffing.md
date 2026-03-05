@@ -63,12 +63,27 @@ The `~L` sigil uses EEx syntax (`<%= %>`). At compile time, it produces a `%Rend
 
 Elixir's EEx module supports custom "engines" that control how templates are compiled. The default engine produces a concatenated string. Our engine produces a `%Rendered{}` struct.
 
+First, define the struct that holds the split template in
+`lib/ignite/live_view/rendered.ex`:
+
+```elixir
+defmodule Ignite.LiveView.Rendered do
+  defstruct statics: [], dynamics: []
+end
+```
+
+Then the engine in `lib/ignite/live_view/eex_engine.ex`:
+
 ```elixir
 defmodule Ignite.LiveView.EExEngine do
   @behaviour EEx.Engine
 
   # Start with empty accumulators
   def init(_opts), do: {[], [], ""}
+
+  # Required callbacks — EEx.Engine requires these even if unused
+  def handle_begin(state), do: state
+  def handle_end(state), do: state
 
   # Literal text → append to pending buffer
   def handle_text(state, _meta, text) do
@@ -82,6 +97,9 @@ defmodule Ignite.LiveView.EExEngine do
     wrapped = quote do: to_string(unquote(expr))
     {[pending | statics], [wrapped | dynamics], ""}
   end
+
+  # <% expr %> (non-output) — not supported in ~L, silently ignored
+  def handle_expr(state, _marker, _expr), do: state
 
   # Final step → build the %Rendered{} struct
   def handle_body(state) do

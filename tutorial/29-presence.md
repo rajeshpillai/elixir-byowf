@@ -24,21 +24,67 @@ For Ignite, we take a simpler approach: a single GenServer that uses `Process.mo
 
 ```elixir
 # lib/ignite/presence.ex
+defmodule Ignite.Presence do
+  use GenServer
+  require Logger
 
-# Track a process under a topic with metadata
-def track(topic, key, meta \\ %{}) do
-  GenServer.call(__MODULE__, {:track, topic, key, meta, self()})
-end
+  # --- Public API ---
 
-# Remove a process from a topic
-def untrack(topic, key) do
-  GenServer.call(__MODULE__, {:untrack, topic, key, self()})
-end
+  def start_link(opts \\ []) do
+    GenServer.start_link(__MODULE__, opts, name: __MODULE__)
+  end
 
-# List all presences for a topic
-def list(topic) do
-  GenServer.call(__MODULE__, {:list, topic})
-end
+  def track(topic, key, meta \\ %{}) do
+    GenServer.call(__MODULE__, {:track, topic, key, meta, self()})
+  end
+
+  def untrack(topic, key) do
+    GenServer.call(__MODULE__, {:untrack, topic, key, self()})
+  end
+
+  def list(topic) do
+    GenServer.call(__MODULE__, {:list, topic})
+  end
+
+  # --- GenServer Callbacks ---
+
+  @impl true
+  def init(_opts) do
+    {:ok, %{presences: %{}, refs: %{}}}
+  end
+
+  @impl true
+  def handle_call({:track, topic, key, meta, pid}, _from, state) do
+    state = do_track(state, topic, key, meta, pid)
+    Ignite.PubSub.broadcast(topic, {:presence_diff, %{joins: %{key => meta}, leaves: %{}}})
+    {:reply, :ok, state}
+  end
+
+  @impl true
+  def handle_call({:untrack, topic, key, pid}, _from, state) do
+    topic_presences = Map.get(state.presences, topic, %{})
+
+    case Map.get(topic_presences, key) do
+      %{pid: ^pid, ref: ref, meta: meta} ->
+        Process.demonitor(ref, [:flush])
+        state = remove_presence(state, topic, key, ref)
+        Ignite.PubSub.broadcast(topic, {:presence_diff, %{joins: %{}, leaves: %{key => meta}}})
+        {:reply, :ok, state}
+
+      _ ->
+        {:reply, :ok, state}
+    end
+  end
+
+  @impl true
+  def handle_call({:list, topic}, _from, state) do
+    result =
+      state.presences
+      |> Map.get(topic, %{})
+      |> Map.new(fn {key, %{meta: meta}} -> {key, meta} end)
+
+    {:reply, result, state}
+  end
 ```
 
 ### 2. Process Monitoring
@@ -46,21 +92,53 @@ end
 When `track/3` is called, the GenServer monitors the caller:
 
 ```elixir
-defp do_track(state, topic, key, meta, pid) do
-  ref = Process.monitor(pid)
-  # Store the presence and the reverse ref mapping
-  ...
-end
+  defp do_track(state, topic, key, meta, pid) do
+    ref = Process.monitor(pid)
+    topic_presences = Map.get(state.presences, topic, %{})
+    updated = Map.put(topic_presences, key, %{pid: pid, meta: meta, ref: ref})
+
+    %{
+      state
+      | presences: Map.put(state.presences, topic, updated),
+        refs: Map.put(state.refs, ref, {topic, key})
+    }
+  end
 ```
 
 When the monitored process dies:
 
 ```elixir
-def handle_info({:DOWN, ref, :process, _pid, _reason}, state) do
-  # Look up which topic/key this ref belongs to
-  {topic, key} = state.refs[ref]
-  # Remove from state and broadcast leave
-  ...
+  @impl true
+  def handle_info({:DOWN, ref, :process, _pid, _reason}, state) do
+    case Map.get(state.refs, ref) do
+      {topic, key} ->
+        meta = get_in(state.presences, [topic, key, :meta]) || %{}
+        state = remove_presence(state, topic, key, ref)
+
+        # Send directly (not via PubSub) because the dead process
+        # can't be excluded as a sender
+        for pid <- :pg.get_members(Ignite.PubSub, topic) do
+          send(pid, {:presence_diff, %{joins: %{}, leaves: %{key => meta}}})
+        end
+
+        {:noreply, state}
+
+      nil ->
+        {:noreply, state}
+    end
+  end
+
+  defp remove_presence(state, topic, key, ref) do
+    topic_presences = Map.get(state.presences, topic, %{})
+    updated = Map.delete(topic_presences, key)
+
+    presences =
+      if updated == %{},
+        do: Map.delete(state.presences, topic),
+        else: Map.put(state.presences, topic, updated)
+
+    %{state | presences: presences, refs: Map.delete(state.refs, ref)}
+  end
 end
 ```
 

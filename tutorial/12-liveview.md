@@ -164,7 +164,7 @@ mix deps.get
 
 3. Visit http://localhost:4000/counter
 
-4. Click the **+** and **-** buttons — the counter updates instantly
+4. Click the **+1** button — the counter updates instantly
    without any page reload!
 
 5. Open a second browser tab to the same URL — each tab has its own

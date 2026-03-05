@@ -71,17 +71,27 @@ The `private` map stores framework-internal state. The adapter uses `private.fla
 ```elixir
 # lib/ignite/session.ex
 defmodule Ignite.Session do
-  @secret "ignite-secret-key-change-in-prod-min-64-bytes-long-for-security!!"
+  @default_secret "ignite-secret-key-change-in-prod-min-64-bytes-long-for-security!!"
   @cookie_name "_ignite_session"
+
+  # In production, set via config: config :ignite, :secret_key_base, "..."
+  defp secret do
+    Application.get_env(:ignite, :secret_key_base, @default_secret)
+  end
+
+  def cookie_name, do: @cookie_name
 
   def encode(session) when is_map(session) do
     session
     |> :erlang.term_to_binary()
-    |> Plug.Crypto.MessageVerifier.sign(@secret)
+    |> Plug.Crypto.MessageVerifier.sign(secret())
   end
 
+  def decode(nil), do: :error
+  def decode(""), do: :error
+
   def decode(cookie_value) when is_binary(cookie_value) do
-    case Plug.Crypto.MessageVerifier.verify(cookie_value, @secret) do
+    case Plug.Crypto.MessageVerifier.verify(cookie_value, secret()) do
       {:ok, binary} ->
         {:ok, :erlang.binary_to_term(binary, [:safe])}
       :error ->

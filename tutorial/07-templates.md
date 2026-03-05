@@ -22,7 +22,7 @@ EEx is part of Elixir's **standard library** — no dependencies needed!
 It lets you embed Elixir expressions inside any text file using special tags:
 
 ```html
-<h1>Hello, <%= @assigns[:name] %>!</h1>
+<h1>Hello, <%= @name %>!</h1>
 <p>2 + 2 = <%= 2 + 2 %></p>
 ```
 
@@ -42,7 +42,8 @@ EEx.eval_file("templates/profile.html.eex", assigns: %{name: "Rajesh"})
 
 The second argument is a **binding** — a keyword list of variables available
 inside the template. We pass `assigns: %{...}` so the template can use
-`@assigns[:key]`.
+`@name`, `@id`, etc. The `@` is an EEx shortcut that expands `@name` to
+`assigns[:name]`.
 
 ### Keyword Lists
 
@@ -95,21 +96,21 @@ A simple HTML page that uses assigns:
 
 ```html
 <h1>User Profile</h1>
-<p><strong>Name:</strong> <%= @assigns[:name] %></p>
-<p><strong>ID:</strong> <%= @assigns[:id] %></p>
+<p><strong>Name:</strong> <%= @name %></p>
+<p><strong>ID:</strong> <%= @id %></p>
+<p><strong>Email:</strong> <%= @email %></p>
 <p><strong>Server Time:</strong> <%= DateTime.utc_now() %></p>
 ```
 
-Note: `@assigns` is a map passed into the template. We access values
-with `@assigns[:key]`. In Phoenix, this is simplified to just `@name`,
-but our version is explicit about where data comes from.
+The `@name` syntax is EEx's built-in shortcut — it expands to `assigns[:name]`.
+This is the same syntax Phoenix uses in its templates.
 
 ### Updated UserController
 
 ```elixir
 def show(conn) do
   user_id = conn.params[:id]
-  render(conn, "profile", name: "Elixir Enthusiast", id: user_id)
+  render(conn, "profile", name: "Elixir Enthusiast", id: user_id, email: "N/A")
 end
 ```
 
@@ -124,8 +125,8 @@ Controller                          EEx Engine
     |   name: "Rajesh", id: 42)        |
     |---------------------------------->|
     |                                   | Read templates/profile.html.eex
-    |                                   | Replace <%= @assigns[:name] %> → "Rajesh"
-    |                                   | Replace <%= @assigns[:id] %> → "42"
+    |                                   | Replace <%= @name %> → "Rajesh"
+    |                                   | Replace <%= @id %> → "42"
     |   "<html>...<h1>Rajesh</h1>..."   |
     |<----------------------------------|
     |                                   |

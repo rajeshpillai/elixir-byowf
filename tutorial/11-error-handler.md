@@ -93,9 +93,37 @@ def init(req, state) do
 end
 ```
 
-The `error_page/1` function generates a styled HTML page showing the
-error message. In production, you'd replace this with a generic
-"Something went wrong" page.
+The `error_page/1` function generates a styled HTML page:
+
+```elixir
+defp error_page(exception) do
+  message = Exception.message(exception) |> html_escape()
+
+  """
+  <!DOCTYPE html>
+  <html>
+  <head><title>500 — Internal Server Error</title></head>
+  <body style="font-family: system-ui; max-width: 600px; margin: 50px auto;">
+    <h1 style="color: #e74c3c;">Something went wrong</h1>
+    <pre style="background: #f8f9fa; padding: 16px; border-radius: 8px;">#{message}</pre>
+    <p><a href="/">Back to Home</a></p>
+  </body>
+  </html>
+  """
+end
+
+defp html_escape(text) do
+  text
+  |> String.replace("&", "&amp;")
+  |> String.replace("<", "&lt;")
+  |> String.replace(">", "&gt;")
+end
+```
+
+The `html_escape/1` function prevents XSS — without it, a crafted
+exception message could inject JavaScript into the error page. In
+production, you'd replace this with a generic "Something went wrong"
+page that hides the exception details.
 
 ### Test Route
 

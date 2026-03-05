@@ -70,14 +70,35 @@ defmodule Ignite.Static do
     build_manifest(dir)
   end
 
+  def rebuild(dir \\ @default_dir) do
+    :ets.delete_all_objects(@table)
+    build_manifest(dir)
+  end
+
   def static_path(filename) do
     case :ets.lookup(@table, filename) do
       [{^filename, hash}] -> "/assets/#{filename}?v=#{hash}"
       [] -> "/assets/#{filename}"
     end
   end
+
+  defp build_manifest(dir) do
+    dir
+    |> Path.join("**/*")
+    |> Path.wildcard()
+    |> Enum.filter(&File.regular?/1)
+    |> Enum.each(fn path ->
+      filename = Path.relative_to(path, dir)
+      hash = hash_file(path)
+      :ets.insert(@table, {filename, hash})
+    end)
+  end
 end
 ```
+
+`build_manifest/1` walks the directory, computes MD5 hashes, and inserts
+`{filename, hash}` pairs into ETS. `rebuild/1` clears and re-scans —
+called by the reloader when assets change during development.
 
 ### 2. ETS for the Manifest
 

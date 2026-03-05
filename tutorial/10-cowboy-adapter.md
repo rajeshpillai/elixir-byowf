@@ -119,6 +119,54 @@ def init(req, state) do
 end
 ```
 
+The `cowboy_to_conn/1` function translates Cowboy's request map into our
+`%Ignite.Conn{}` struct:
+
+```elixir
+defp cowboy_to_conn(req) do
+  # Read the body if present (POST/PUT/PATCH)
+  {body_params, _req} = read_cowboy_body(req)
+
+  # Convert Cowboy headers to a simple map
+  headers =
+    req.headers
+    |> Enum.into(%{}, fn {k, v} -> {String.downcase(k), v} end)
+
+  %Ignite.Conn{
+    method: req.method,
+    path: req.path,
+    headers: headers,
+    params: body_params
+  }
+end
+
+defp read_cowboy_body(req) do
+  case :cowboy_req.has_body(req) do
+    true ->
+      {:ok, body, req} = :cowboy_req.read_body(req)
+      content_type = :cowboy_req.header("content-type", req, "")
+      {parse_body(body, content_type), req}
+
+    false ->
+      {%{}, req}
+  end
+end
+
+defp parse_body(body, "application/x-www-form-urlencoded" <> _) do
+  URI.decode_query(body)
+end
+
+defp parse_body(body, _) when byte_size(body) > 0 do
+  %{"_body" => body}
+end
+
+defp parse_body(_, _), do: %{}
+```
+
+Cowboy's `req` is a map with keys like `method`, `path`, and `headers`.
+We read the body with `:cowboy_req.read_body/1` and reuse the same
+`parse_body` logic from Step 9.
+
 ### Updated `lib/ignite/application.ex`
 
 The supervisor now starts Cowboy instead of our gen_tcp server:

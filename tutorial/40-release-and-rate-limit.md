@@ -97,12 +97,39 @@ In dev/test, the default is used automatically. In production (via `runtime.exs`
 In a release, `mix ecto.migrate` doesn't exist. `Ignite.Release` provides the same functionality:
 
 ```elixir
-# Run from a release:
+# lib/ignite/release.ex
+defmodule Ignite.Release do
+  @app :ignite
+
+  def migrate do
+    load_app()
+    for repo <- repos() do
+      {:ok, _, _} = Ecto.Migrator.with_repo(repo, &Ecto.Migrator.run(&1, :up, all: true))
+    end
+  end
+
+  def rollback(repo, version) do
+    load_app()
+    {:ok, _, _} = Ecto.Migrator.with_repo(repo, &Ecto.Migrator.run(&1, :down, to: version))
+  end
+
+  defp repos, do: Application.fetch_env!(@app, :ecto_repos)
+
+  defp load_app do
+    Application.ensure_all_started(:ssl)
+    Application.ensure_all_started(:ecto_sql)
+    Application.load(@app)
+  end
+end
+```
+
+Run from a release:
+```bash
 bin/ignite eval "Ignite.Release.migrate()"
 bin/ignite eval "Ignite.Release.rollback(MyApp.Repo, 20240301120000)"
 ```
 
-It uses `Ecto.Migrator.with_repo/2` which boots the repo, runs migrations, then shuts it down cleanly.
+`Ecto.Migrator.with_repo/2` boots the repo, runs migrations, then shuts it down cleanly.
 
 ### Release Configuration
 
@@ -178,9 +205,50 @@ content-type: application/json
 {"error":"Too Many Requests","message":"Rate limit exceeded. Try again in 60 seconds.","retry_after":60}
 ```
 
+### The RateLimiter GenServer
+
+```elixir
+# lib/ignite/rate_limiter.ex
+defmodule Ignite.RateLimiter do
+  use GenServer
+
+  @table :ignite_rate_limiter
+
+  def start_link(opts \\ []) do
+    GenServer.start_link(__MODULE__, opts, name: __MODULE__)
+  end
+
+  @impl true
+  def init(_opts) do
+    :ets.new(@table, [:named_table, :bag, :public, write_concurrency: true, read_concurrency: true])
+    schedule_cleanup()
+    {:ok, %{}}
+  end
+
+  @impl true
+  def handle_info(:cleanup, state) do
+    config = Application.get_env(:ignite, :rate_limit, [])
+    window_ms = Keyword.get(config, :window_ms, 60_000)
+    cutoff = System.monotonic_time(:millisecond) - window_ms
+    match_spec = [{{:_, :"$1"}, [{:<, :"$1", cutoff}], [true]}]
+    :ets.select_delete(@table, match_spec)
+    schedule_cleanup()
+    {:noreply, state}
+  end
+
+  defp schedule_cleanup do
+    config = Application.get_env(:ignite, :rate_limit, [])
+    interval = min(Keyword.get(config, :window_ms, 60_000), 60_000)
+    Process.send_after(self(), :cleanup, interval)
+  end
+
+  # ... call/1, client_ip/1, count_requests/2 shown below ...
+end
+```
+
 ### GenServer Cleanup
 
-The `Ignite.RateLimiter` GenServer periodically deletes expired entries using `:ets.select_delete/2` with a match spec:
+The GenServer periodically deletes expired entries using `:ets.select_delete/2` with a match spec:
 
 ```elixir
 match_spec = [{{:_, :"$1"}, [{:<, :"$1", cutoff}], [true]}]

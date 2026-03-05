@@ -48,6 +48,41 @@ When `:ssl` is set, it returns:
 
 The `tls_opts` include `port`, `certfile`, and `keyfile` — converted to charlists because Erlang's `:ssl` module expects them that way.
 
+### The Full `child_spec/2`
+
+```elixir
+# lib/ignite/ssl.ex
+defmodule Ignite.SSL do
+  def child_spec(port, dispatch) do
+    case Application.get_env(:ignite, :ssl) do
+      nil ->
+        %{id: :cowboy_listener,
+          start: {:cowboy, :start_clear, [:ignite_http, [port: port], %{env: %{dispatch: dispatch}}]}}
+
+      ssl_opts when is_list(ssl_opts) ->
+        certfile = Keyword.fetch!(ssl_opts, :certfile)
+        keyfile = Keyword.fetch!(ssl_opts, :keyfile)
+        validate_file!(certfile, "SSL certificate")
+        validate_file!(keyfile, "SSL private key")
+
+        tls_opts = [
+          port: port,
+          certfile: String.to_charlist(certfile),
+          keyfile: String.to_charlist(keyfile)
+        ]
+
+        %{id: :cowboy_listener,
+          start: {:cowboy, :start_tls, [:ignite_https, tls_opts, %{env: %{dispatch: dispatch}}]}}
+    end
+  end
+
+  def ssl_configured? do
+    Application.get_env(:ignite, :ssl) != nil
+  end
+  # ... validate_file!, redirect_child_spec ...
+end
+```
+
 ### File Validation
 
 Before starting TLS, we check that the certificate files actually exist:

@@ -175,6 +175,24 @@ def verify_csrf_token(conn) do
     end
   end
 end
+
+defp csrf_error_page do
+  """
+  <!DOCTYPE html>
+  <html>
+  <head><title>403 Forbidden</title></head>
+  <body style="font-family: system-ui; max-width: 600px; margin: 50px auto;">
+    <h1 style="color: #e74c3c;">403 Forbidden</h1>
+    <p>Invalid or missing CSRF token. This usually means:</p>
+    <ul>
+      <li>Your session expired — try refreshing the page</li>
+      <li>The form is missing a CSRF token tag</li>
+    </ul>
+    <p><a href="/">Back to Home</a></p>
+  </body>
+  </html>
+  """
+end
 ```
 
 **Safe methods** (GET, HEAD, OPTIONS) are always allowed — they shouldn't modify state.

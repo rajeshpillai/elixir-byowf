@@ -68,10 +68,15 @@ defp read_headers(socket, acc \\ %{}) do
       acc                                           # Done! Return what we collected
 
     {:ok, {:http_header, _, name, _, value}} ->
+      key = name |> to_string() |> String.downcase()
       read_headers(socket, Map.put(acc, key, value))  # Add to acc, keep going
   end
 end
 ```
+
+The `name` from Erlang's HTTP parser might be an atom (`:Host`) or a string,
+so we normalize it: convert to string, then lowercase. This ensures headers
+are always accessed as `"host"`, `"content-type"`, etc.
 
 The `\\` gives `acc` a default value of `%{}` (empty map), so callers don't
 need to pass it.

@@ -42,26 +42,95 @@ We use a **separate `Ignite.DebugPage` module**. The Cowboy adapter stays focuse
 # lib/ignite/debug_page.ex
 defmodule Ignite.DebugPage do
   def render(exception, stacktrace, conn) do
-    if Mix.env() == :prod do
+    if Application.get_env(:ignite, :env) == :prod do
       render_prod()
     else
       render_dev(exception, stacktrace, conn)
     end
   end
+
+  defp render_prod do
+    """
+    <!DOCTYPE html>
+    <html>
+    <head><title>500 — Internal Server Error</title></head>
+    <body style="font-family: system-ui; max-width: 600px; margin: 80px auto; text-align: center;">
+      <h1 style="color: #e74c3c;">500 — Internal Server Error</h1>
+      <p>Something went wrong. Please try again later.</p>
+      <p><a href="/">Back to Home</a></p>
+    </body>
+    </html>
+    """
+  end
+
+  defp render_dev(exception, stacktrace, conn) do
+    exception_type = exception.__struct__ |> inspect() |> html_escape()
+    message = Exception.message(exception) |> html_escape()
+    trace_html = Enum.map_join(stacktrace, "\n", &format_entry/1)
+
+    """
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>#{exception_type} — Ignite Debug</title>
+      <style>
+        body { font-family: system-ui, sans-serif; margin: 0; background: #f5f5f5; }
+        header { background: #e74c3c; color: #fff; padding: 24px 32px; }
+        header h1 { font-size: 1.4em; }
+        header pre { background: rgba(0,0,0,0.2); padding: 12px; border-radius: 6px; }
+        nav { background: #fff; border-bottom: 2px solid #e0e0e0; padding: 0 32px; }
+        .tab { background: none; border: none; padding: 12px 20px; cursor: pointer; }
+        .tab.active { color: #e74c3c; border-bottom: 3px solid #e74c3c; font-weight: 600; }
+        .panel { display: none; padding: 24px 32px; }
+        .panel.active { display: block; }
+        table { width: 100%; border-collapse: collapse; }
+        td { padding: 6px 12px; border-bottom: 1px solid #eee; font-family: monospace; }
+        tr.app td { font-weight: 600; }
+        tr.dep td { color: #999; }
+      </style>
+    </head>
+    <body>
+      <header><h1>#{exception_type}</h1><pre>#{message}</pre></header>
+      <nav>
+        <button class="tab active" onclick="showTab('stacktrace')">Stacktrace</button>
+        <button class="tab" onclick="showTab('request')">Request</button>
+        <button class="tab" onclick="showTab('session')">Session</button>
+      </nav>
+      <section id="stacktrace" class="panel active">
+        <table><tbody>#{trace_html}</tbody></table>
+      </section>
+      <section id="request" class="panel">#{format_request(conn)}</section>
+      <section id="session" class="panel">#{format_session(conn)}</section>
+      <script>
+        function showTab(id) {
+          document.querySelectorAll('.panel').forEach(function(p) { p.classList.remove('active'); });
+          document.querySelectorAll('.tab').forEach(function(t) { t.classList.remove('active'); });
+          document.getElementById(id).classList.add('active');
+          event.target.classList.add('active');
+        }
+      </script>
+    </body>
+    </html>
+    """
+  end
+  # ... format_entry, format_request, format_session, html_escape below ...
 end
 ```
 
-**`render/3`** — The entry point. Checks `Mix.env()` at runtime to decide which page to show.
+**`render/3`** — The entry point. Uses `Application.get_env(:ignite, :env)` instead of
+`Mix.env()` (since `Mix` is not available in releases — see Step 40).
 
 ### 2. Dev Mode: Rich Error Page
 
-The dev page has three sections, switchable via tabs:
+The dev page has three sections, switchable via inline JavaScript tabs:
 
 **Stacktrace** — Each entry shows `Module.function/arity` and `file:line`. App frames (files under `lib/my_app/` or `lib/ignite/`) are shown bold; dependency frames are dimmed. This makes it easy to spot your code in a long trace.
 
 **Request** — Method, path, parameters, and headers from `conn`.
 
 **Session** — Session data (CSRF token, flash messages, etc.).
+
+All CSS and JS are inlined — no external assets. This ensures the error page works even when the static asset pipeline is broken.
 
 ### 3. Stacktrace Entry Formatting
 
@@ -109,7 +178,10 @@ def init(req, state) do
   req =
     try do
       conn = MyApp.Router.call(conn)
-      # ... session cookie, send response ...
+      cookie_value = Ignite.Session.encode(conn.session)
+      req = :cowboy_req.set_resp_cookie(Ignite.Session.cookie_name(), cookie_value, req,
+              %{path: "/", http_only: true, same_site: :lax})
+      :cowboy_req.reply(conn.status, conn.resp_headers, conn.resp_body, req)
     rescue
       exception ->
         Logger.error("""
@@ -210,7 +282,7 @@ iex -S mix
 
 ## Key Concepts
 
-- **`Mix.env()`** — Returns the current environment (`:dev`, `:test`, `:prod`). Checked at runtime to decide what to show. In production, never leak internal details.
+- **`Application.get_env(:ignite, :env)`** — Returns the current environment (`:dev`, `:test`, `:prod`). We use application config instead of `Mix.env()` because `Mix` is not available in compiled releases (see Step 40).
 - **Stacktrace tuples** — `{module, function, arity_or_args, location}` where `location` is a keyword list with `:file` and `:line`. The `arity` field is sometimes the actual arguments list, not an integer.
 - **Variable scoping in try/rescue** — Variables assigned inside `try` are not available in `rescue`. Move shared state before the `try` block.
 - **Self-contained error pages** — Inline all CSS/JS so the error page works even when external assets are broken.

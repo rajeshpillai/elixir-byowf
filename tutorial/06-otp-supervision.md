@@ -137,15 +137,39 @@ Key changes:
 - `spawn_link` connects the acceptor loop to the GenServer
 - `Task.start` replaces `spawn` for individual requests
 
+### `mix.exs` (Tell OTP About Our Application)
+
+For the supervisor to start automatically, you must add `mod:` to the
+`application/0` function in `mix.exs`:
+
+```elixir
+def application do
+  [
+    extra_applications: [:logger],
+    mod: {Ignite.Application, []}
+  ]
+end
+```
+
+The `mod:` option tells the BEAM: "When this app starts, call
+`Ignite.Application.start/2`." Without this line, nothing starts
+automatically.
+
 ### `lib/ignite/application.ex` (The Supervisor)
 
 ```elixir
-children = [
-  {Ignite.Server, 4000}
-]
+defmodule Ignite.Application do
+  use Application
 
-opts = [strategy: :one_for_one, name: Ignite.Supervisor]
-Supervisor.start_link(children, opts)
+  def start(_type, _args) do
+    children = [
+      {Ignite.Server, 4000}
+    ]
+
+    opts = [strategy: :one_for_one, name: Ignite.Supervisor]
+    Supervisor.start_link(children, opts)
+  end
+end
 ```
 
 This tells the supervisor: "Start `Ignite.Server` with argument `4000`.
