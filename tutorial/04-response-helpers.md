@@ -37,22 +37,33 @@ text(conn, "Hello")
 
 This is why Phoenix controllers can use `text`, `json`, `render` directly.
 
-### Map Update Syntax
+### Struct Update Syntax
 
-The `%{struct | key: new_value}` syntax creates a **new** struct with
-some fields changed:
+The `%StructName{existing | key: new_value}` syntax creates a **new**
+struct with some fields changed. The `|` (pipe) separates the existing
+struct from the fields you want to override:
 
 ```elixir
 conn = %Ignite.Conn{status: 200, resp_body: ""}
 new_conn = %Ignite.Conn{conn | status: 404, resp_body: "Not Found"}
+#                        ^^^^   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+#                        base   fields to override
 
 conn.status      #=> 200  (unchanged!)
 new_conn.status  #=> 404  (new copy)
 ```
 
+Read it as: "create a new `Ignite.Conn` starting from `conn`, but with
+`status` set to 404 and `resp_body` set to `"Not Found"`."
+
 This is **immutability** in action. You never modify data — you create
 new versions. This makes debugging easier because you can always trace
 back to the original.
+
+> **Note:** Plain maps use `%{map | key: value}` (no struct name).
+> Structs use `%StructName{struct | key: value}`. The `|` syntax only
+> updates existing keys — it raises if you try to set a key that doesn't
+> exist in the struct definition.
 
 ### Enum.map and Enum.join
 
