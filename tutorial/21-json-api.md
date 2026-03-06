@@ -141,3 +141,7 @@ Response:        200 OK  Content-Type: application/json
 | `lib/my_app/controllers/api_controller.ex` | **New** |
 | `lib/my_app/controllers/welcome_controller.ex` | **Modified** — added link to API status page |
 | `lib/my_app/router.ex` | **Modified** — added `/api/status` and `/api/echo` routes |
+
+---
+
+[← Previous: Step 20 - JS Hooks — Client-Side JavaScript Interop](20-js-hooks.md) | [Next: Step 22 - PUT/PATCH/DELETE HTTP Methods →](22-http-methods.md)

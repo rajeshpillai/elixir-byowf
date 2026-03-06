@@ -240,3 +240,7 @@ A production health check might also verify database connectivity (`Repo.query!(
 
 - **Modified** `lib/my_app/controllers/api_controller.ex` — Added `health/1` action and `format_uptime/1` helper
 - **Modified** `lib/my_app/router.ex` — Added `get "/health"` route
+
+---
+
+[← Previous: Step 35 - Logger Metadata (Request ID + Timing)](35-logger-metadata.md) | [Next: Step 37 - Static Asset Pipeline →](37-static-asset-pipeline.md)

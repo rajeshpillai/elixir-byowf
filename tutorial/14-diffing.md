@@ -296,3 +296,7 @@ Changing a controller file requires restarting the entire server.
 In **Step 15**, we'll build a **Hot Code Reloader** — a GenServer
 that watches for file changes and recompiles modules on the fly,
 without dropping any connections.
+
+---
+
+[← Previous: Step 13 - Frontend JS Glue](13-frontend-glue.md) | [Next: Step 15 - Hot Code Reloader →](15-hot-reloader.md)

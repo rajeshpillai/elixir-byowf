@@ -302,3 +302,7 @@ Congratulations! You've built a complete web framework with:
 - PubSub → LiveView Navigation → LiveComponents → JS Hooks
 
 The framework is now feature-comparable to a simplified Phoenix LiveView. See the README roadmap for ideas on what to add next (CSRF, Ecto, clustering, etc.).
+
+---
+
+[← Previous: Step 19 - LiveComponents — Reusable Stateful Widgets](19-live-components.md) | [Next: Step 21 - JSON Response Helper →](21-json-api.md)

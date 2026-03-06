@@ -199,3 +199,7 @@ get "/users/:id", to: UserController, action: :show
 ```
 
 The `:id` will be captured into `conn.params[:id]`.
+
+---
+
+[← Previous: Step 3 - Router DSL (Macros)](03-router-dsl.md) | [Next: Step 5 - Dynamic Route Matching →](05-dynamic-routes.md)

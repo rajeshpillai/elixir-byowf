@@ -189,3 +189,7 @@ We have a solid HTTP framework. Now it's time for the "wow" feature:
 In **Step 12**, we'll add WebSocket support so the server can **push**
 updates to the browser. You'll build a live counter that increments
 without any page reload.
+
+---
+
+[← Previous: Step 10 - Cowboy Adapter](10-cowboy-adapter.md) | [Next: Step 12 - LiveView (WebSocket) →](12-liveview.md)

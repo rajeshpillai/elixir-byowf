@@ -220,3 +220,7 @@ In **Step 6**, we'll wrap the server in an **OTP Supervisor**. This gives
 us "self-healing" — when a request handler crashes, the supervisor restarts
 the server automatically. This is the secret sauce behind Erlang's famous
 "nine nines" (99.9999999%) uptime.
+
+---
+
+[← Previous: Step 4 - Response Helpers](04-response-helpers.md) | [Next: Step 6 - OTP Supervision →](06-otp-supervision.md)

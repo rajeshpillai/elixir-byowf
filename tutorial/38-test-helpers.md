@@ -352,3 +352,7 @@ Phoenix uses `Ecto.Adapters.SQL.Sandbox` for test isolation (each test runs in a
 - **Modified** `config/config.exs` — Added `:port` config and env-specific config import
 - **Modified** `test/test_helper.exs` — Run migrations automatically before tests
 - **Modified** `test/ignite_test.exs` — Replaced empty module with ConnTest helper tests
+
+---
+
+[← Previous: Step 37 - Static Asset Pipeline](37-static-asset-pipeline.md) | [Next: Step 39 - SSL/TLS Support →](39-ssl-tls.md)

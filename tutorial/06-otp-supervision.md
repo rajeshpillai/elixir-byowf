@@ -267,3 +267,7 @@ template system. You'll write HTML files with embedded Elixir code
 ```elixir
 render(conn, "profile", name: "Rajesh", id: 42)
 ```
+
+---
+
+[← Previous: Step 5 - Dynamic Route Matching](05-dynamic-routes.md) | [Next: Step 7 - EEx Template Engine →](07-templates.md)

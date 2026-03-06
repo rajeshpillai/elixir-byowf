@@ -121,3 +121,7 @@ curl -X DELETE http://localhost:4000/users/42
 | `lib/ignite/router.ex` | **Modified** — added `put`, `patch`, and `delete` macros |
 | `lib/my_app/router.ex` | **Modified** — added PUT/PATCH/DELETE routes for users |
 | `lib/my_app/controllers/user_controller.ex` | **Modified** — added `update/1` and `delete/1` actions |
+
+---
+
+[← Previous: Step 21 - JSON Response Helper](21-json-api.md) | [Next: Step 23 - Scoped Routes →](23-scoped-routes.md)

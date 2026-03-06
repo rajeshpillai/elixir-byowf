@@ -319,3 +319,7 @@ cases (arbitrary positioning, reordering).
 |------|--------|---------|
 | `lib/ignite/live_view/stream.ex` | **Modified** | Added `limit`, `order` fields, upsert detection, `apply_limit/5` |
 | `lib/my_app/live/stream_demo_live.ex` | **Modified** | Added `limit: 20`, "Update Latest" button for upsert demo |
+
+---
+
+[← Previous: Step 40 - Deployment with `mix release` + Rate Limiting](40-release-and-rate-limit.md)

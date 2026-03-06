@@ -279,3 +279,7 @@ pushes an update, the input loses focus and the text disappears.
 In **Step 16**, we'll integrate **Morphdom** — a DOM diffing library
 that only updates the elements that actually changed, preserving focus,
 input state, and CSS animations.
+
+---
+
+[← Previous: Step 14 - Diffing Engine](14-diffing.md) | [Next: Step 16 - Morphdom Integration →](16-morphdom.md)

@@ -248,3 +248,7 @@ Our controllers are building response strings manually with `%{conn | resp_body:
 In **Step 4**, we'll create **Response Helpers** like `text(conn, "Hello!")` that
 handle status codes and content types automatically — just like Phoenix's
 `text/2` and `html/2`.
+
+---
+
+[← Previous: Step 2 - The Conn Struct & Parser](02-conn-struct.md) | [Next: Step 4 - Response Helpers →](04-response-helpers.md)

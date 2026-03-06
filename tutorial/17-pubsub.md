@@ -373,3 +373,7 @@ With PubSub, you can now build:
 - **Game state** — synchronize multiplayer game state
 
 The next step toward Phoenix parity would be **Presence** — tracking which users are currently online using CRDT (Conflict-free Replicated Data Types).
+
+---
+
+[← Previous: Step 16 - Morphdom Integration](16-morphdom.md) | [Next: Step 18 - LiveView Navigation — SPA-like Page Transitions →](18-live-navigation.md)

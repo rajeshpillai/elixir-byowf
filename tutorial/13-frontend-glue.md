@@ -285,3 +285,7 @@ still be sending kilobytes of HTML.
 In **Step 14**, we'll build a **Diffing Engine** that splits templates
 into "statics" (HTML that never changes) and "dynamics" (values that do).
 The server will only send the changed values, reducing bandwidth by 90%.
+
+---
+
+[← Previous: Step 12 - LiveView (WebSocket)](12-liveview.md) | [Next: Step 14 - Diffing Engine →](14-diffing.md)

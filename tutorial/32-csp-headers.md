@@ -289,3 +289,7 @@ Phoenix doesn't include CSP by default — developers add it themselves. Our imp
 - [ ] `lib/ignite/controller.ex` — **Modified** (add `csp_nonce/1` and `csp_script_tag/2`)
 - [ ] `lib/my_app/router.ex` — **Modified** (add `plug :set_csp_headers`)
 - [ ] `lib/my_app/controllers/welcome_controller.ex` — **Modified** (add nonce to inline scripts)
+
+---
+
+[← Previous: Step 31 - CSRF Protection](31-csrf-protection.md) | [Next: Step 33 - `mix ignite.routes` →](33-mix-ignite-routes.md)

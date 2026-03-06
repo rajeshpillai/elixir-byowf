@@ -265,3 +265,7 @@ Tab 2 closes
 - [ ] `lib/my_app/live/presence_demo_live.ex` — **New**
 - [ ] `lib/my_app/router.ex` — **Modified** (add `GET /presence` route)
 - [ ] `lib/my_app/controllers/welcome_controller.ex` — **Modified** (add `presence/1` action + link)
+
+---
+
+[← Previous: Step 28 - Flash Messages](28-flash-messages.md) | [Next: Step 30 - Ecto Integration (Database Persistence) →](30-ecto-integration.md)

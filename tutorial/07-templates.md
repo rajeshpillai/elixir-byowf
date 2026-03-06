@@ -194,3 +194,7 @@ In **Step 8**, we'll build a **Middleware Pipeline** (Plugs). You'll
 write `plug :log_request` in your router, and every request will be
 logged automatically. If an auth plug fails, it can halt the pipeline
 before the controller even runs.
+
+---
+
+[← Previous: Step 6 - OTP Supervision](06-otp-supervision.md) | [Next: Step 8 - Middleware Pipeline (Plugs) →](08-middleware.md)

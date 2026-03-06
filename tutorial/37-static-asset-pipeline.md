@@ -302,3 +302,7 @@ Phoenix's approach is more production-optimized (filename fingerprinting works w
 - **Modified** `lib/ignite/controller.ex` — Added `static_path/1` convenience delegate
 - **Modified** `lib/ignite/reloader.ex` — Watch `assets/` directory, rebuild manifest on changes
 - **Modified** `templates/live.html.eex` — Use `Ignite.Static.static_path/1` in script tags
+
+---
+
+[← Previous: Step 36 - Health Check Endpoint](36-health-check.md) | [Next: Step 38 - Test Helpers (ConnTest) →](38-test-helpers.md)

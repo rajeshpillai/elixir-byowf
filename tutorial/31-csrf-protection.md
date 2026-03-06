@@ -389,3 +389,7 @@ The approach is identical — we just implement the validation as a router plug 
 - [ ] `lib/my_app/router.ex` — **Modified** (add `plug :verify_csrf_token` and implementation)
 - [ ] `lib/my_app/controllers/welcome_controller.ex` — **Modified** (add CSRF token to forms)
 - [ ] `lib/my_app/controllers/upload_controller.ex` — **Modified** (add CSRF token to upload form)
+
+---
+
+[← Previous: Step 30 - Ecto Integration (Database Persistence)](30-ecto-integration.md) | [Next: Step 32 - Content Security Policy (CSP) Headers →](32-csp-headers.md)

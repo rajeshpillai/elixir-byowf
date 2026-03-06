@@ -360,3 +360,7 @@ iex -S mix
 ## What's Next?
 
 In Step 20, we'll add **JS Hooks** — client-side lifecycle callbacks that let you integrate third-party JavaScript libraries (charts, maps, clipboard) with LiveView's server-rendered model.
+
+---
+
+[← Previous: Step 18 - LiveView Navigation — SPA-like Page Transitions](18-live-navigation.md) | [Next: Step 20 - JS Hooks — Client-Side JavaScript Interop →](20-js-hooks.md)

@@ -318,3 +318,7 @@ What happens when a controller crashes? Right now, Cowboy returns
 a generic error. In **Step 11**, we'll add an **Error Handler** that
 catches exceptions and returns a friendly 500 page with a logged
 stacktrace.
+
+---
+
+[← Previous: Step 9 - POST Body Parser](09-post-parser.md) | [Next: Step 11 - Error Handler →](11-error-handler.md)

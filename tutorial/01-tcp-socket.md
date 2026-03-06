@@ -282,3 +282,7 @@ In **Step 2**, we'll create an `%Ignite.Conn{}` struct — a data structure
 that holds all the information about a request (method, path, headers) and
 its response (status, body). This is the same pattern Phoenix uses with
 `%Plug.Conn{}`.
+
+---
+
+[← Previous: Step 0 - Project Setup](00-project-setup.md) | [Next: Step 2 - The Conn Struct & Parser →](02-conn-struct.md)

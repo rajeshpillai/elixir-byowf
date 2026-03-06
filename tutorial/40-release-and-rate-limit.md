@@ -416,3 +416,7 @@ PORT=4000 \
 - **Modified** `lib/ignite/session.ex` — Configurable secret key (reads from config)
 - **Modified** `lib/my_app/router.ex` — Added `plug :rate_limit` as first middleware
 - **Modified** `mix.exs` — Added release configuration
+
+---
+
+[← Previous: Step 39 - SSL/TLS Support](39-ssl-tls.md) | [Next: Step 41 - Stream Upsert & Limit →](41-stream-upsert-limit.md)

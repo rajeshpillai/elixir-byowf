@@ -346,3 +346,7 @@ Phoenix's HEEx engine (`Phoenix.LiveView.Engine`) takes this much further:
 - **Change tracking** on assigns — if you don't touch `@count`, it skips even evaluating that expression
 
 Our `~L` engine covers the core concept: compile-time statics/dynamics separation with sparse wire updates.
+
+---
+
+[← Previous: Step 23 - Scoped Routes](23-scoped-routes.md) | [Next: Step 25 - LiveView Streams →](25-streams.md)

@@ -353,3 +353,7 @@ mix deps.get
 The JS is currently inline in the controller. In **Step 13**, we'll
 extract it into a proper `assets/ignite.js` file and make the
 LiveView host page a reusable template.
+
+---
+
+[← Previous: Step 11 - Error Handler](11-error-handler.md) | [Next: Step 13 - Frontend JS Glue →](13-frontend-glue.md)

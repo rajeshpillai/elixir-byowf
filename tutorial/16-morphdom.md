@@ -222,3 +222,7 @@ You understand the internals of Phoenix better than most developers
 who just run `mix phx.new`. Every concept here — the conn pipeline,
 macros, OTP supervision, LiveView — is the same architecture that
 powers production Elixir applications.
+
+---
+
+[← Previous: Step 15 - Hot Code Reloader](15-hot-reloader.md) | [Next: Step 17 - PubSub — Real-Time Broadcasting Between LiveViews →](17-pubsub.md)

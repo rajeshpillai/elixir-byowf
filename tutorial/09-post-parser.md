@@ -224,3 +224,7 @@ SSL/TLS, keep-alive connections, and protection against malformed requests.
 In **Step 10**, we'll replace our TCP server with **Cowboy** — the
 battle-tested HTTP server used by Phoenix. We'll create an **adapter**
 that translates between Cowboy and our `%Ignite.Conn{}` struct.
+
+---
+
+[← Previous: Step 8 - Middleware Pipeline (Plugs)](08-middleware.md) | [Next: Step 10 - Cowboy Adapter →](10-cowboy-adapter.md)

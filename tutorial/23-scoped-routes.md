@@ -181,3 +181,7 @@ Phoenix's `scope` is more powerful — it also supports:
 - `as: :admin` to prefix path helper names
 
 Phoenix uses a combination of module attributes and careful macro expansion ordering to achieve this. Our AST transformation approach is simpler and covers the most common use case (path prefixing with nesting).
+
+---
+
+[← Previous: Step 22 - PUT/PATCH/DELETE HTTP Methods](22-http-methods.md) | [Next: Step 24 - Fine-Grained Diffing →](24-fine-grained-diffing.md)

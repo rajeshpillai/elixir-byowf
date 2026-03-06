@@ -299,3 +299,7 @@ curl http://localhost:4000/users              # GET index → JSON
 curl http://localhost:4000/users/42           # GET show → template
 curl -X DELETE http://localhost:4000/users/42 # DELETE → JSON
 ```
+
+---
+
+[← Previous: Step 26 - File Uploads](26-file-uploads.md) | [Next: Step 28 - Flash Messages →](28-flash-messages.md)

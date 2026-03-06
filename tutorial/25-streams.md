@@ -396,3 +396,7 @@ Phoenix LiveView's stream system is more sophisticated:
 - **DOM patching** — Uses `phx-update="stream"` attribute with specialized DOM patching that handles reordering
 
 Our implementation covers the core concept: operation-based list management with O(1) wire overhead per change.
+
+---
+
+[← Previous: Step 24 - Fine-Grained Diffing](24-fine-grained-diffing.md) | [Next: Step 26 - File Uploads →](26-file-uploads.md)

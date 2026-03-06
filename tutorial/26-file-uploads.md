@@ -410,3 +410,7 @@ Phoenix LiveView's upload system is more sophisticated:
 - **File validation** can inspect actual file content (magic bytes), not just MIME type
 
 Our implementation covers the core: chunked binary transfer, progress tracking, validation, drag-and-drop, and temp file management — enough for medium-scale apps.
+
+---
+
+[← Previous: Step 25 - LiveView Streams](25-streams.md) | [Next: Step 27 - Path Helpers & Resource Routes →](27-path-helpers.md)

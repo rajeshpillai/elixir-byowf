@@ -368,3 +368,7 @@ Or just use a browser: `curl -X POST -d "username=Jose" http://localhost:4000/us
 | `lib/ignite/live_view/handler.ex` | **Modified** — pass session to LiveView mount |
 | `lib/my_app/controllers/user_controller.ex` | **Modified** — flash + redirect on create |
 | `lib/my_app/controllers/welcome_controller.ex` | **Modified** — flash display on index |
+
+---
+
+[← Previous: Step 27 - Path Helpers & Resource Routes](27-path-helpers.md) | [Next: Step 29 - Presence Tracking →](29-presence.md)

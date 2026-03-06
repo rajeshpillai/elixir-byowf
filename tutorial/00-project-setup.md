@@ -254,3 +254,7 @@ We have an empty Elixir project. In **Step 1**, we'll build the first
 real piece: a **TCP server** that listens on port 4000 and responds
 "Hello, Ignite!" to every browser request. You'll learn about Erlang's
 `:gen_tcp`, pattern matching, recursion, and BEAM processes.
+
+---
+
+[Next: Step 1 - The TCP Socket Foundation →](01-tcp-socket.md)

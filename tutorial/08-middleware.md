@@ -203,3 +203,7 @@ the form data in the **body**.
 In **Step 9**, we'll build a **POST Body Parser** that reads the request
 body and turns form data like `username=jose&password=secret` into
 `conn.params`.
+
+---
+
+[← Previous: Step 7 - EEx Template Engine](07-templates.md) | [Next: Step 9 - POST Body Parser →](09-post-parser.md)

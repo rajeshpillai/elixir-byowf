@@ -275,3 +275,7 @@ Phoenix's `mix phx.routes` also displays the generated path helper name (e.g., `
 
 - [ ] `lib/ignite/router.ex` — **Modified** (add `__routes__/0` generation in `__before_compile__`)
 - [ ] `lib/mix/tasks/ignite.routes.ex` — **New**
+
+---
+
+[← Previous: Step 32 - Content Security Policy (CSP) Headers](32-csp-headers.md) | [Next: Step 34 - Debug Error Page →](34-debug-error-page.md)

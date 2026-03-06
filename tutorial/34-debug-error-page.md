@@ -326,3 +326,7 @@ Phoenix's `Plug.Debugger` goes further by showing actual source code lines aroun
 
 - [ ] `lib/ignite/debug_page.ex` — **New**
 - [ ] `lib/ignite/adapters/cowboy.ex` — **Modified** (move `conn` before `try`, use `Ignite.DebugPage.render/3`)
+
+---
+
+[← Previous: Step 33 - `mix ignite.routes`](33-mix-ignite-routes.md) | [Next: Step 35 - Logger Metadata (Request ID + Timing) →](35-logger-metadata.md)

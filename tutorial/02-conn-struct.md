@@ -220,3 +220,7 @@ get "/fire", to: WelcomeController, action: :fire
 ```
 
 This is where Elixir's metaprogramming superpowers come in.
+
+---
+
+[← Previous: Step 1 - The TCP Socket Foundation](01-tcp-socket.md) | [Next: Step 3 - Router DSL (Macros) →](03-router-dsl.md)

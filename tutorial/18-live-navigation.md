@@ -277,3 +277,7 @@ end
 5. Dashboard auto-refreshes every second
 6. Click browser Back button → returns to counter instantly
 7. Counter still works
+
+---
+
+[← Previous: Step 17 - PubSub — Real-Time Broadcasting Between LiveViews](17-pubsub.md) | [Next: Step 19 - LiveComponents — Reusable Stateful Widgets →](19-live-components.md)

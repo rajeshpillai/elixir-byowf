@@ -264,3 +264,7 @@ Phoenix uses the `:telemetry` library for a more extensible event system (you ca
 - **Modified** `config/config.exs` — Logger console format with `request_id` metadata
 - **Modified** `lib/ignite/adapters/cowboy.ex` — Request ID generation, Logger.metadata, monotonic timing, x-request-id header, log_duration/1 helper
 - **Modified** `lib/my_app/router.ex` — Removed `log_request` plug (adapter handles it now)
+
+---
+
+[← Previous: Step 34 - Debug Error Page](34-debug-error-page.md) | [Next: Step 36 - Health Check Endpoint →](36-health-check.md)

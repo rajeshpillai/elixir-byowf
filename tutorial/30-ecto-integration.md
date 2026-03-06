@@ -340,3 +340,7 @@ Ecto is the same library — the integration pattern is identical to Phoenix.
 - [ ] `lib/my_app/controllers/user_controller.ex` — **Modified** (rewrite actions to use Ecto)
 - [ ] `lib/my_app/controllers/welcome_controller.ex` — **Modified** (add email input to create form)
 - [ ] `templates/profile.html.eex` — **Modified** (add email field)
+
+---
+
+[← Previous: Step 29 - Presence Tracking](29-presence.md) | [Next: Step 31 - CSRF Protection →](31-csrf-protection.md)

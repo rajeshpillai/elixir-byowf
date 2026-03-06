@@ -315,3 +315,7 @@ iex -S mix
 - **Modified** `lib/ignite/application.ex` — Rewired to use `Ignite.SSL.child_spec/2`, added redirect listener
 - **Modified** `lib/my_app/router.ex` — Added `plug :set_hsts_header`
 - **Modified** `mix.exs` — Added `:ssl`, `:public_key` to `extra_applications`
+
+---
+
+[← Previous: Step 38 - Test Helpers (ConnTest)](38-test-helpers.md) | [Next: Step 40 - Deployment with `mix release` + Rate Limiting →](40-release-and-rate-limit.md)
