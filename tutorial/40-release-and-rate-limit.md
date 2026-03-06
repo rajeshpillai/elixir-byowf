@@ -448,6 +448,28 @@ config :ignite,
 
 Override at runtime with `RATE_LIMIT_MAX` and `RATE_LIMIT_WINDOW_MS` env vars.
 
+### Router Integration
+
+**Update `lib/my_app/router.ex`** — add `plug :rate_limit` as the first middleware and define the plug function:
+
+```elixir
+# lib/my_app/router.ex
+plug :rate_limit
+plug :add_server_header
+plug :set_hsts_header
+# ... other plugs ...
+
+@doc """
+Rate limiting plug — rejects requests exceeding the configured
+requests-per-window limit with 429 Too Many Requests.
+"""
+def rate_limit(conn) do
+  Ignite.RateLimiter.call(conn)
+end
+```
+
+The `rate_limit` plug is first in the pipeline so requests are checked before any other work is done. When the limit is exceeded, `Ignite.RateLimiter.call/1` returns the conn with a 429 JSON response already sent, and the pipeline halts (because `resp_body` is already set).
+
 ## Concepts Learned
 
 ### `Application.ensure_all_started/1` and `Application.load/1`

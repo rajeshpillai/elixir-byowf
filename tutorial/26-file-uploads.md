@@ -464,6 +464,23 @@ The JavaScript client adds three capabilities:
 
 The chunker uses `setTimeout(sendNextChunk, 10)` between chunks to avoid flooding the WebSocket. Since WebSocket guarantees message ordering, chunks always arrive in the correct order.
 
+The key JS function for sending binary chunks constructs the binary frame with the ref prefix:
+
+```javascript
+// Build binary frame: [2 bytes: ref_len][ref bytes: ref][chunk data]
+const refBytes = new TextEncoder().encode(ref);
+const header = new Uint8Array(2);
+header[0] = (refBytes.length >> 8) & 0xFF;
+header[1] = refBytes.length & 0xFF;
+const frame = new Uint8Array(header.length + refBytes.length + chunk.byteLength);
+frame.set(header, 0);
+frame.set(refBytes, 2);
+frame.set(new Uint8Array(chunk), 2 + refBytes.length);
+socket.send(frame.buffer);
+```
+
+See `assets/ignite.js` for the complete file input handling, chunked upload loop, and drag-and-drop implementation.
+
 ## Using It
 
 ### HTTP Upload (`/upload`)
