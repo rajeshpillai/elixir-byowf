@@ -78,6 +78,43 @@ end
 
 Think of `quote` as a template and `unquote` as the placeholder slots.
 
+> **Try it in IEx!** Open a terminal and run `iex` to explore the AST yourself:
+>
+> ```elixir
+> iex> quote do: 1 + 2
+> {:+, [context: Elixir, imports: [{2, Kernel}]], [1, 2]}
+>
+> iex> quote do: "hello"
+> "hello"                    # Simple values are their own AST
+>
+> iex> name = "world"
+> iex> quote do: "hello, " <> unquote(name)
+> {:<>, [context: Elixir, imports: [{2, Kernel}]], ["hello, ", "world"]}
+> ```
+>
+> Notice the pattern: every expression becomes a 3-element tuple `{operation, metadata, arguments}`. That's all the AST is — nested tuples that describe your code. Macros receive these tuples and return new ones.
+
+### import vs alias
+
+You've seen `alias` in Step 2 — it creates a shortcut for a module name.
+`import` is different: it brings a module's functions (or macros) into scope
+so you can call them **without the module prefix**:
+
+```elixir
+# With alias — still need the module prefix for macros:
+alias Ignite.Router
+Router.get "/hello", ...     # Works, but verbose in a router file
+
+# With import — macros are available directly:
+import Ignite.Router
+get "/hello", ...            # Clean! This is what we want in a DSL
+```
+
+Rule of thumb:
+- **`alias`** — "I want a shorter name" (`Ignite.Conn` → `Conn`)
+- **`import`** — "I want to use functions/macros without any prefix"
+- **`use`** — "Run this module's `__using__` macro to set me up" (often calls `import` for you)
+
 ### use and __using__
 
 When you write `use Ignite.Router`, Elixir calls `Ignite.Router.__using__/1`.
