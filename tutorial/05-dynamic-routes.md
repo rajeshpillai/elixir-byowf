@@ -21,6 +21,19 @@ end
 
 ## Concepts You'll Learn
 
+### String.split with `trim: true`
+
+`String.split/3` breaks a string into a list. The `trim: true` option
+removes empty strings caused by leading/trailing delimiters:
+
+```elixir
+String.split("/users/42", "/")                #=> ["", "users", "42"]
+String.split("/users/42", "/", trim: true)    #=> ["users", "42"]
+```
+
+Without `trim`, the leading `/` produces an empty string `""` at the
+start — we don't want that.
+
 ### List Pattern Matching
 
 Elixir can pattern match on lists:
@@ -108,34 +121,98 @@ The `["users", id]` pattern matches any two-segment path starting with
 
 ### Updated Router (`lib/ignite/router.ex`)
 
-**Update `lib/ignite/router.ex`** — add the `build_route/4`, `build_match_pattern/1`, and `build_params_map/1` private functions, update `__using__/1` so `call/1` splits the path into segments, change `dispatch` to accept two arguments, and update `finalize_routes/0` accordingly. Key changes:
+**Update `lib/ignite/router.ex`** — we need to add three private functions and update the existing macros.
 
-1. **`call/1` splits the path** into segments before dispatching:
-   ```elixir
-   segments = String.split(conn.path, "/", trim: true)
-   dispatch(conn, segments)
-   ```
+**1. Update `__using__/1`** — `call/1` now splits the path into segments before dispatching:
 
-2. **`dispatch` now takes two args**: the conn and the segments list
+```elixir
+def call(conn) do
+  segments = String.split(conn.path, "/", trim: true)
+  dispatch(conn, segments)
+end
+```
 
-3. **`build_route/4`** is shared by `get` and `post` macros:
-   - Splits the route path into segments
-   - Identifies dynamic segments (starting with `:`)
-   - Generates a pattern that captures dynamic parts as variables
-   - Builds a params map from the captured variables
+**2. Update the `get` macro** to use a shared `build_route/4` function:
 
-4. **`build_match_pattern/1`** converts path segments using `":" <> name`
-   pattern matching to detect dynamic parts:
-   - `"users"` → literal string `"users"` (must match exactly)
-   - `":id"` → `Macro.var(:id, nil)` (matches anything, captures value)
-   - Returns both the pattern list and the param names via `Enum.unzip/1`
+```elixir
+defmacro get(path, to: controller, action: action) do
+  build_route("GET", path, controller, action)
+end
+```
 
-5. **`build_params_map/1`** generates `%{id: id}` code at compile time
-   using a raw AST tuple `{:%{}, [], pairs}` — this is how macros build
-   map literals programmatically
+**3. Add `build_route/4`** — the shared logic that all route macros use:
 
-6. **`finalize_routes/0`** also changes — the catch-all is now
-   `dispatch(conn, _segments)` (two args) instead of `dispatch(conn)`
+```elixir
+defp build_route(method, path, controller, action) do
+  segments = String.split(path, "/", trim: true)
+  {match_pattern, param_names} = build_match_pattern(segments)
+
+  quote do
+    defp dispatch(
+           %Ignite.Conn{method: unquote(method)} = conn,
+           unquote(match_pattern)
+         ) do
+      params = unquote(build_params_map(param_names))
+      conn = %Ignite.Conn{conn | params: Map.merge(conn.params, params)}
+      apply(unquote(controller), unquote(action), [conn])
+    end
+  end
+end
+```
+
+**4. Add `build_match_pattern/1`** — converts path segments into a pattern list:
+
+```elixir
+defp build_match_pattern(segments) do
+  {patterns, names} =
+    Enum.map(segments, fn
+      ":" <> name ->
+        # Dynamic segment: create a variable that captures the value
+        var_name = String.to_atom(name)
+        {Macro.var(var_name, nil), var_name}
+
+      static ->
+        # Static segment: must match this exact string
+        {static, nil}
+    end)
+    |> Enum.unzip()
+
+  {patterns, Enum.reject(names, &is_nil/1)}
+end
+```
+
+For `"/users/:id"`, this produces:
+- `patterns` = `["users", {:id, [], nil}]` — a list with a literal and a variable
+- `param_names` = `[:id]` — which segments to capture into params
+
+**5. Add `build_params_map/1`** — generates a map expression in the AST:
+
+```elixir
+defp build_params_map(param_names) do
+  pairs =
+    Enum.map(param_names, fn name ->
+      {name, Macro.var(name, nil)}
+    end)
+
+  {:%{}, [], pairs}
+end
+```
+
+The `{:%{}, [], pairs}` is how you build a map literal (`%{id: id}`)
+programmatically inside a macro. It's the AST representation — the same
+3-element tuple format we explored in Step 3's IEx session.
+
+**6. Update `finalize_routes/0`** — the catch-all now takes two args:
+
+```elixir
+defmacro finalize_routes do
+  quote do
+    defp dispatch(conn, _segments) do
+      Ignite.Controller.text(conn, "404 - Not Found", 404)
+    end
+  end
+end
+```
 
 ### New UserController
 
