@@ -56,6 +56,23 @@ alias Ignite.Conn
 %Ignite.Conn{method: "GET"}
 ```
 
+### `:gen_tcp.recv/2` — Reading from a Socket
+
+`:gen_tcp.recv(socket, 0)` reads the next chunk of data from the TCP socket.
+The `0` means "read whatever is available" (as opposed to a fixed number of bytes).
+
+Because we set `packet: :http_bin` on the socket in Step 1, Erlang's built-in
+HTTP parser automatically breaks the raw bytes into structured tuples:
+
+| Raw bytes | Erlang returns |
+|-----------|----------------|
+| `GET /hello HTTP/1.1\r\n` | `{:ok, {:http_request, :GET, {:abs_path, "/hello"}, ...}}` |
+| `Host: localhost:4000\r\n` | `{:ok, {:http_header, _, :Host, _, "localhost:4000"}}` |
+| `\r\n` (blank line = end of headers) | `{:ok, :http_eoh}` |
+
+This means we never have to manually split strings or parse HTTP ourselves —
+Erlang does the heavy lifting, and we pattern match on the results.
+
 ### Accumulator Pattern
 
 When reading headers, we use a common Elixir pattern — passing an accumulator
