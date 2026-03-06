@@ -21,21 +21,11 @@ proper `send_resp/1` function.
 
 ## Concepts You'll Learn
 
-### Import
+### Import (Recap)
 
-`import` brings a module's functions into scope so you can call them
-without the module prefix:
-
-```elixir
-import Ignite.Controller
-
-# Now instead of:
-Ignite.Controller.text(conn, "Hello")
-# You can write:
-text(conn, "Hello")
-```
-
-This is why Phoenix controllers can use `text`, `json`, `render` directly.
+We covered `import` in Step 3. Quick reminder: `import Ignite.Controller`
+lets you call `text(conn, "Hello")` instead of `Ignite.Controller.text(conn, "Hello")`.
+Our controllers will `import` the controller module so the helpers read cleanly.
 
 ### Struct Update Syntax
 
@@ -89,19 +79,79 @@ defp status_text(_),   do: "OK"
 
 The `_` matches anything — it's the default/fallback clause.
 
+### Default Arguments (`\\`)
+
+Elixir uses `\\` to define default argument values:
+
+```elixir
+def text(conn, body, status \\ 200) do
+  # ...
+end
+```
+
+This generates two function clauses behind the scenes:
+
+```elixir
+text(conn, "Hello!")       # status defaults to 200
+text(conn, "Oops!", 500)   # explicit status
+```
+
+That's why `text` is technically **arity 3** (`text/3`) but can be called
+with 2 arguments. You'll see this written as `text/2,3` in some docs.
+
 ## The Code
 
 ### `lib/ignite/controller.ex`
 
 **Create `lib/ignite/controller.ex`.** Two response helpers and one serializer:
 
-- **`text/3`** — sets plain text body, status, and content-type
-- **`html/3`** — sets HTML body, status, and content-type
-- **`send_resp/1`** — converts a conn into a raw HTTP string
+```elixir
+defmodule Ignite.Controller do
+  def text(conn, body, status \\ 200) do
+    %Ignite.Conn{
+      conn
+      | status: status,
+        resp_body: body,
+        resp_headers: Map.put(conn.resp_headers, "content-type", "text/plain"),
+        halted: true
+    }
+  end
 
-The key pattern: helpers return a **modified conn**, not a string.
-The conn accumulates response data as it flows through the system,
-and `send_resp` converts it all at the end.
+  def html(conn, body, status \\ 200) do
+    %Ignite.Conn{
+      conn
+      | status: status,
+        resp_body: body,
+        resp_headers: Map.put(conn.resp_headers, "content-type", "text/html; charset=utf-8"),
+        halted: true
+    }
+  end
+
+  def send_resp(conn) do
+    status_line = "HTTP/1.1 #{conn.status} #{status_text(conn.status)}\r\n"
+
+    headers =
+      conn.resp_headers
+      |> Map.put("content-length", Integer.to_string(byte_size(conn.resp_body)))
+      |> Map.put("connection", "close")
+      |> Enum.map(fn {k, v} -> "#{k}: #{v}\r\n" end)
+      |> Enum.join()
+
+    status_line <> headers <> "\r\n" <> conn.resp_body
+  end
+
+  defp status_text(200), do: "OK"
+  defp status_text(404), do: "Not Found"
+  defp status_text(500), do: "Internal Server Error"
+  defp status_text(_),   do: "OK"
+end
+```
+
+Three things to notice:
+
+- **`text/3` and `html/3`** return a modified conn — they don't send anything yet
+- **`send_resp/1`** converts the finished conn into a raw HTTP string
+- **`halted: true`** signals that a response has been set (used later by middleware)
 
 ### Updated controllers
 
