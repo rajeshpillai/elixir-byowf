@@ -60,17 +60,75 @@ This file runs at boot time in both `iex -S mix` and releases. It reads environm
 **Create `config/runtime.exs`:**
 
 ```elixir
+import Config
+
+# runtime.exs is evaluated at boot time — both in `iex -S mix` and in
+# a release. Use System.get_env/1 here to read environment variables.
+# These override values set in config.exs / prod.exs / test.exs.
+
 if config_env() == :prod do
-  port = String.to_integer(System.get_env("PORT") || "4443")
+  # Port — default to 4443 for HTTPS, override with $PORT
+  port =
+    case System.get_env("PORT") do
+      nil -> 4443
+      val -> String.to_integer(val)
+    end
+
   config :ignite, port: port
 
-  database_path = System.get_env("DATABASE_PATH") ||
-    raise "DATABASE_PATH is missing"
-  config :ignite, MyApp.Repo, database: database_path
+  # Database path (SQLite).
+  # For production, set DATABASE_PATH to an absolute path on the server.
+  database_path =
+    System.get_env("DATABASE_PATH") ||
+      raise """
+      environment variable DATABASE_PATH is missing.
+      For example: export DATABASE_PATH=/var/data/ignite_prod.db
+      """
 
-  secret_key_base = System.get_env("SECRET_KEY_BASE") ||
-    raise "SECRET_KEY_BASE is missing"
+  config :ignite, MyApp.Repo,
+    database: database_path,
+    pool_size: String.to_integer(System.get_env("POOL_SIZE") || "10")
+
+  # Secret key for session cookie signing.
+  # Must be at least 64 bytes for security.
+  # Generate one with: openssl rand -base64 64
+  secret_key_base =
+    System.get_env("SECRET_KEY_BASE") ||
+      raise """
+      environment variable SECRET_KEY_BASE is missing.
+      Generate one with: openssl rand -base64 64
+      """
+
   config :ignite, secret_key_base: secret_key_base
+
+  # SSL certificate paths (optional).
+  # Omit these to run plain HTTP behind a reverse proxy (nginx, Caddy, etc.).
+  ssl_certfile = System.get_env("SSL_CERTFILE")
+  ssl_keyfile = System.get_env("SSL_KEYFILE")
+
+  if ssl_certfile && ssl_keyfile do
+    config :ignite,
+      ssl: [
+        certfile: ssl_certfile,
+        keyfile: ssl_keyfile
+      ]
+  end
+
+  # HTTP→HTTPS redirect port (optional)
+  case System.get_env("HTTP_REDIRECT_PORT") do
+    nil -> :ok
+    val -> config(:ignite, http_redirect_port: String.to_integer(val))
+  end
+
+  # Rate limiting override (optional)
+  case System.get_env("RATE_LIMIT_MAX") do
+    nil ->
+      :ok
+
+    val ->
+      window = String.to_integer(System.get_env("RATE_LIMIT_WINDOW_MS") || "60000")
+      config :ignite, rate_limit: [max_requests: String.to_integer(val), window_ms: window]
+  end
 end
 ```
 
@@ -223,16 +281,80 @@ content-type: application/json
 # lib/ignite/rate_limiter.ex
 defmodule Ignite.RateLimiter do
   use GenServer
+  require Logger
 
   @table :ignite_rate_limiter
+  @default_max 100
+  @default_window_ms 60_000
+
+  # --- Public API ---
 
   def start_link(opts \\ []) do
     GenServer.start_link(__MODULE__, opts, name: __MODULE__)
   end
 
+  @doc """
+  Rate limit plug entry point.
+
+  Checks the request rate for the client's IP. If within the limit,
+  adds rate limit headers and returns the conn (pipeline continues).
+  If exceeded, halts the conn with 429.
+  """
+  def call(conn) do
+    config = Application.get_env(:ignite, :rate_limit, [])
+    max_requests = Keyword.get(config, :max_requests, @default_max)
+    window_ms = Keyword.get(config, :window_ms, @default_window_ms)
+
+    ip = client_ip(conn)
+    now = System.monotonic_time(:millisecond)
+
+    # Record this request
+    :ets.insert(@table, {ip, now})
+
+    # Count requests in the current window
+    cutoff = now - window_ms
+    count = count_requests(ip, cutoff)
+
+    remaining = max(max_requests - count, 0)
+    retry_after_secs = div(window_ms, 1000)
+    reset_unix = System.os_time(:second) + retry_after_secs
+
+    conn = add_rate_limit_headers(conn, max_requests, remaining, reset_unix)
+
+    if count > max_requests do
+      Logger.warning(
+        "[RateLimiter] Rate limit exceeded for #{ip} " <>
+          "(#{count}/#{max_requests} in #{window_ms}ms)"
+      )
+
+      conn
+      |> add_resp_header("retry-after", Integer.to_string(retry_after_secs))
+      |> Ignite.Controller.json(
+        %{
+          error: "Too Many Requests",
+          message: "Rate limit exceeded. Try again in #{retry_after_secs} seconds.",
+          retry_after: retry_after_secs
+        },
+        429
+      )
+    else
+      conn
+    end
+  end
+
+  # --- GenServer Callbacks ---
+
   @impl true
   def init(_opts) do
-    :ets.new(@table, [:named_table, :bag, :public, write_concurrency: true, read_concurrency: true])
+    # :bag allows multiple {ip, timestamp} entries per key
+    :ets.new(@table, [
+      :named_table,
+      :bag,
+      :public,
+      write_concurrency: true,
+      read_concurrency: true
+    ])
+
     schedule_cleanup()
     {:ok, %{}}
   end
@@ -240,21 +362,63 @@ defmodule Ignite.RateLimiter do
   @impl true
   def handle_info(:cleanup, state) do
     config = Application.get_env(:ignite, :rate_limit, [])
-    window_ms = Keyword.get(config, :window_ms, 60_000)
+    window_ms = Keyword.get(config, :window_ms, @default_window_ms)
     cutoff = System.monotonic_time(:millisecond) - window_ms
+
+    # Delete all entries older than the window.
     match_spec = [{{:_, :"$1"}, [{:<, :"$1", cutoff}], [true]}]
-    :ets.select_delete(@table, match_spec)
+    deleted = :ets.select_delete(@table, match_spec)
+
+    if deleted > 0 do
+      Logger.debug("[RateLimiter] Cleaned up #{deleted} expired entries")
+    end
+
     schedule_cleanup()
     {:noreply, state}
   end
 
-  defp schedule_cleanup do
-    config = Application.get_env(:ignite, :rate_limit, [])
-    interval = min(Keyword.get(config, :window_ms, 60_000), 60_000)
-    Process.send_after(self(), :cleanup, interval)
+  # --- Private Helpers ---
+
+  defp count_requests(ip, cutoff) do
+    # Count entries for this IP where timestamp >= cutoff (within window)
+    match_spec = [{{ip, :"$1"}, [{:>=, :"$1", cutoff}], [true]}]
+    :ets.select_count(@table, match_spec)
   end
 
-  # ... call/1, client_ip/1, count_requests/2 shown below ...
+  defp client_ip(conn) do
+    # Check x-forwarded-for first (behind reverse proxy like nginx/CloudFlare)
+    case Map.get(conn.headers, "x-forwarded-for") do
+      nil ->
+        Map.get(conn.private, :peer_ip, "unknown")
+
+      forwarded ->
+        # x-forwarded-for can contain multiple IPs: "client, proxy1, proxy2"
+        forwarded |> String.split(",") |> List.first() |> String.trim()
+    end
+  end
+
+  defp add_rate_limit_headers(conn, limit, remaining, reset_unix) do
+    new_headers =
+      conn.resp_headers
+      |> Map.put("x-ratelimit-limit", Integer.to_string(limit))
+      |> Map.put("x-ratelimit-remaining", Integer.to_string(remaining))
+      |> Map.put("x-ratelimit-reset", Integer.to_string(reset_unix))
+
+    %Ignite.Conn{conn | resp_headers: new_headers}
+  end
+
+  defp add_resp_header(conn, key, value) do
+    new_headers = Map.put(conn.resp_headers, key, value)
+    %Ignite.Conn{conn | resp_headers: new_headers}
+  end
+
+  defp schedule_cleanup do
+    config = Application.get_env(:ignite, :rate_limit, [])
+    window_ms = Keyword.get(config, :window_ms, @default_window_ms)
+    # Clean up at the window interval, capped at 60s
+    interval = min(window_ms, 60_000)
+    Process.send_after(self(), :cleanup, interval)
+  end
 end
 ```
 

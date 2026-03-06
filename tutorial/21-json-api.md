@@ -96,6 +96,19 @@ get "/api/status", to: MyApp.ApiController, action: :status
 post "/api/echo", to: MyApp.ApiController, action: :echo
 ```
 
+### Welcome Controller Link
+
+**Update `lib/my_app/controllers/welcome_controller.ex`** — add an API section to the index page so visitors can discover and test the JSON endpoints:
+
+```elixir
+    <h2>API Routes</h2>
+    <ul>
+      <li><a href="/api/status">/api/status</a> — JSON response</li>
+    </ul>
+```
+
+This is just a convenience link on the homepage — the real work is in `ApiController` and the router.
+
 ## Testing
 
 ```bash

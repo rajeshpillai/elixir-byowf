@@ -57,33 +57,101 @@ The `tls_opts` include `port`, `certfile`, and `keyfile` — converted to charli
 ```elixir
 # lib/ignite/ssl.ex
 defmodule Ignite.SSL do
+  @moduledoc """
+  SSL/TLS configuration for Ignite.
+
+  Reads the `:ssl` key from application config and determines whether
+  to start Cowboy in clear (HTTP) or TLS (HTTPS) mode.
+  """
+
   def child_spec(port, dispatch) do
     case Application.get_env(:ignite, :ssl) do
       nil ->
-        %{id: :cowboy_listener,
-          start: {:cowboy, :start_clear, [:ignite_http, [port: port], %{env: %{dispatch: dispatch}}]}}
+        # Plain HTTP (dev/test)
+        %{
+          id: :cowboy_listener,
+          start:
+            {:cowboy, :start_clear,
+             [
+               :ignite_http,
+               [port: port],
+               %{env: %{dispatch: dispatch}}
+             ]}
+        }
 
       ssl_opts when is_list(ssl_opts) ->
+        # HTTPS (prod)
         certfile = Keyword.fetch!(ssl_opts, :certfile)
         keyfile = Keyword.fetch!(ssl_opts, :keyfile)
+
         validate_file!(certfile, "SSL certificate")
         validate_file!(keyfile, "SSL private key")
 
-        tls_opts = [
-          port: port,
-          certfile: String.to_charlist(certfile),
-          keyfile: String.to_charlist(keyfile)
-        ]
+        # Erlang :ssl expects charlists for file paths
+        tls_opts =
+          [
+            port: port,
+            certfile: String.to_charlist(certfile),
+            keyfile: String.to_charlist(keyfile)
+          ]
+          |> maybe_add(:cacertfile, ssl_opts)
 
-        %{id: :cowboy_listener,
-          start: {:cowboy, :start_tls, [:ignite_https, tls_opts, %{env: %{dispatch: dispatch}}]}}
+        %{
+          id: :cowboy_listener,
+          start:
+            {:cowboy, :start_tls,
+             [
+               :ignite_https,
+               tls_opts,
+               %{env: %{dispatch: dispatch}}
+             ]}
+        }
     end
+  end
+
+  def redirect_child_spec(http_port, https_port) do
+    redirect_dispatch =
+      :cowboy_router.compile([
+        {:_, [{"/[...]", Ignite.SSL.RedirectHandler, %{https_port: https_port}}]}
+      ])
+
+    %{
+      id: :cowboy_redirect_listener,
+      start:
+        {:cowboy, :start_clear,
+         [
+           :ignite_http_redirect,
+           [port: http_port],
+           %{env: %{dispatch: redirect_dispatch}}
+         ]}
+    }
   end
 
   def ssl_configured? do
     Application.get_env(:ignite, :ssl) != nil
   end
-  # ... validate_file!, redirect_child_spec ...
+
+  # Adds an optional SSL option (like :cacertfile) if present in config.
+  defp maybe_add(tls_opts, key, ssl_opts) do
+    case Keyword.get(ssl_opts, key) do
+      nil -> tls_opts
+      value -> Keyword.put(tls_opts, key, String.to_charlist(value))
+    end
+  end
+
+  defp validate_file!(path, label) do
+    unless File.exists?(path) do
+      raise """
+      #{label} not found: #{path}
+
+      To generate self-signed certificates for testing:
+
+          mix ignite.gen.cert
+
+      For production, use certificates from Let's Encrypt or your CA.
+      """
+    end
+  end
 end
 ```
 
@@ -129,10 +197,42 @@ The `RedirectHandler` is a minimal `:cowboy_handler` that preserves path and que
 **Create `lib/ignite/ssl/redirect_handler.ex`:**
 
 ```elixir
-defp build_https_url(host, 443, path, ""), do: "https://#{host}#{path}"
-defp build_https_url(host, 443, path, qs), do: "https://#{host}#{path}?#{qs}"
-defp build_https_url(host, port, path, ""), do: "https://#{host}:#{port}#{path}"
-defp build_https_url(host, port, path, qs), do: "https://#{host}:#{port}#{path}?#{qs}"
+# lib/ignite/ssl/redirect_handler.ex
+defmodule Ignite.SSL.RedirectHandler do
+  @moduledoc """
+  Cowboy handler that 301-redirects all HTTP requests to HTTPS.
+
+  Preserves the original path and query string. The target HTTPS port
+  is passed in via init state.
+  """
+
+  @behaviour :cowboy_handler
+
+  @impl true
+  def init(req, state) do
+    https_port = state.https_port
+    host = :cowboy_req.host(req)
+    path = :cowboy_req.path(req)
+    qs = :cowboy_req.qs(req)
+
+    location = build_https_url(host, https_port, path, qs)
+
+    req =
+      :cowboy_req.reply(
+        301,
+        %{"location" => location},
+        "Moved permanently to #{location}",
+        req
+      )
+
+    {:ok, req, state}
+  end
+
+  defp build_https_url(host, 443, path, ""), do: "https://#{host}#{path}"
+  defp build_https_url(host, 443, path, qs), do: "https://#{host}#{path}?#{qs}"
+  defp build_https_url(host, port, path, ""), do: "https://#{host}:#{port}#{path}"
+  defp build_https_url(host, port, path, qs), do: "https://#{host}:#{port}#{path}?#{qs}"
+end
 ```
 
 When the HTTPS port is the standard 443, the port number is omitted from the URL.
@@ -148,7 +248,36 @@ config :ignite,
   hsts_max_age: 31_536_000   # 1 year
 ```
 
-**Create `lib/ignite/hsts.ex`** — the `Ignite.HSTS` module adds the header:
+**Create `lib/ignite/hsts.ex`:**
+
+```elixir
+# lib/ignite/hsts.ex
+defmodule Ignite.HSTS do
+  @moduledoc """
+  HTTP Strict Transport Security (HSTS) plug for Ignite.
+
+  When enabled, adds the `strict-transport-security` response header
+  to tell browsers: "Only connect to this site over HTTPS for the next
+  N seconds."
+  """
+
+  @default_max_age 31_536_000
+
+  def put_hsts_header(conn) do
+    if Application.get_env(:ignite, :hsts, false) do
+      max_age = Application.get_env(:ignite, :hsts_max_age, @default_max_age)
+      value = "max-age=#{max_age}; includeSubDomains"
+
+      new_headers = Map.put(conn.resp_headers, "strict-transport-security", value)
+      %Ignite.Conn{conn | resp_headers: new_headers}
+    else
+      conn
+    end
+  end
+end
+```
+
+The module adds the header:
 
 ```
 strict-transport-security: max-age=31536000; includeSubDomains
@@ -168,7 +297,105 @@ In dev/test (where `:hsts` config is not set), it's a no-op — the function ret
 
 ### Self-Signed Certificate Generator
 
-**Create `lib/mix/tasks/ignite.gen.cert.ex`** — for local HTTPS testing, run:
+**Create `lib/mix/tasks/ignite.gen.cert.ex`:**
+
+```elixir
+# lib/mix/tasks/ignite.gen.cert.ex
+defmodule Mix.Tasks.Ignite.Gen.Cert do
+  @moduledoc """
+  Generates self-signed SSL certificates for local development.
+
+      $ mix ignite.gen.cert
+
+  Creates `priv/ssl/cert.pem` and `priv/ssl/key.pem` using `openssl`.
+  These are **not** suitable for production.
+  """
+
+  use Mix.Task
+
+  @shortdoc "Generate self-signed SSL certificates for development"
+
+  @output_dir "priv/ssl"
+  @certfile "cert.pem"
+  @keyfile "key.pem"
+
+  @impl true
+  def run(args) do
+    hostname = parse_hostname(args)
+
+    File.mkdir_p!(@output_dir)
+
+    certpath = Path.join(@output_dir, @certfile)
+    keypath = Path.join(@output_dir, @keyfile)
+
+    if File.exists?(certpath) do
+      Mix.shell().info("""
+      Certificate already exists at #{certpath}.
+      Delete it first if you want to regenerate:
+
+          rm -rf #{@output_dir}
+          mix ignite.gen.cert
+      """)
+    else
+      generate_cert(hostname, certpath, keypath)
+    end
+  end
+
+  defp generate_cert(hostname, certpath, keypath) do
+    Mix.shell().info("Generating self-signed certificate for #{hostname}...")
+
+    {output, exit_code} =
+      System.cmd("openssl", [
+        "req",
+        "-x509",
+        "-newkey", "rsa:2048",
+        "-nodes",
+        "-keyout", keypath,
+        "-out", certpath,
+        "-days", "365",
+        "-subj", "/CN=#{hostname}/O=Ignite Dev"
+      ], stderr_to_stdout: true)
+
+    if exit_code == 0 do
+      Mix.shell().info("""
+
+      Self-signed certificate generated successfully!
+
+        Certificate: #{certpath}
+        Private key: #{keypath}
+        Valid for:   365 days
+        Hostname:    #{hostname}
+
+      Add this to your config/prod.exs:
+
+          config :ignite,
+            port: 4443,
+            ssl: [
+              certfile: "#{certpath}",
+              keyfile: "#{keypath}"
+            ]
+
+      Then start with: MIX_ENV=prod iex -S mix
+
+      Note: Browsers will show a warning for self-signed certs.
+      Use `curl -k` to skip verification when testing.
+      """)
+    else
+      Mix.shell().error("Failed to generate certificate:\n#{output}")
+      Mix.shell().error("Make sure `openssl` is installed and in your PATH.")
+    end
+  end
+
+  defp parse_hostname(args) do
+    case OptionParser.parse(args, strict: [hostname: :string]) do
+      {opts, _, _} -> Keyword.get(opts, :hostname, "localhost")
+      _ -> "localhost"
+    end
+  end
+end
+```
+
+For local HTTPS testing, run:
 
 ```bash
 $ mix ignite.gen.cert
@@ -198,6 +425,52 @@ The task also prints the exact config snippet to add to `config/prod.exs`.
 
 # After (config-driven):
 Ignite.SSL.child_spec(port, dispatch)
+```
+
+The full updated `start/2` and helper functions in `application.ex`:
+
+```elixir
+# lib/ignite/application.ex (relevant changes)
+@impl true
+def start(_type, _args) do
+  port = Application.get_env(:ignite, :port, 4000)
+  Ignite.Static.init()
+
+  dispatch = :cowboy_router.compile([{:_, [
+    # ... existing routes ...
+    {"/[...]", Ignite.Adapters.Cowboy, []}
+  ]}])
+
+  children =
+    [
+      MyApp.Repo,
+      Ignite.PubSub,
+      Ignite.Presence,
+      Ignite.RateLimiter,
+
+      # Start Cowboy — HTTP or HTTPS depending on :ssl config
+      Ignite.SSL.child_spec(port, dispatch)
+    ] ++ redirect_children(port) ++ dev_children()
+
+  scheme = if Ignite.SSL.ssl_configured?(), do: "https", else: "http"
+  Logger.info("Ignite is heating up on #{scheme}://localhost:#{port}")
+
+  opts = [strategy: :one_for_one, name: Ignite.Supervisor]
+  Supervisor.start_link(children, opts)
+end
+
+# Optional HTTP→HTTPS redirect listener (only when SSL is configured).
+# Set `config :ignite, http_redirect_port: 4080` to enable.
+defp redirect_children(https_port) do
+  http_port = Application.get_env(:ignite, :http_redirect_port)
+
+  if http_port && Ignite.SSL.ssl_configured?() do
+    Logger.info("HTTP→HTTPS redirect on port #{http_port}")
+    [Ignite.SSL.redirect_child_spec(http_port, https_port)]
+  else
+    []
+  end
+end
 ```
 
 The log message now shows the correct scheme:

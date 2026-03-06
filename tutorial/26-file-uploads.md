@@ -40,19 +40,104 @@ Each "part" is separated by a boundary string. Parts can be regular fields (just
 
 Instead of parsing multipart ourselves, we use Cowboy's streaming API.
 
-**Update `lib/ignite/adapters/cowboy.ex`** — add multipart parsing to handle `multipart/form-data` requests:
+**Update `lib/ignite/adapters/cowboy.ex`** — add multipart parsing to handle `multipart/form-data` requests. In the existing body-reading code, detect `multipart/form-data` and branch to a new parser:
 
 ```elixir
-# Read the next part's headers
-{:ok, headers, req} = :cowboy_req.read_part(req)
-# headers = %{"content-disposition" => "form-data; name=\"file\"; filename=\"photo.jpg\"", ...}
+content_type = :cowboy_req.header("content-type", req, "")
 
-# Read the part's body (streaming for large files)
-{:ok, body, req} = :cowboy_req.read_part_body(req)
-# or {:more, partial_body, req} for large bodies — call again to get the rest
+if String.starts_with?(content_type, "multipart/form-data") do
+  read_multipart(req, %{})
+else
+  {:ok, body, req} = :cowboy_req.read_body(req)
+  {parse_body(body, content_type), req}
+end
 ```
 
-The `read_part`/`read_part_body` loop reads one part at a time without loading the entire request into memory.
+Then add the multipart functions:
+
+```elixir
+# Loops through all parts of a multipart/form-data request.
+# File parts are streamed to disk as %Ignite.Upload{} structs.
+# Regular fields are stored as strings.
+defp read_multipart(req, params) do
+  case :cowboy_req.read_part(req) do
+    {:ok, headers, req} ->
+      {name, filename} = parse_disposition(headers)
+
+      if filename do
+        # File part — stream to temp file
+        {:ok, tmp_path} = Ignite.Upload.random_file("multipart")
+        Ignite.Upload.schedule_cleanup(tmp_path)
+        {:ok, file} = File.open(tmp_path, [:write, :binary, :raw])
+        {:ok, req} = read_part_body_to_file(req, file)
+        File.close(file)
+
+        upload_content_type =
+          case Map.get(headers, "content-type") do
+            nil -> "application/octet-stream"
+            ct -> ct
+          end
+
+        upload = %Ignite.Upload{
+          path: tmp_path,
+          filename: filename,
+          content_type: upload_content_type
+        }
+
+        read_multipart(req, Map.put(params, name, upload))
+      else
+        # Regular field — read body as string
+        {:ok, body, req} = :cowboy_req.read_part_body(req)
+        read_multipart(req, Map.put(params, name, body))
+      end
+
+    {:done, req} ->
+      {params, req}
+  end
+end
+
+# Streams part body chunks to a file handle.
+# Cowboy returns {:more, data, req} for large bodies.
+defp read_part_body_to_file(req, file) do
+  case :cowboy_req.read_part_body(req) do
+    {:ok, data, req} ->
+      IO.binwrite(file, data)
+      {:ok, req}
+
+    {:more, data, req} ->
+      IO.binwrite(file, data)
+      read_part_body_to_file(req, file)
+  end
+end
+
+# Extracts "name" and "filename" from the content-disposition header.
+defp parse_disposition(headers) do
+  case Map.get(headers, "content-disposition") do
+    nil ->
+      {nil, nil}
+
+    disposition ->
+      name = extract_header_param(disposition, "name")
+      filename = extract_header_param(disposition, "filename")
+      {name, filename}
+  end
+end
+
+defp extract_header_param(header, param_name) do
+  header
+  |> String.split(";")
+  |> Enum.find_value(fn part ->
+    trimmed = String.trim(part)
+
+    case String.split(trimmed, "=", parts: 2) do
+      [^param_name, value] -> String.trim(value, "\"")
+      _ -> nil
+    end
+  end)
+end
+```
+
+The `read_part`/`read_part_body` loop reads one part at a time. For large file bodies, Cowboy returns `{:more, data, req}` — the recursive `read_part_body_to_file/2` keeps writing chunks until `{:ok, data, req}` signals the end. No data accumulates in memory.
 
 ### The Upload Struct
 
@@ -61,6 +146,53 @@ The `read_part`/`read_part_body` loop reads one part at a time without loading t
 ```elixir
 defmodule Ignite.Upload do
   defstruct [:path, :filename, :content_type]
+
+  @type t :: %__MODULE__{
+          path: String.t(),
+          filename: String.t(),
+          content_type: String.t() | nil
+        }
+
+  @upload_dir "/tmp/ignite-uploads"
+
+  @doc "Returns the base upload directory, creating it if needed."
+  def upload_dir do
+    File.mkdir_p!(@upload_dir)
+    @upload_dir
+  end
+
+  @doc "Generates a unique temp file path and creates the empty file."
+  def random_file(prefix \\ "upload") do
+    dir = upload_dir()
+    random = :rand.uniform(999_999_999) |> Integer.to_string()
+    timestamp = System.system_time(:millisecond) |> Integer.to_string()
+    filename = "#{prefix}-#{timestamp}-#{random}"
+    path = Path.join(dir, filename)
+    File.write!(path, "")
+    {:ok, path}
+  end
+
+  @doc """
+  Schedules cleanup of a temp file when the calling process exits.
+
+  Spawns a lightweight process that monitors the caller. When the
+  caller dies (request finished, WebSocket closed), the temp file
+  is deleted automatically.
+  """
+  def schedule_cleanup(path) do
+    parent = self()
+
+    spawn(fn ->
+      ref = Process.monitor(parent)
+
+      receive do
+        {:DOWN, ^ref, :process, ^parent, _reason} ->
+          File.rm(path)
+      end
+    end)
+
+    :ok
+  end
 end
 ```
 
@@ -75,23 +207,6 @@ def upload(conn) do
   %Ignite.Upload{} = upload = conn.params["file"]
   size = File.stat!(upload.path).size
   text(conn, "Uploaded #{upload.filename}: #{size} bytes")
-end
-```
-
-### Temp File Cleanup
-
-Each temp file gets an automatic cleanup process:
-
-```elixir
-def schedule_cleanup(path) do
-  parent = self()
-  spawn(fn ->
-    ref = Process.monitor(parent)
-    receive do
-      {:DOWN, ^ref, :process, ^parent, _reason} ->
-        File.rm(path)
-    end
-  end)
 end
 ```
 
@@ -120,7 +235,51 @@ Files are sent as **binary chunks over the existing WebSocket connection**. The 
 
 ### Upload Configuration
 
-**Update `lib/ignite/live_view.ex`** — add the `allow_upload` and `consume_uploaded_entries` functions.
+**Create `lib/ignite/live_view/upload.ex`** — this file defines the structs and all helper functions. The key functions that LiveViews call directly are `allow_upload/3` and `consume_uploaded_entries/3`, defined in `Ignite.LiveView.UploadHelpers`:
+
+```elixir
+def allow_upload(assigns, name, opts \\ []) do
+  upload = %Upload{
+    name: name,
+    accept: Keyword.get(opts, :accept, []),
+    max_entries: Keyword.get(opts, :max_entries, 1),
+    max_file_size: Keyword.get(opts, :max_file_size, 8_000_000),
+    chunk_size: Keyword.get(opts, :chunk_size, 64_000),
+    auto_upload: Keyword.get(opts, :auto_upload, false)
+  }
+
+  uploads = Map.get(assigns, :__uploads__, %{})
+  Map.put(assigns, :__uploads__, Map.put(uploads, name, upload))
+end
+```
+
+```elixir
+def consume_uploaded_entries(assigns, name, callback) do
+  uploads = Map.get(assigns, :__uploads__, %{})
+
+  upload =
+    Map.get(uploads, name) ||
+      raise ArgumentError, "upload #{inspect(name)} not configured"
+
+  {completed, remaining} = Enum.split_with(upload.entries, & &1.done?)
+
+  {results, kept} =
+    Enum.reduce(completed, {[], []}, fn entry, {results_acc, kept_acc} ->
+      case callback.(entry) do
+        {:ok, value} ->
+          if entry.tmp_path, do: File.rm(entry.tmp_path)
+          {[value | results_acc], kept_acc}
+
+        {:postpone, _} ->
+          {results_acc, [entry | kept_acc]}
+      end
+    end)
+
+  updated_upload = %{upload | entries: remaining ++ Enum.reverse(kept)}
+  updated_uploads = Map.put(uploads, name, updated_upload)
+  {Map.put(assigns, :__uploads__, updated_uploads), Enum.reverse(results)}
+end
+```
 
 In `mount/2`, configure what uploads are allowed:
 
@@ -145,24 +304,43 @@ Options:
 
 ### The Upload Structs
 
-**Create `lib/ignite/live_view/upload.ex`:**
+These structs are defined at the top of `lib/ignite/live_view/upload.ex`:
 
 ```elixir
-# Stored in assigns.__uploads__[name]
-%Ignite.LiveView.Upload{
-  name: :photos,
-  accept: ["image/*", ".pdf"],
-  max_entries: 5,
-  max_file_size: 5_000_000,
-  chunk_size: 64_000,
-  auto_upload: true,
-  entries: [%UploadEntry{}, ...],
-  errors: []
-}
+defmodule Ignite.LiveView.Upload do
+  defstruct [
+    :name,
+    :accept,
+    :max_entries,
+    :max_file_size,
+    :chunk_size,
+    :auto_upload,
+    entries: [],
+    errors: []
+  ]
+end
 
-# Each file being uploaded
+defmodule Ignite.LiveView.UploadEntry do
+  defstruct [
+    :ref,
+    :upload_name,
+    :client_name,
+    :client_type,
+    :client_size,
+    :tmp_path,
+    progress: 0,
+    done?: false,
+    valid?: true,
+    errors: []
+  ]
+end
+```
+
+At runtime, an entry looks like:
+
+```elixir
 %Ignite.LiveView.UploadEntry{
-  ref: "0",               # unique reference
+  ref: "0",               # unique reference from the client
   client_name: "photo.jpg",
   client_type: "image/jpeg",
   client_size: 204800,
@@ -293,18 +471,66 @@ The chunker uses `setTimeout(sendNextChunk, 10)` between chunks to avoid floodin
 **Create `lib/my_app/controllers/upload_controller.ex`:**
 
 ```elixir
-def upload_form(conn) do
-  html(conn, """
-  <form action="/upload" method="post" enctype="multipart/form-data">
-    <input type="file" name="file" />
-    <button type="submit">Upload</button>
-  </form>
-  """)
-end
+defmodule MyApp.UploadController do
+  import Ignite.Controller
 
-def upload(conn) do
-  upload = conn.params["file"]
-  text(conn, "Got #{upload.filename}, #{File.stat!(upload.path).size} bytes")
+  def upload_form(conn) do
+    html(conn, """
+    <h1>File Upload</h1>
+    <form action="/upload" method="post" enctype="multipart/form-data"
+          style="max-width:500px;margin:20px auto;text-align:left;">
+      #{csrf_token_tag(conn)}
+      <div style="margin-bottom:15px;">
+        <label style="display:block;margin-bottom:4px;font-weight:bold;">Select a file</label>
+        <input type="file" name="file" required />
+      </div>
+      <div style="margin-bottom:15px;">
+        <label style="display:block;margin-bottom:4px;font-weight:bold;">Description</label>
+        <input type="text" name="description" placeholder="Optional description"
+               style="width:100%;padding:8px;box-sizing:border-box;" />
+      </div>
+      <button type="submit" style="padding:10px 20px;background:#3498db;color:white;
+              border:none;border-radius:4px;cursor:pointer;">Upload</button>
+    </form>
+    """)
+  end
+
+  def upload(conn) do
+    case conn.params["file"] do
+      %Ignite.Upload{} = upload ->
+        size = File.stat!(upload.path).size
+        File.mkdir_p!("uploads")
+        safe_name = sanitize_filename(upload.filename)
+        dest = Path.join("uploads", safe_name)
+        File.cp!(upload.path, dest)
+
+        html(conn, """
+        <h1>Upload Successful</h1>
+        <p><strong>#{escape(upload.filename)}</strong> — #{size} bytes
+           (#{escape(upload.content_type)})</p>
+        <p><a href="/uploads/#{safe_name}" target="_blank">View File</a></p>
+        <p><a href="/upload">Upload another</a> &middot; <a href="/">Home</a></p>
+        """)
+
+      _ ->
+        text(conn, "No file uploaded", 400)
+    end
+  end
+
+  defp escape(text) when is_binary(text) do
+    text
+    |> String.replace("&", "&amp;")
+    |> String.replace("<", "&lt;")
+    |> String.replace(">", "&gt;")
+  end
+
+  defp escape(nil), do: ""
+
+  defp sanitize_filename(name) do
+    timestamp = System.system_time(:millisecond) |> Integer.to_string()
+    safe = name |> Path.basename() |> String.replace(~r/[^\w.\-]/, "_")
+    "#{timestamp}-#{safe}"
+  end
 end
 ```
 
@@ -316,28 +542,194 @@ end
 defmodule MyApp.UploadDemoLive do
   use Ignite.LiveView
 
+  @impl true
   def mount(_params, _session) do
-    assigns = allow_upload(%{uploaded_files: []}, :photos,
-      accept: ["image/*"], max_entries: 5, max_file_size: 5_000_000,
-      auto_upload: true
-    )
+    assigns = %{uploaded_files: [], message: nil}
+
+    assigns =
+      allow_upload(assigns, :photos,
+        accept: ["image/*", ".pdf", ".txt", ".md"],
+        max_entries: 5,
+        max_file_size: 5_000_000,
+        auto_upload: true
+      )
+
     {:ok, assigns}
   end
 
-  def handle_event("save", _params, assigns) do
-    {assigns, results} = consume_uploaded_entries(assigns, :photos, fn entry ->
-      {:ok, %{name: entry.client_name, size: entry.client_size}}
-    end)
-    {:noreply, %{assigns | uploaded_files: results}}
+  @impl true
+  def handle_event("validate", _params, assigns) do
+    {:noreply, assigns}
   end
 
+  @impl true
+  def handle_event("save", _params, assigns) do
+    File.mkdir_p!("uploads")
+
+    {assigns, results} =
+      consume_uploaded_entries(assigns, :photos, fn entry ->
+        safe_name = sanitize_filename(entry.client_name)
+        dest = Path.join("uploads", safe_name)
+        File.cp!(entry.tmp_path, dest)
+
+        {:ok, %{name: entry.client_name, size: entry.client_size,
+                 type: entry.client_type, url: "/uploads/#{safe_name}"}}
+      end)
+
+    message = "#{length(results)} file(s) uploaded successfully!"
+    {:noreply, %{assigns | uploaded_files: assigns.uploaded_files ++ results, message: message}}
+  end
+
+  @impl true
+  def handle_event("clear", _params, assigns) do
+    assigns =
+      allow_upload(assigns, :photos,
+        accept: ["image/*", ".pdf", ".txt", ".md"],
+        max_entries: 5, max_file_size: 5_000_000, auto_upload: true
+      )
+
+    {:noreply, %{assigns | uploaded_files: [], message: nil}}
+  end
+
+  @impl true
   def render(assigns) do
     uploads = Map.get(assigns, :__uploads__, %{})
-    photo_upload = Map.get(uploads, :photos, %{entries: []})
-    # ... render entries with progress bars, drop zone, etc.
+    photo_upload = Map.get(uploads, :photos, %{entries: [], errors: []})
+
+    entries_html =
+      photo_upload.entries
+      |> Enum.map(fn entry ->
+        bar_color = if entry.done?, do: "#27ae60", else: "#3498db"
+        status = if entry.done?, do: "Done", else: "#{entry.progress}%"
+
+        """
+        <div style="display:flex;align-items:center;gap:12px;padding:8px;
+                    background:#f8f9fa;border-radius:6px;margin:4px 0;">
+          <span style="flex:1;">#{escape(entry.client_name)}</span>
+          <span style="color:#888;font-size:12px;">#{format_size(entry.client_size)}</span>
+          <div style="width:100px;height:8px;background:#eee;border-radius:4px;overflow:hidden;">
+            <div style="width:#{entry.progress}%;height:100%;background:#{bar_color};
+                        transition:width 0.3s;"></div>
+          </div>
+          <span style="font-size:12px;min-width:40px;">#{status}</span>
+        </div>
+        """
+      end)
+      |> Enum.join("")
+
+    all_done = Enum.all?(photo_upload.entries, & &1.done?)
+    has_entries = photo_upload.entries != []
+    save_disabled = if has_entries and all_done, do: "", else: " disabled"
+
+    """
+    <div style="max-width:600px;margin:0 auto;">
+      <h1>LiveView Upload Demo</h1>
+      <form ignite-submit="save">
+        <div ignite-drop-target="photos"
+             style="border:2px dashed #ccc;border-radius:8px;padding:40px;text-align:center;">
+          <p>Drag &amp; drop files here, or click to select</p>
+          #{live_file_input(assigns, :photos)}
+        </div>
+        #{entries_html}
+        <button type="submit"#{save_disabled}>Save Files</button>
+        <button type="button" ignite-click="clear">Clear</button>
+      </form>
+    </div>
+    """
+  end
+
+  defp escape(text) when is_binary(text) do
+    text |> String.replace("&", "&amp;") |> String.replace("<", "&lt;")
+        |> String.replace(">", "&gt;")
+  end
+
+  defp escape(nil), do: ""
+
+  defp sanitize_filename(name) do
+    timestamp = System.system_time(:millisecond) |> Integer.to_string()
+    safe = name |> Path.basename() |> String.replace(~r/[^\w.\-]/, "_")
+    "#{timestamp}-#{safe}"
+  end
+
+  defp format_size(bytes) when bytes < 1024, do: "#{bytes} B"
+  defp format_size(bytes) when bytes < 1_048_576, do: "#{Float.round(bytes / 1024, 1)} KB"
+  defp format_size(bytes), do: "#{Float.round(bytes / 1_048_576, 1)} MB"
+end
+```
+
+### Router Routes
+
+**Update `lib/my_app/router.ex`:**
+
+```elixir
+get "/upload", to: MyApp.UploadController, action: :upload_form
+post "/upload", to: MyApp.UploadController, action: :upload
+get "/upload-demo", to: MyApp.WelcomeController, action: :upload_demo
+```
+
+The `upload_demo` action in `WelcomeController` serves the LiveView-connected page (same pattern as the counter and streams demos).
+
+### Handler: Binary Frame Handling
+
+**Update `lib/ignite/live_view/handler.ex`** — add upload protocol events to the text frame handler and a new binary frame handler:
+
+```elixir
+# In websocket_handle({:text, json}, state), add before the generic event handler:
+
+{:ok, %{"event" => "__upload_validate__", "params" => %{"name" => name, "entries" => entries}}} ->
+  upload_name = String.to_atom(name)
+  new_assigns = Ignite.LiveView.UploadHelpers.validate_entries(state.assigns, upload_name, entries)
+
+  # Let the view handle validation if it defines handle_event("validate", ...)
+  new_assigns =
+    if function_exported?(state.view, :handle_event, 3) do
+      case apply(state.view, :handle_event, ["validate", %{"name" => name}, new_assigns]) do
+        {:noreply, a} -> a
+        _ -> new_assigns
+      end
+    else
+      new_assigns
+    end
+
+  send_render_update_with_upload_config(state, new_assigns, upload_name)
+
+{:ok, %{"event" => "__upload_complete__", "params" => %{"name" => name, "ref" => ref}}} ->
+  upload_name = String.to_atom(name)
+  new_assigns = Ignite.LiveView.UploadHelpers.mark_complete(state.assigns, upload_name, ref)
+  send_render_update(state, new_assigns)
+```
+
+```elixir
+# Binary frames carry file upload chunks
+# Protocol: [2 bytes: ref_len][ref_len bytes: ref_string][rest: chunk_data]
+@impl true
+def websocket_handle({:binary, data}, state) do
+  case data do
+    <<ref_len::16, ref::binary-size(ref_len), chunk_data::binary>> ->
+      new_assigns = Ignite.LiveView.UploadHelpers.receive_chunk(state.assigns, ref, chunk_data)
+      send_render_update(state, new_assigns)
+
+    _ ->
+      Logger.warning("[LiveView] Malformed binary upload frame")
+      {:ok, state}
   end
 end
 ```
+
+The `send_render_update_with_upload_config/3` helper is like `send_render_update/2` but also includes the upload config in the JSON payload so the JS client knows the chunk size and which entries are valid:
+
+```elixir
+defp send_render_update_with_upload_config(state, assigns, upload_name) do
+  # ... render + diff as usual ...
+  upload_config = Ignite.LiveView.UploadHelpers.build_upload_config(assigns, upload_name)
+  payload_map = %{d: diff_payload}
+  payload_map = if upload_config, do: Map.put(payload_map, :upload, upload_config), else: payload_map
+  payload = Jason.encode!(payload_map)
+  {:reply, {:text, payload}, new_state}
+end
+```
+
+See `lib/ignite/live_view/handler.ex` for the complete implementation including component routing and redirect handling.
 
 ## Testing
 

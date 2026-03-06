@@ -162,6 +162,40 @@ defp handle_possible_component_event(event, params, state) do
 end
 ```
 
+This function is called from the generic event handling branch of `websocket_handle/2`. Here's how it integrates — the `{:ok, %{"event" => event, "params" => params}}` clause tries component routing first, then falls back to the parent LiveView's `handle_event/3`:
+
+```elixir
+# In websocket_handle/2 — the generic event clause:
+
+{:ok, %{"event" => event, "params" => params}} ->
+  # Route component events (format: "component_id:event_name")
+  {new_assigns, is_component_event} =
+    handle_possible_component_event(event, params, state)
+
+  new_assigns =
+    if is_component_event do
+      new_assigns
+    else
+      case apply(state.view, :handle_event, [event, params, state.assigns]) do
+        {:noreply, assigns} -> assigns
+      end
+    end
+
+  # Check for pending redirect
+  case Map.pop(new_assigns, :__redirect__) do
+    {nil, clean_assigns} ->
+      send_render_update(state, clean_assigns)
+
+    {redirect_info, clean_assigns} ->
+      {_streams, clean_assigns} = Ignite.LiveView.Stream.extract_stream_ops(clean_assigns)
+      new_state = %{state | assigns: clean_assigns}
+      payload = Jason.encode!(%{redirect: redirect_info})
+      {:reply, {:text, payload}, new_state}
+  end
+```
+
+The key insight: `handle_possible_component_event/3` returns a `{assigns, boolean}` tuple. If the event matched a component (the boolean is `true`), the updated assigns already contain the new component state and the parent's `handle_event/3` is skipped. If it didn't match (the boolean is `false`), the event is dispatched to the parent LiveView as usual.
+
 After updating component state, the handler re-renders the **entire parent LiveView** (which will re-render all its components with updated state), then sends the new dynamics to the client.
 
 ## Step 4: JavaScript Event Namespacing
@@ -182,7 +216,62 @@ function resolveEvent(eventName, target) {
 }
 ```
 
-This is called for all event types (click, change, submit). A button inside `<div ignite-component="alerts">` that has `ignite-click="dismiss"` will send `"alerts:dismiss"` over the WebSocket.
+This function is called from the existing click, change, and submit handlers. Here's how it integrates with each one:
+
+**Click handler** — wraps the event name before sending:
+
+```javascript
+// In the click event listener:
+var eventName = target.getAttribute("ignite-click");
+if (eventName) {
+  e.preventDefault();
+  var params = {};
+  var value = target.getAttribute("ignite-value");
+  if (value) {
+    params.value = value;
+  }
+  // Namespace the event if inside a component
+  sendEvent(resolveEvent(eventName, target), params);
+  return;
+}
+```
+
+**Change handler** — same pattern for input events:
+
+```javascript
+// In the input event listener:
+var eventName = el.getAttribute("ignite-change");
+if (eventName) {
+  var params = {
+    field: target.getAttribute("name") || "",
+    value: target.value,
+  };
+  // Namespace the event if inside a component
+  sendEvent(resolveEvent(eventName, target), params);
+  return;
+}
+```
+
+**Submit handler** — same pattern for form submissions:
+
+```javascript
+// In the submit event listener:
+var eventName = form.getAttribute("ignite-submit");
+if (eventName) {
+  e.preventDefault();
+  var params = {};
+  var formData = new FormData(form);
+  formData.forEach(function (value, key) {
+    if (!(value instanceof File)) {
+      params[key] = value;
+    }
+  });
+  // Namespace the event if inside a component
+  sendEvent(resolveEvent(eventName, form), params);
+}
+```
+
+In all three cases, the change is the same: replace `sendEvent(eventName, params)` with `sendEvent(resolveEvent(eventName, target), params)`. The `resolveEvent` function walks up the DOM tree and, if it finds an `[ignite-component]` ancestor, prefixes the event name with `"componentId:"`. For elements outside any component, the event name passes through unchanged.
 
 ## Step 5: Building a Component
 
@@ -294,6 +383,43 @@ end
 
 Each component gets a unique `id`. The same component module can be used multiple times with different IDs and props.
 
+## Step 8: Route and Controller
+
+**Update `lib/my_app/router.ex`** — add a route for the components demo page:
+
+```elixir
+get "/components", to: MyApp.WelcomeController, action: :components
+```
+
+**Update `lib/my_app/controllers/welcome_controller.ex`** — add the `components` action that renders the LiveView shell page, and add `"/components"` to the `@live_routes` map:
+
+```elixir
+# In @live_routes map, add:
+"/components" => "/live/components",
+
+# New action:
+def components(conn) do
+  render(conn, "live",
+    title: "LiveComponents — Ignite",
+    live_path: "/live/components",
+    live_routes: @live_routes
+  )
+end
+```
+
+Also add a link on the welcome page's index action so users can discover the demo:
+
+```elixir
+# In the index action's HTML, add to the <ul> of demo routes:
+<li><a href="/components">/components</a> — LiveComponents (reusable stateful widgets)</li>
+```
+
+The WebSocket route `/live/components` is registered in `lib/ignite/application.ex` alongside the other LiveView paths, mapping to `MyApp.ComponentsDemoLive`:
+
+```elixir
+{"/live/components", Ignite.LiveView.Handler, %{view: MyApp.ComponentsDemoLive}},
+```
+
 ## How Events Flow
 
 ```
@@ -348,9 +474,9 @@ iex -S mix
 |------|--------|
 | `lib/ignite/live_component.ex` | **New** |
 | `lib/ignite/live_view.ex` | **Modified** — added `live_component/3` and `collect_components/1` |
-| `lib/ignite/live_view/handler.ex` | **Modified** — added component event routing |
-| `lib/ignite/application.ex` | **Modified** — no functional change, cleanup only |
-| `assets/ignite.js` | **Modified** — added `resolveEvent` for component event namespacing |
+| `lib/ignite/live_view/handler.ex` | **Modified** — added `handle_possible_component_event/3` + event dispatch integration |
+| `lib/ignite/application.ex` | **Modified** — added `/live/components` WebSocket route |
+| `assets/ignite.js` | **Modified** — added `resolveEvent` + integrated into click/change/submit handlers |
 | `lib/my_app/live/components/notification_badge.ex` | **New** |
 | `lib/my_app/live/components/toggle_button.ex` | **New** |
 | `lib/my_app/live/components_demo_live.ex` | **New** |

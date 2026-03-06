@@ -86,11 +86,27 @@ end
 
 ### Updated Router (`lib/ignite/router.ex`)
 
-**Update `lib/ignite/router.ex`** — add the `plug` macro and update the `call/1` function with the two additions below:
+**Update `lib/ignite/router.ex`** — three changes: update the `__using__` macro, add the `plug` macro, and update `call/1`.
 
-Two new additions:
+1. **Updated `__using__` macro** — register the `@plugs` accumulating attribute and
+   add `@before_compile` so that `call/1` is generated after all plugs are registered:
+   ```elixir
+   defmacro __using__(_opts) do
+     quote do
+       import Ignite.Router
 
-1. **`plug` macro** — registers a function name in `@plugs`:
+       # Accumulate plug names as a module attribute.
+       # `accumulate: true` means each `@plugs :name` adds to a list.
+       Module.register_attribute(__MODULE__, :plugs, accumulate: true)
+
+       # Generate call/1 after all plugs and routes are defined.
+       # This ensures @plugs is fully accumulated when call/1 is compiled.
+       @before_compile Ignite.Router
+     end
+   end
+   ```
+
+2. **`plug` macro** — registers a function name in `@plugs`:
    ```elixir
    defmacro plug(function_name) do
      quote do
@@ -99,18 +115,27 @@ Two new additions:
    end
    ```
 
-2. **Updated `call/1`** — runs plugs before dispatching:
+3. **`@before_compile` callback with `call/1`** — runs plugs before dispatching.
+   We define `call/1` inside `__before_compile__/1` so that `@plugs` is fully
+   accumulated and reversed once at compile time:
    ```elixir
-   def call(conn) do
-     conn = Enum.reduce(Enum.reverse(@plugs), conn, fn plug_func, acc ->
-       if acc.halted, do: acc, else: apply(__MODULE__, plug_func, [acc])
-     end)
+   defmacro __before_compile__(env) do
+     plugs = Module.get_attribute(env.module, :plugs) |> Enum.reverse()
 
-     if conn.halted do
-       conn
-     else
-       segments = String.split(conn.path, "/", trim: true)
-       dispatch(conn, segments)
+     quote do
+       def call(conn) do
+         conn =
+           Enum.reduce(unquote(plugs), conn, fn plug_func, acc ->
+             if acc.halted, do: acc, else: apply(__MODULE__, plug_func, [acc])
+           end)
+
+         if conn.halted do
+           conn
+         else
+           segments = String.split(conn.path, "/", trim: true)
+           dispatch(conn, segments)
+         end
+       end
      end
    end
    ```

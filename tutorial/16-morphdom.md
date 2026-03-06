@@ -101,55 +101,168 @@ before `ignite.js` so it's available as a global `morphdom` function.
 
 ### Updated `assets/ignite.js`
 
-**Update `assets/ignite.js`** — add the `applyUpdate()` function and replace the `container.innerHTML = html` call in `socket.onmessage` with `applyUpdate(container, html)`:
+**Replace `assets/ignite.js` with the full updated file.** The key changes from Step 14:
+- New `applyUpdate()` function that uses morphdom instead of `innerHTML`
+- The `socket.onmessage` handler now calls `applyUpdate(container, html)` instead of `container.innerHTML = html`
 
 ```javascript
-// --- Apply update to DOM ---
-// Uses morphdom if available, falls back to innerHTML
-function applyUpdate(container, newHtml) {
-  if (typeof morphdom === "function") {
-    var wrapper = document.createElement("div");
-    wrapper.id = APP_CONTAINER_ID;
-    wrapper.innerHTML = newHtml;
-    morphdom(container, wrapper, {
-      onBeforeElUpdated: function (fromEl, toEl) {
-        // Skip file inputs — browsers don't allow setting their value
-        if (fromEl.type === "file") return false;
-        // Don't overwrite value if user is actively typing
-        if (fromEl === document.activeElement) {
-          if (fromEl.tagName === "INPUT" || fromEl.tagName === "TEXTAREA") {
+/**
+ * Ignite.js — Frontend glue for Ignite LiveView.
+ *
+ * Uses morphdom for efficient DOM patching:
+ * - Instead of replacing innerHTML (which destroys focus, animations, etc.),
+ *   morphdom compares the old and new HTML and only updates what changed.
+ *
+ * Protocol:
+ * - On mount: server sends {s: [...statics], d: [...dynamics]}
+ * - On update: server sends {d: [...dynamics]}
+ * - JS zips statics + dynamics, then morphdom patches the DOM
+ */
+
+(function () {
+  "use strict";
+
+  // --- Configuration ---
+  var LIVE_PATH = "/live";
+  var APP_CONTAINER_ID = "ignite-app";
+
+  // Statics are saved from the first message and reused for every update
+  var statics = null;
+
+  // --- WebSocket Connection ---
+  var protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+  var socket = new WebSocket(protocol + "//" + window.location.host + LIVE_PATH);
+
+  // --- Reconstruct HTML from statics + dynamics ---
+  function buildHtml(statics, dynamics) {
+    var html = "";
+    for (var i = 0; i < statics.length; i++) {
+      html += statics[i];
+      if (i < dynamics.length) {
+        html += dynamics[i];
+      }
+    }
+    return html;
+  }
+
+  // --- Apply update to DOM ---
+  // Uses morphdom if available, falls back to innerHTML
+  function applyUpdate(container, newHtml) {
+    if (typeof morphdom === "function") {
+      // Create a temporary wrapper to morph into
+      var wrapper = document.createElement("div");
+      wrapper.id = APP_CONTAINER_ID;
+      wrapper.innerHTML = newHtml;
+
+      morphdom(container, wrapper, {
+        // Preserve focused input elements
+        onBeforeElUpdated: function (fromEl, toEl) {
+          // Don't update the element if the user is actively typing in it
+          if (fromEl === document.activeElement && fromEl.tagName === "INPUT") {
             toEl.value = fromEl.value;
           }
-        }
-        return true;
-      }
-    });
-  } else {
-    container.innerHTML = newHtml;
+          return true;
+        },
+      });
+    } else {
+      // Fallback: replace entire content
+      container.innerHTML = newHtml;
+    }
   }
-}
-```
 
-Then in the `socket.onmessage` handler, replace:
-```javascript
-container.innerHTML = html;
-```
-with:
-```javascript
-applyUpdate(container, html);
+  // --- Receive updates from server ---
+  socket.onmessage = function (event) {
+    var data = JSON.parse(event.data);
+    var container = document.getElementById(APP_CONTAINER_ID);
+    if (!container) return;
+
+    // First message includes statics — save them
+    if (data.s) {
+      statics = data.s;
+    }
+
+    // Reconstruct HTML and patch the DOM
+    if (statics && data.d) {
+      var newHtml = buildHtml(statics, data.d);
+      applyUpdate(container, newHtml);
+    }
+  };
+
+  // --- Send events to server ---
+  document.addEventListener("click", function (e) {
+    var target = e.target;
+
+    while (target && target !== document) {
+      var eventName = target.getAttribute("ignite-click");
+      if (eventName) {
+        e.preventDefault();
+
+        var params = {};
+        var value = target.getAttribute("ignite-value");
+        if (value) {
+          params.value = value;
+        }
+
+        socket.send(
+          JSON.stringify({
+            event: eventName,
+            params: params,
+          })
+        );
+        return;
+      }
+      target = target.parentElement;
+    }
+  });
+
+  // --- Connection lifecycle ---
+  socket.onopen = function () {
+    console.log("[Ignite] LiveView connected (morphdom: " + (typeof morphdom === "function") + ")");
+  };
+
+  socket.onclose = function () {
+    console.log("[Ignite] LiveView disconnected");
+  };
+
+  socket.onerror = function (err) {
+    console.error("[Ignite] WebSocket error:", err);
+  };
+})();
 ```
 
 The key change: instead of `container.innerHTML = html` (which destroys and recreates all elements), we call `applyUpdate` which uses morphdom to diff and patch only the changed elements.
 
 ### Updated `templates/live.html.eex`
 
-**Replace `templates/live.html.eex` with:**
+**Replace `templates/live.html.eex` with the full updated file.** The only change from Step 13 is the new `<script>` tag that loads morphdom *before* `ignite.js`:
 
-Loads morphdom before ignite.js:
 ```html
-<script src="/assets/morphdom.min.js"></script>
-<script src="/assets/ignite.js"></script>
+<!DOCTYPE html>
+<html>
+<head>
+  <title><%= @assigns[:title] || "Ignite LiveView" %></title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      text-align: center;
+      margin-top: 50px;
+      color: #333;
+    }
+    button { cursor: pointer; margin: 5px; }
+    #ignite-app { min-height: 100px; }
+  </style>
+</head>
+<body>
+  <div id="ignite-app">Connecting...</div>
+  <hr>
+  <p><small>Powered by <a href="/">Ignite</a></small></p>
+  <script src="/assets/morphdom.min.js"></script>
+  <script src="/assets/ignite.js"></script>
+</body>
+</html>
 ```
+
+Morphdom must be loaded **before** `ignite.js` so that `typeof morphdom === "function"` evaluates to `true` when our code runs.
 
 ## How It Works
 

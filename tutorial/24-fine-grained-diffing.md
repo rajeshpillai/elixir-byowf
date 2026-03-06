@@ -214,19 +214,71 @@ var newHtml = buildHtml(statics, dynamics);
 applyUpdate(el, newHtml);      // morphdom patches the DOM
 ```
 
-### Backward Compatibility
+### Handler Integration
 
-If a LiveView's `render/1` returns a plain string (not `%Rendered{}`), the engine wraps it as a single dynamic — exactly like before.
+The handler orchestrates the whole flow. On mount it sends statics + dynamics; on updates it diffs against previous dynamics and sends only changes.
 
-**Update `lib/ignite/live_view/handler.ex`** — add a `normalize` clause for plain strings:
+**Update `lib/ignite/live_view/engine.ex`** — the `normalize` function detects whether `render/1` returned a `%Rendered{}` or a plain string:
 
 ```elixir
+# %Rendered{} from ~L sigil: use statics/dynamics directly
+defp normalize(%Rendered{statics: statics, dynamics: dynamics}) do
+  {statics, dynamics}
+end
+
+# Legacy string: entire HTML is one dynamic
 defp normalize(html) when is_binary(html) do
   {["", ""], [html]}
 end
 ```
 
-This means existing LiveViews (like RegistrationLive with conditional branches) keep working without changes.
+This means existing LiveViews (like RegistrationLive with conditional branches) keep working without changes — the full HTML becomes a single dynamic at index 0.
+
+**Update `lib/ignite/live_view/handler.ex`** — on mount, send statics + dynamics and store `prev_dynamics` for future diffs:
+
+```elixir
+# On mount: send both statics and dynamics
+def websocket_init(state) do
+  view_module = state.view
+  session = Map.get(state, :session, %{})
+
+  case apply(view_module, :mount, [%{}, session]) do
+    {:ok, assigns} ->
+      {statics, dynamics} = Engine.render(view_module, assigns)
+      assigns = Ignite.LiveView.collect_components(assigns)
+
+      # Store prev_dynamics for future sparse diffing
+      new_state = %{view: view_module, assigns: assigns, prev_dynamics: dynamics}
+
+      payload = Jason.encode!(%{s: statics, d: dynamics})
+      {:reply, {:text, payload}, new_state}
+  end
+end
+```
+
+On subsequent renders (events, server push), diff against previous dynamics:
+
+```elixir
+# Renders the view, diffs against previous dynamics, and sends sparse update
+defp send_render_update(state, assigns) do
+  {_statics, new_dynamics} = Engine.render(state.view, assigns)
+  assigns = Ignite.LiveView.collect_components(assigns)
+
+  # Compute sparse diff against previous dynamics
+  diff_payload =
+    case Map.get(state, :prev_dynamics) do
+      nil -> new_dynamics
+      prev -> Engine.diff(prev, new_dynamics)
+    end
+
+  new_state = %{state | assigns: assigns, prev_dynamics: new_dynamics}
+
+  payload = Jason.encode!(%{d: diff_payload})
+  {:reply, {:text, payload}, new_state}
+end
+```
+
+The key insight: `Engine.render/2` calls `normalize` internally, so the handler doesn't care whether the view uses `~L` or plain strings. Both return `{statics, dynamics}`. The handler just stores `prev_dynamics` and passes old + new to `Engine.diff/2`.
 
 ## Using It
 
@@ -257,6 +309,69 @@ defmodule MyApp.CounterLive do
   end
 end
 ```
+
+### Convert DashboardLive to `~L`
+
+The dashboard is the best showcase — 8 dynamic values, but only a few change each tick.
+
+**Update `lib/my_app/live/dashboard_live.ex`** — switch `render/1` to use the `~L` sigil:
+
+```elixir
+def render(assigns) do
+  ~L"""
+  <div id="dashboard" style="max-width: 600px; margin: 0 auto; text-align: left;">
+    <h1>BEAM Dashboard</h1>
+    <p style="color: #888; font-size: 14px;">Auto-refreshes every second</p>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 20px 0;">
+      <div style="background: #f0f4ff; padding: 16px; border-radius: 8px;">
+        <div style="font-size: 14px; color: #666;">Uptime</div>
+        <div style="font-size: 24px; font-weight: bold;"><%= assigns.uptime %></div>
+      </div>
+
+      <div style="background: #f0fff4; padding: 16px; border-radius: 8px;">
+        <div style="font-size: 14px; color: #666;">Processes</div>
+        <div style="font-size: 24px; font-weight: bold;"><%= assigns.process_count %></div>
+      </div>
+
+      <div style="background: #fff8f0; padding: 16px; border-radius: 8px;">
+        <div style="font-size: 14px; color: #666;">Memory (Total)</div>
+        <div style="font-size: 24px; font-weight: bold;"><%= assigns.total_memory %> MB</div>
+      </div>
+
+      <div style="background: #fff0f0; padding: 16px; border-radius: 8px;">
+        <div style="font-size: 14px; color: #666;">Memory (Processes)</div>
+        <div style="font-size: 24px; font-weight: bold;"><%= assigns.process_memory %> MB</div>
+      </div>
+
+      <div style="background: #f5f0ff; padding: 16px; border-radius: 8px;">
+        <div style="font-size: 14px; color: #666;">Atoms</div>
+        <div style="font-size: 24px; font-weight: bold;"><%= assigns.atom_count %></div>
+      </div>
+
+      <div style="background: #f0ffff; padding: 16px; border-radius: 8px;">
+        <div style="font-size: 14px; color: #666;">Ports</div>
+        <div style="font-size: 24px; font-weight: bold;"><%= assigns.port_count %></div>
+      </div>
+
+      <div style="background: #fffff0; padding: 16px; border-radius: 8px;">
+        <div style="font-size: 14px; color: #666;">Schedulers</div>
+        <div style="font-size: 24px; font-weight: bold;"><%= assigns.schedulers %></div>
+      </div>
+
+      <div style="background: #f0f0f0; padding: 16px; border-radius: 8px;">
+        <div style="font-size: 14px; color: #666;">OTP Release</div>
+        <div style="font-size: 24px; font-weight: bold;"><%= assigns.otp_release %></div>
+      </div>
+    </div>
+
+    <button ignite-click="gc" style="...">Run GC</button>
+  </div>
+  """
+end
+```
+
+Each `<%= %>` gets its own index (0-7). On each tick, the engine compares all 8 values against the previous render. Schedulers (index 6) and OTP release (index 7) never change, so they are never sent. A typical tick sends only 3-4 changed indices like `{"0": "2m 55s", "2": "60.3", "3": "14.2"}` — about 50 bytes instead of 2000.
 
 ### Local variables work too
 

@@ -98,6 +98,105 @@ function createHookInstance(hookDef, el) {
 
 `Object.create(hookDef)` creates a new object that inherits from the hook definition. This way each instance has its own `el` and `pushEvent` but shares the callback implementations.
 
+### Hook Lifecycle Functions
+
+These four functions manage the full lifecycle. Add them to `ignite.js` right after `createHookInstance`:
+
+**`mountHooks`** — scans the container for new `[ignite-hook]` elements and calls `mounted()`:
+
+```javascript
+function mountHooks(container) {
+  var hookDefs = getHookDefinitions();
+  var elements = container.querySelectorAll("[ignite-hook]");
+
+  for (var i = 0; i < elements.length; i++) {
+    var el = elements[i];
+    var hookName = el.getAttribute("ignite-hook");
+    var elId = el.id;
+
+    if (!elId || !hookName) continue;
+    if (mountedHooks[elId]) continue; // already mounted
+
+    var def = hookDefs[hookName];
+    if (!def) {
+      console.warn("[Ignite] Hook '" + hookName + "' not found in IgniteHooks");
+      continue;
+    }
+
+    var instance = createHookInstance(def, el);
+    mountedHooks[elId] = { name: hookName, instance: instance };
+
+    if (typeof instance.mounted === "function") {
+      instance.mounted();
+    }
+  }
+}
+```
+
+**`updateHooks`** — refreshes the `this.el` reference (morphdom may replace the DOM node) and calls `updated()`:
+
+```javascript
+function updateHooks(container) {
+  var elements = container.querySelectorAll("[ignite-hook]");
+
+  for (var i = 0; i < elements.length; i++) {
+    var el = elements[i];
+    var elId = el.id;
+    if (!elId) continue;
+
+    var entry = mountedHooks[elId];
+    if (entry) {
+      // Update the element reference (morphdom may have replaced it)
+      entry.instance.el = el;
+      if (typeof entry.instance.updated === "function") {
+        entry.instance.updated();
+      }
+    }
+  }
+}
+```
+
+**`cleanupHooks`** — finds hooks whose elements were removed from the DOM and calls `destroyed()`:
+
+```javascript
+function cleanupHooks(container) {
+  var currentIds = {};
+  var elements = container.querySelectorAll("[ignite-hook]");
+  for (var i = 0; i < elements.length; i++) {
+    if (elements[i].id) currentIds[elements[i].id] = true;
+  }
+
+  var toRemove = [];
+  for (var id in mountedHooks) {
+    if (!currentIds[id]) {
+      toRemove.push(id);
+    }
+  }
+
+  for (var j = 0; j < toRemove.length; j++) {
+    var entry = mountedHooks[toRemove[j]];
+    if (entry && typeof entry.instance.destroyed === "function") {
+      entry.instance.destroyed();
+    }
+    delete mountedHooks[toRemove[j]];
+  }
+}
+```
+
+**`destroyAllHooks`** — tears down every hook (used during navigation):
+
+```javascript
+function destroyAllHooks() {
+  for (var id in mountedHooks) {
+    var entry = mountedHooks[id];
+    if (entry && typeof entry.instance.destroyed === "function") {
+      entry.instance.destroyed();
+    }
+  }
+  mountedHooks = {};
+}
+```
+
 ### Lifecycle Integration with morphdom
 
 After every DOM update (mount or event response), Ignite runs three phases:
@@ -106,24 +205,70 @@ After every DOM update (mount or event response), Ignite runs three phases:
 2. **Mount** — Find new `[ignite-hook]` elements → call `mounted()`
 3. **Update** — Find existing hooks whose elements were re-rendered → call `updated()`
 
+Add the three calls at the end of `applyUpdate`, after morphdom has patched the DOM:
+
 ```javascript
 function applyUpdate(container, newHtml) {
-  // ... morphdom patches the DOM ...
+  if (typeof morphdom === "function") {
+    var wrapper = document.createElement("div");
+    wrapper.id = APP_CONTAINER_ID;
+    if (container.dataset.livePath) {
+      wrapper.dataset.livePath = container.dataset.livePath;
+    }
+    if (container.dataset.liveRoutes) {
+      wrapper.dataset.liveRoutes = container.dataset.liveRoutes;
+    }
+    wrapper.innerHTML = newHtml;
 
-  cleanupHooks(container);  // destroyed() on removed elements
-  mountHooks(container);    // mounted() on new elements
-  updateHooks(container);   // updated() on existing elements
+    morphdom(container, wrapper, {
+      onBeforeElUpdated: function (fromEl, toEl) {
+        if (fromEl.hasAttribute("ignite-stream")) return false;
+        if (fromEl.type === "file") return false;
+        if (fromEl === document.activeElement) {
+          if (fromEl.tagName === "INPUT" || fromEl.tagName === "TEXTAREA") {
+            toEl.value = fromEl.value;
+          }
+        }
+        return true;
+      },
+    });
+  } else {
+    container.innerHTML = newHtml;
+  }
+
+  // Hook lifecycle: clean up removed hooks, mount new ones, update existing
+  cleanupHooks(container);
+  mountHooks(container);
+  updateHooks(container);
 }
 ```
 
 ### Navigation Cleanup
 
-When navigating between LiveViews, all hooks are destroyed:
+When navigating between LiveViews, call `destroyAllHooks()` at the top of `connect` before opening the new WebSocket:
 
 ```javascript
 function connect(livePath) {
-  destroyAllHooks();  // Call destroyed() on everything
-  // ... close old WS, open new one ...
+  // Close existing connection
+  if (socket) {
+    socket.onclose = null;
+    socket.close();
+  }
+
+  // Destroy all hooks from previous view
+  destroyAllHooks();
+
+  // Reset statics and dynamics for new view
+  statics = null;
+  dynamics = null;
+
+  var container = document.getElementById(APP_CONTAINER_ID);
+  if (container) {
+    container.innerHTML = "Connecting...";
+    container.dataset.livePath = livePath;
+  }
+
+  // ... open new WebSocket ...
 }
 ```
 
@@ -216,22 +361,104 @@ The server doesn't need any special code for hooks. Events pushed via `pushEvent
 defmodule MyApp.HooksDemoLive do
   use Ignite.LiveView
 
+  @impl true
   def mount(_params, _session) do
-    {:ok, %{hook_events: []}}
+    {:ok, %{
+      server_clicks: 0,
+      hook_events: [],
+      copy_text: "Hello from Ignite! Copy me to clipboard."
+    }}
   end
 
+  @impl true
+  def handle_event("server_click", _params, assigns) do
+    {:noreply, %{assigns | server_clicks: assigns.server_clicks + 1}}
+  end
+
+  # Receives events pushed from JS hooks via pushEvent()
+  @impl true
   def handle_event("clipboard_result", params, assigns) do
     status = if params["success"] == "true", do: "copied", else: "failed"
     event = "Clipboard: #{status}"
-    {:noreply, %{assigns | hook_events: [event | assigns.hook_events]}}
+    {:noreply, %{assigns | hook_events: [event | Enum.take(assigns.hook_events, 4)]}}
   end
 
+  @impl true
   def handle_event("local_time", params, assigns) do
     event = "Client time: #{params["time"]}"
-    {:noreply, %{assigns | hook_events: [event | assigns.hook_events]}}
+    {:noreply, %{assigns | hook_events: [event | Enum.take(assigns.hook_events, 4)]}}
+  end
+
+  @impl true
+  def render(assigns) do
+    events_html = if assigns.hook_events == [] do
+      "<em>No hook events yet — click the buttons above</em>"
+    else
+      assigns.hook_events
+      |> Enum.map(fn e -> "<li>#{e}</li>" end)
+      |> Enum.join("\n")
+    end
+
+    ~L"""
+    <div id="hooks-demo" style="max-width: 600px; margin: 0 auto;">
+      <h1>JS Hooks Demo</h1>
+
+      <div style="margin: 24px 0; padding: 20px; background: #f8f9fa; border-radius: 8px;">
+        <h3 style="margin-top: 0;">Server State</h3>
+        <p>Server clicks: <strong><%= assigns.server_clicks %></strong></p>
+        <button ignite-click="server_click"
+                style="padding: 8px 16px; background: #3498db; color: white; border: none; border-radius: 6px; cursor: pointer;">
+          Server Click
+        </button>
+      </div>
+
+      <div style="margin: 24px 0; padding: 20px; background: #fff8f0; border-radius: 8px;">
+        <h3 style="margin-top: 0;">Clipboard Hook</h3>
+        <div id="clipboard-hook" ignite-hook="CopyToClipboard" data-text="<%= assigns.copy_text %>"
+             style="display: flex; gap: 12px; align-items: center;">
+          <code style="padding: 8px 12px; background: #eee; border-radius: 4px; flex: 1;"><%= assigns.copy_text %></code>
+          <button id="copy-btn"
+                  style="padding: 8px 16px; background: #9b59b6; color: white; border: none; border-radius: 6px; cursor: pointer;">
+            Copy
+          </button>
+        </div>
+      </div>
+
+      <div style="margin: 24px 0; padding: 20px; background: #f0f4ff; border-radius: 8px;">
+        <h3 style="margin-top: 0;">Local Time Hook</h3>
+        <div id="time-hook" ignite-hook="LocalTime"
+             style="display: flex; gap: 12px; align-items: center;">
+          <span id="local-time-display" style="font-size: 18px; font-weight: bold;">--:--:--</span>
+          <button id="send-time-btn"
+                  style="padding: 8px 16px; background: #27ae60; color: white; border: none; border-radius: 6px; cursor: pointer;">
+            Send to Server
+          </button>
+        </div>
+      </div>
+
+      <div style="margin: 24px 0; padding: 20px; background: #f0fff4; border-radius: 8px;">
+        <h3 style="margin-top: 0;">Hook Events Log</h3>
+        <ul style="margin: 8px 0; padding-left: 20px;">
+          <%= events_html %>
+        </ul>
+      </div>
+    </div>
+    """
   end
 end
 ```
+
+## Step 6: Loading hooks.js in the Template
+
+**Update `templates/live.html.eex`** — add a `<script>` tag for `hooks.js` **before** `ignite.js` so the hooks are registered before the framework initializes:
+
+```html
+  <script src="<%= Ignite.Static.static_path("morphdom.min.js") %>"></script>
+  <script src="<%= Ignite.Static.static_path("hooks.js") %>"></script>
+  <script src="<%= Ignite.Static.static_path("ignite.js") %>"></script>
+```
+
+The load order matters: `hooks.js` populates `window.IgniteHooks`, then `ignite.js` reads from it when calling `mountHooks` on the initial render.
 
 ## How It All Fits Together
 

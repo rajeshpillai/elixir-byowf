@@ -147,63 +147,73 @@ The adapter does three things:
 3. **Reply** via `:cowboy_req.reply/4`
 
 ```elixir
-def init(req, state) do
-  conn = cowboy_to_conn(req)
-  conn = MyApp.Router.call(conn)
+defmodule Ignite.Adapters.Cowboy do
+  @moduledoc """
+  Bridges Cowboy's request format with Ignite's %Conn{} struct.
 
-  req = :cowboy_req.reply(
-    conn.status,
-    conn.resp_headers,
-    conn.resp_body,
-    req
-  )
+  Cowboy calls `init/2` for every HTTP request. We convert the Cowboy
+  request into an %Ignite.Conn{}, run it through the router, and send
+  the response back through Cowboy.
+  """
 
-  {:ok, req, state}
-end
-```
+  @behaviour :cowboy_handler
 
-The `cowboy_to_conn/1` function translates Cowboy's request map into our
-`%Ignite.Conn{}` struct:
+  require Logger
 
-```elixir
-defp cowboy_to_conn(req) do
-  # Read the body if present (POST/PUT/PATCH)
-  {body_params, _req} = read_cowboy_body(req)
+  @impl true
+  def init(req, state) do
+    conn = cowboy_to_conn(req)
+    conn = MyApp.Router.call(conn)
 
-  # Convert Cowboy headers to a simple map
-  headers =
-    req.headers
-    |> Enum.into(%{}, fn {k, v} -> {String.downcase(k), v} end)
+    req = :cowboy_req.reply(
+      conn.status,
+      conn.resp_headers,
+      conn.resp_body,
+      req
+    )
 
-  %Ignite.Conn{
-    method: req.method,
-    path: req.path,
-    headers: headers,
-    params: body_params
-  }
-end
-
-defp read_cowboy_body(req) do
-  case :cowboy_req.has_body(req) do
-    true ->
-      {:ok, body, req} = :cowboy_req.read_body(req)
-      content_type = :cowboy_req.header("content-type", req, "")
-      {parse_body(body, content_type), req}
-
-    false ->
-      {%{}, req}
+    {:ok, req, state}
   end
-end
 
-defp parse_body(body, "application/x-www-form-urlencoded" <> _) do
-  URI.decode_query(body)
-end
+  defp cowboy_to_conn(req) do
+    # Read the body if present (POST/PUT/PATCH)
+    {body_params, _req} = read_cowboy_body(req)
 
-defp parse_body(body, _) when byte_size(body) > 0 do
-  %{"_body" => body}
-end
+    # Convert Cowboy headers (list of tuples) to a map
+    headers =
+      req.headers
+      |> Enum.into(%{}, fn {k, v} -> {String.downcase(k), v} end)
 
-defp parse_body(_, _), do: %{}
+    %Ignite.Conn{
+      method: req.method,
+      path: req.path,
+      headers: headers,
+      params: body_params
+    }
+  end
+
+  defp read_cowboy_body(req) do
+    case :cowboy_req.has_body(req) do
+      true ->
+        {:ok, body, req} = :cowboy_req.read_body(req)
+        content_type = :cowboy_req.header("content-type", req, "")
+        {parse_body(body, content_type), req}
+
+      false ->
+        {%{}, req}
+    end
+  end
+
+  defp parse_body(body, "application/x-www-form-urlencoded" <> _) do
+    URI.decode_query(body)
+  end
+
+  defp parse_body(body, _) when byte_size(body) > 0 do
+    %{"_body" => body}
+  end
+
+  defp parse_body(_, _), do: %{}
+end
 ```
 
 Cowboy's `req` is a map with keys like `method`, `path`, and `headers`.
@@ -215,20 +225,43 @@ We read the body with `:cowboy_req.read_body/1` and reuse the same
 **Replace `lib/ignite/application.ex` with:** the version below that starts Cowboy instead of our gen_tcp server:
 
 ```elixir
-dispatch = :cowboy_router.compile([
-  {:_, [{"/[...]", Ignite.Adapters.Cowboy, []}]}
-])
+defmodule Ignite.Application do
+  @moduledoc """
+  The OTP Application for Ignite.
 
-children = [
-  %{
-    id: :cowboy_listener,
-    start: {:cowboy, :start_clear, [
-      :ignite_http,
-      [port: port],
-      %{env: %{dispatch: dispatch}}
-    ]}
-  }
-]
+  Starts Cowboy as the HTTP server with our custom handler.
+  """
+
+  use Application
+  require Logger
+
+  @impl true
+  def start(_type, _args) do
+    port = Application.get_env(:ignite, :port, 4000)
+
+    # Cowboy routing: send ALL requests to our adapter
+    dispatch =
+      :cowboy_router.compile([
+        {:_, [{"/[...]", Ignite.Adapters.Cowboy, []}]}
+      ])
+
+    children = [
+      %{
+        id: :cowboy_listener,
+        start: {:cowboy, :start_clear, [
+          :ignite_http,
+          [port: port],
+          %{env: %{dispatch: dispatch}}
+        ]}
+      }
+    ]
+
+    Logger.info("Ignite is heating up on http://localhost:#{port}")
+
+    opts = [strategy: :one_for_one, name: Ignite.Supervisor]
+    Supervisor.start_link(children, opts)
+  end
+end
 ```
 
 ### What We Keep

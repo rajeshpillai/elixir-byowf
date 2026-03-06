@@ -95,6 +95,14 @@ defmodule Ignite.Static do
       :ets.insert(@table, {filename, hash})
     end)
   end
+
+  defp hash_file(path) do
+    path
+    |> File.read!()
+    |> :erlang.md5()
+    |> Base.encode16(case: :lower)
+    |> binary_part(0, 8)
+  end
 end
 ```
 
@@ -155,15 +163,21 @@ end
 
 ```html
 <!-- Before: hardcoded, no cache busting -->
+<script src="/assets/morphdom.min.js"></script>
+<script src="/assets/hooks.js"></script>
 <script src="/assets/ignite.js"></script>
 
 <!-- After: content-hashed, cache-busted -->
+<script src="<%= Ignite.Static.static_path("morphdom.min.js") %>"></script>
+<script src="<%= Ignite.Static.static_path("hooks.js") %>"></script>
 <script src="<%= Ignite.Static.static_path("ignite.js") %>"></script>
 ```
 
 The rendered HTML becomes:
 
 ```html
+<script src="/assets/morphdom.min.js?v=f4e8a2b1"></script>
+<script src="/assets/hooks.js?v=e5f6g7h8"></script>
 <script src="/assets/ignite.js?v=a1b2c3d4"></script>
 ```
 
@@ -186,13 +200,63 @@ Controllers that `import Ignite.Controller` can call `static_path("app.css")` di
 
 **Update `lib/ignite/reloader.ex`** — watch `assets/` directory and rebuild manifest on changes:
 
-```elixir
-# lib/ignite/reloader.ex — in handle_info(:check, state)
-new_asset_mtimes = get_asset_mtimes()
+The reloader's `init/1` state now tracks `asset_mtimes` alongside the existing `mtimes` for `lib/` files:
 
-if new_asset_mtimes != state.asset_mtimes do
-  Logger.info("[Reloader] Asset changes detected — rebuilding static manifest...")
-  Ignite.Static.rebuild()
+```elixir
+# lib/ignite/reloader.ex — init/1
+@impl true
+def init(path) do
+  state = %{
+    path: path,
+    mtimes: get_mtimes(path),
+    asset_mtimes: get_asset_mtimes()
+  }
+
+  schedule_check()
+  Logger.info("[Reloader] Watching #{path}/ and assets/ for changes...")
+  {:ok, state}
+end
+```
+
+The `handle_info(:check, state)` callback checks both `lib/` and `assets/` for changes. When asset files change, it rebuilds the static manifest:
+
+```elixir
+# lib/ignite/reloader.ex — handle_info/2
+@impl true
+def handle_info(:check, state) do
+  new_mtimes = get_mtimes(state.path)
+
+  if new_mtimes != state.mtimes do
+    reload_changed(state.mtimes, new_mtimes)
+  end
+
+  # Check for asset file changes and rebuild the static manifest
+  new_asset_mtimes = get_asset_mtimes()
+
+  if new_asset_mtimes != state.asset_mtimes do
+    Logger.info("[Reloader] Asset changes detected — rebuilding static manifest...")
+    Ignite.Static.rebuild()
+  end
+
+  schedule_check()
+  {:noreply, %{state | mtimes: new_mtimes, asset_mtimes: new_asset_mtimes}}
+end
+```
+
+The `get_asset_mtimes/0` helper scans `assets/` for all files and records their modification times, mirroring how `get_mtimes/1` works for `lib/`:
+
+```elixir
+# lib/ignite/reloader.ex — get_asset_mtimes/0
+defp get_asset_mtimes do
+  Path.join("assets", "**/*")
+  |> Path.wildcard()
+  |> Enum.filter(&File.regular?/1)
+  |> Enum.into(%{}, fn file ->
+    case File.stat(file) do
+      {:ok, stat} -> {file, stat.mtime}
+      _ -> {file, nil}
+    end
+  end)
 end
 ```
 

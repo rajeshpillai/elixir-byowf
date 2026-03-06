@@ -164,77 +164,113 @@ The Repo must start before Cowboy so database connections are available when the
 
 ### 7. Controller Updates
 
-**Update `lib/my_app/controllers/user_controller.ex`** — rewrite all 5 actions to use Ecto queries instead of hardcoded data:
+**Update `lib/my_app/controllers/user_controller.ex`** — rewrite all 5 actions to use Ecto queries instead of hardcoded data. Here is the full module:
 
-**index** — fetch all users:
 ```elixir
-def index(conn) do
-  users = Repo.all(User)
-  data = Enum.map(users, fn u -> %{id: u.id, username: u.username, email: u.email} end)
-  json(conn, %{users: data})
-end
-```
+# lib/my_app/controllers/user_controller.ex
+defmodule MyApp.UserController do
+  import Ignite.Controller
+  alias MyApp.{Repo, User}
 
-**show** — fetch by ID with 404 handling:
-```elixir
-def show(conn) do
-  case Repo.get(User, conn.params[:id]) do
-    nil  -> json(conn, %{error: "User not found"}, 404)
-    user -> render(conn, "profile", name: user.username, id: user.id, email: user.email || "N/A")
+  def index(conn) do
+    users = Repo.all(User)
+
+    data =
+      Enum.map(users, fn u ->
+        %{id: u.id, username: u.username, email: u.email}
+      end)
+
+    json(conn, %{users: data})
   end
-end
-```
 
-**create** — validate with changeset, persist, flash + redirect:
-```elixir
-def create(conn) do
-  changeset = User.changeset(%User{}, %{username: conn.params["username"], email: conn.params["email"]})
+  def show(conn) do
+    user_id = conn.params[:id]
 
-  case Repo.insert(changeset) do
-    {:ok, user} ->
-      conn |> put_flash(:info, "User '#{user.username}' created!") |> redirect(to: "/")
-    {:error, changeset} ->
-      conn |> put_flash(:error, "Failed to create user: #{format_errors(changeset)}") |> redirect(to: "/")
+    case Repo.get(User, user_id) do
+      nil ->
+        json(conn, %{error: "User not found"}, 404)
+
+      user ->
+        render(conn, "profile",
+          name: user.username,
+          id: user.id,
+          email: user.email || "N/A"
+        )
+    end
   end
-end
-```
 
-**update** — fetch, validate, update:
-```elixir
-def update(conn) do
-  case Repo.get(User, conn.params[:id]) do
-    nil -> json(conn, %{error: "User not found"}, 404)
-    user ->
-      case Repo.update(User.changeset(user, %{username: conn.params["username"], email: conn.params["email"]})) do
-        {:ok, updated} -> json(conn, %{updated: true, id: updated.id, username: updated.username})
-        {:error, cs}   -> json(conn, %{error: format_errors(cs)}, 422)
-      end
+  def create(conn) do
+    attrs = %{
+      username: conn.params["username"] || "",
+      email: conn.params["email"]
+    }
+
+    changeset = User.changeset(%User{}, attrs)
+
+    case Repo.insert(changeset) do
+      {:ok, user} ->
+        conn
+        |> put_flash(:info, "User '#{user.username}' created!")
+        |> redirect(to: "/")
+
+      {:error, changeset} ->
+        errors = format_errors(changeset)
+
+        conn
+        |> put_flash(:error, "Failed to create user: #{errors}")
+        |> redirect(to: "/")
+    end
   end
-end
-```
 
-**delete** — fetch, delete:
-```elixir
-def delete(conn) do
-  case Repo.get(User, conn.params[:id]) do
-    nil  -> json(conn, %{error: "User not found"}, 404)
-    user -> {:ok, _} = Repo.delete(user); json(conn, %{deleted: true, id: user.id})
+  def update(conn) do
+    user_id = conn.params[:id]
+
+    case Repo.get(User, user_id) do
+      nil ->
+        json(conn, %{error: "User not found"}, 404)
+
+      user ->
+        attrs = %{
+          username: conn.params["username"],
+          email: conn.params["email"]
+        }
+
+        changeset = User.changeset(user, attrs)
+
+        case Repo.update(changeset) do
+          {:ok, updated} ->
+            json(conn, %{updated: true, id: updated.id, username: updated.username})
+
+          {:error, changeset} ->
+            errors = format_errors(changeset)
+            json(conn, %{error: errors}, 422)
+        end
+    end
   end
-end
-```
 
-### Error Formatting
+  def delete(conn) do
+    user_id = conn.params[:id]
 
-```elixir
-defp format_errors(changeset) do
-  Ecto.Changeset.traverse_errors(changeset, fn {msg, opts} ->
-    Enum.reduce(opts, msg, fn {key, value}, acc ->
-      String.replace(acc, "%{#{key}}", to_string(value))
+    case Repo.get(User, user_id) do
+      nil ->
+        json(conn, %{error: "User not found"}, 404)
+
+      user ->
+        {:ok, _deleted} = Repo.delete(user)
+        json(conn, %{deleted: true, id: user.id})
+    end
+  end
+
+  defp format_errors(changeset) do
+    Ecto.Changeset.traverse_errors(changeset, fn {msg, opts} ->
+      Enum.reduce(opts, msg, fn {key, value}, acc ->
+        String.replace(acc, "%{#{key}}", to_string(value))
+      end)
     end)
-  end)
-  |> Enum.map_join(", ", fn {field, msgs} ->
-    "#{field} #{Enum.join(msgs, ", ")}"
-  end)
+    |> Enum.map_join(", ", fn {field, msgs} ->
+      "#{field} #{Enum.join(msgs, ", ")}"
+    end)
+  end
 end
 ```
 

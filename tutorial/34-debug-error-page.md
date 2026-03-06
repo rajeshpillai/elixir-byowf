@@ -115,7 +115,94 @@ defmodule Ignite.DebugPage do
     </html>
     """
   end
-  # ... format_entry, format_request, format_session, html_escape below ...
+  # --- Stacktrace ---
+
+  defp format_entry({mod, fun, arity, location}) do
+    arity_val = if is_list(arity), do: length(arity), else: arity
+    func = "#{inspect(mod)}.#{fun}/#{arity_val}"
+    file = Keyword.get(location, :file, ~c"") |> to_string()
+    line = Keyword.get(location, :line, "?")
+    app_class = if app_frame?(file), do: "app", else: "dep"
+
+    "<tr class=\"#{app_class}\"><td>#{html_escape(func)}</td><td>#{html_escape(file)}:#{line}</td></tr>"
+  end
+
+  defp app_frame?(file) do
+    String.starts_with?(file, "lib/my_app") or String.starts_with?(file, "lib/ignite")
+  end
+
+  # --- Request tab ---
+
+  defp format_request(nil), do: "<p>Request context not available.</p>"
+
+  defp format_request(conn) do
+    headers_html =
+      conn.headers
+      |> Enum.map_join("\n", fn {k, v} ->
+        "<tr><td>#{html_escape(k)}</td><td>#{html_escape(v)}</td></tr>"
+      end)
+
+    params_html =
+      if conn.params == %{} do
+        "<p class=\"empty\">No parameters</p>"
+      else
+        rows =
+          Enum.map_join(conn.params, "\n", fn {k, v} ->
+            "<tr><td>#{html_escape(to_string(k))}</td><td>#{html_escape(inspect(v))}</td></tr>"
+          end)
+
+        "<table><thead><tr><th>Key</th><th>Value</th></tr></thead><tbody>#{rows}</tbody></table>"
+      end
+
+    """
+    <h3>Request</h3>
+    <table>
+      <tbody>
+        <tr><td><strong>Method</strong></td><td>#{html_escape(conn.method)}</td></tr>
+        <tr><td><strong>Path</strong></td><td>#{html_escape(conn.path)}</td></tr>
+      </tbody>
+    </table>
+    <h3>Parameters</h3>
+    #{params_html}
+    <h3>Headers</h3>
+    <table>
+      <thead><tr><th>Header</th><th>Value</th></tr></thead>
+      <tbody>#{headers_html}</tbody>
+    </table>
+    """
+  end
+
+  # --- Session tab ---
+
+  defp format_session(nil), do: "<p>Session not available.</p>"
+
+  defp format_session(conn) do
+    if conn.session == %{} do
+      "<p class=\"empty\">Empty session</p>"
+    else
+      rows =
+        Enum.map_join(conn.session, "\n", fn {k, v} ->
+          "<tr><td>#{html_escape(to_string(k))}</td><td>#{html_escape(inspect(v))}</td></tr>"
+        end)
+
+      """
+      <table>
+        <thead><tr><th>Key</th><th>Value</th></tr></thead>
+        <tbody>#{rows}</tbody>
+      </table>
+      """
+    end
+  end
+
+  # --- HTML escaping ---
+
+  defp html_escape(str) when is_binary(str) do
+    str
+    |> String.replace("&", "&amp;")
+    |> String.replace("<", "&lt;")
+    |> String.replace(">", "&gt;")
+    |> String.replace("\"", "&quot;")
+  end
 end
 ```
 

@@ -161,7 +161,17 @@ defmacro __before_compile__(env) do
   quote do
     # @plugs is fully accumulated — all plugs registered
     def call(conn) do
-      Enum.reduce(unquote(plugs), conn, fn ...)
+      conn =
+        Enum.reduce(unquote(plugs), conn, fn plug_func, acc ->
+          if acc.halted, do: acc, else: apply(__MODULE__, plug_func, [acc])
+        end)
+
+      if conn.halted do
+        conn
+      else
+        segments = String.split(conn.path, "/", trim: true)
+        dispatch(conn, segments)
+      end
     end
   end
 end
@@ -194,58 +204,104 @@ defmodule Ignite.ConnTest do
     build_conn(:get, path, params) |> dispatch(router)
   end
 
-  # post/3, put/3, patch/3, delete/3 follow the same pattern
+  def post(router, path, params \\ %{}) do
+    build_conn(:post, path, params) |> dispatch(router)
+  end
+
+  def put(router, path, params \\ %{}) do
+    build_conn(:put, path, params) |> dispatch(router)
+  end
+
+  def patch(router, path, params \\ %{}) do
+    build_conn(:patch, path, params) |> dispatch(router)
+  end
+
+  def delete(router, path, params \\ %{}) do
+    build_conn(:delete, path, params) |> dispatch(router)
+  end
+
+  def text_response(conn, status) do
+    assert_status!(conn, status)
+    assert_content_type!(conn, "text/plain")
+    conn.resp_body
+  end
+
+  def html_response(conn, status) do
+    assert_status!(conn, status)
+    assert_content_type!(conn, "text/html")
+    conn.resp_body
+  end
+
+  def json_response(conn, status) do
+    assert_status!(conn, status)
+    assert_content_type!(conn, "application/json")
+
+    case Jason.decode(conn.resp_body) do
+      {:ok, decoded} ->
+        decoded
+
+      {:error, reason} ->
+        raise "Expected valid JSON body, got decode error: #{inspect(reason)}\n\nBody: #{conn.resp_body}"
+    end
+  end
+
+  def redirected_to(conn) do
+    case Map.get(conn.resp_headers, "location") do
+      nil ->
+        raise "Expected response to have a location header (redirect), but none was set.\n" <>
+                "Response status: #{conn.status}"
+
+      location ->
+        location
+    end
+  end
+
+  def init_test_session(conn, extra \\ %{}) do
+    csrf_token = Ignite.CSRF.generate_token()
+    session = Map.merge(%{"_csrf_token" => csrf_token}, extra)
+    %Ignite.Conn{conn | session: session}
+  end
+
+  def with_csrf(conn) do
+    session_token = conn.session["_csrf_token"]
+
+    unless session_token do
+      raise "No CSRF token in session. Call init_test_session/2 before with_csrf/1."
+    end
+
+    masked = Ignite.CSRF.mask_token(session_token)
+    %Ignite.Conn{conn | params: Map.put(conn.params, "_csrf_token", masked)}
+  end
+
+  def put_content_type(conn, content_type) do
+    %Ignite.Conn{conn | headers: Map.put(conn.headers, "content-type", content_type)}
+  end
+
+  def put_req_header(conn, key, value) do
+    %Ignite.Conn{conn | headers: Map.put(conn.headers, key, value)}
+  end
+
+  # --- Private Assertion Helpers ---
+
+  defp assert_status!(conn, expected) do
+    actual = conn.status
+
+    if actual != expected do
+      raise "Expected response status #{expected}, got #{actual}.\n\nBody: #{String.slice(conn.resp_body, 0, 500)}"
+    end
+  end
+
+  defp assert_content_type!(conn, expected) do
+    actual = Map.get(conn.resp_headers, "content-type", "")
+
+    unless String.starts_with?(actual, expected) do
+      raise "Expected content-type starting with #{inspect(expected)}, got #{inspect(actual)}."
+    end
+  end
 end
 ```
 
-### 2. Response Assertions
-
-```elixir
-def text_response(conn, status) do
-  assert_status!(conn, status)
-  assert_content_type!(conn, "text/plain")
-  conn.resp_body
-end
-
-def html_response(conn, status) do
-  assert_status!(conn, status)
-  assert_content_type!(conn, "text/html")
-  conn.resp_body
-end
-
-def json_response(conn, status) do
-  assert_status!(conn, status)
-  assert_content_type!(conn, "application/json")
-  Jason.decode!(conn.resp_body)
-end
-
-def redirected_to(conn) do
-  Map.get(conn.resp_headers, "location") ||
-    raise "No location header"
-end
-```
-
-### 3. Session and CSRF Helpers
-
-```elixir
-def init_test_session(conn, extra \\ %{}) do
-  csrf_token = Ignite.CSRF.generate_token()
-  session = Map.merge(%{"_csrf_token" => csrf_token}, extra)
-  %Ignite.Conn{conn | session: session}
-end
-
-def with_csrf(conn) do
-  token = conn.session["_csrf_token"]
-  masked = Ignite.CSRF.mask_token(token)
-  %Ignite.Conn{conn | params: Map.put(conn.params, "_csrf_token", masked)}
-end
-
-def put_content_type(conn, content_type) do
-  %Ignite.Conn{conn | headers: Map.put(conn.headers, "content-type", content_type)}
-end
-```
-
-### 4. Test Configuration
+### 2. Test Configuration
 
 **Update `config/config.exs`** — add `:port` config and env-specific config import:
 
@@ -273,6 +329,92 @@ config :logger, level: :warning
 # test/test_helper.exs
 ExUnit.start()
 Ecto.Migrator.run(MyApp.Repo, :up, all: true, log: false)
+```
+
+### 3. Example Test File
+
+**`test/ignite_test.exs`** — tests for the ConnTest helpers themselves:
+
+```elixir
+# test/ignite_test.exs
+defmodule Ignite.ConnTestTest do
+  use ExUnit.Case
+  import Ignite.ConnTest
+
+  describe "build_conn/3" do
+    test "creates a conn with method, path, and empty params" do
+      conn = build_conn(:get, "/hello")
+      assert conn.method == "GET"
+      assert conn.path == "/hello"
+      assert conn.params == %{}
+    end
+
+    test "creates a conn with params" do
+      conn = build_conn(:post, "/users", %{"username" => "jose"})
+      assert conn.method == "POST"
+      assert conn.path == "/users"
+      assert conn.params["username"] == "jose"
+    end
+
+    test "uppercases the method" do
+      conn = build_conn(:delete, "/users/1")
+      assert conn.method == "DELETE"
+    end
+  end
+
+  describe "init_test_session/2" do
+    test "sets a CSRF token in the session" do
+      conn = build_conn(:post, "/users") |> init_test_session()
+      assert is_binary(conn.session["_csrf_token"])
+      assert String.length(conn.session["_csrf_token"]) > 10
+    end
+
+    test "merges extra session data" do
+      conn = build_conn(:post, "/users") |> init_test_session(%{"user_id" => 42})
+      assert conn.session["user_id"] == 42
+      assert is_binary(conn.session["_csrf_token"])
+    end
+  end
+
+  describe "with_csrf/1" do
+    test "adds a masked CSRF token to params" do
+      conn =
+        build_conn(:post, "/users")
+        |> init_test_session()
+        |> with_csrf()
+
+      assert is_binary(conn.params["_csrf_token"])
+
+      # The masked token should validate against the session token
+      assert Ignite.CSRF.valid_token?(
+               conn.session["_csrf_token"],
+               conn.params["_csrf_token"]
+             )
+    end
+
+    test "raises without a session" do
+      conn = build_conn(:post, "/users")
+
+      assert_raise RuntimeError, ~r/No CSRF token in session/, fn ->
+        with_csrf(conn)
+      end
+    end
+  end
+
+  describe "put_content_type/2" do
+    test "sets the content-type request header" do
+      conn = build_conn(:post, "/api/echo") |> put_content_type("application/json")
+      assert conn.headers["content-type"] == "application/json"
+    end
+  end
+
+  describe "put_req_header/3" do
+    test "sets a request header" do
+      conn = build_conn(:get, "/") |> put_req_header("accept", "text/html")
+      assert conn.headers["accept"] == "text/html"
+    end
+  end
+end
 ```
 
 ## Testing
