@@ -66,6 +66,8 @@ Or follow along commit-by-commit and build everything yourself.
 | 38 | [Test Helpers](tutorial/38-test-helpers.md) | `ConnTest` module | Test infrastructure, plug ordering fix |
 | 39 | [SSL/TLS](tutorial/39-ssl-tls.md) | HTTPS support | Config-driven, HSTS, cert generation |
 | 40 | [Release + Rate Limit](tutorial/40-release-and-rate-limit.md) | Production deploy | `mix release`, ETS rate limiter |
+| 41 | [Stream Upsert & Limit](tutorial/41-stream-upsert-limit.md) | Stream enhancements | Upsert, client-side limits |
+| 42 | [FEEx Templates](tutorial/42-feex-templates.md) | `~F` sigil (Flame EEx) | `@` shorthand, blocks, auto-escaping |
 
 ## Project Structure
 
@@ -85,6 +87,7 @@ ignite/
 │   │   │   ├── handler.ex     # WebSocket handler
 │   │   │   ├── engine.ex      # Diffing engine
 │   │   │   ├── eex_engine.ex  # Custom EEx engine for ~L sigil
+│   │   │   ├── feex_engine.ex # Flame EEx engine for ~F sigil
 │   │   │   ├── rendered.ex    # %Rendered{} struct
 │   │   │   └── stream.ex      # LiveView streams
 │   │   ├── live_component.ex  # LiveComponent behaviour

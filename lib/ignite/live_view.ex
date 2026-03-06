@@ -167,6 +167,51 @@ defmodule Ignite.LiveView do
     EEx.compile_string(template, engine: Ignite.LiveView.EExEngine)
   end
 
+  @doc """
+  Compiles a Flame EEx (FEEx) template into a `%Rendered{}` struct.
+
+  Enhanced version of `~L` with three improvements:
+
+  1. **`@` shorthand** — `@count` compiles to `assigns.count`
+  2. **Block support** — `<% if/for/case %>` work as expected
+  3. **Auto escaping** — `<%= @name %>` HTML-escapes the value
+
+  Use `raw/1` to embed trusted HTML without escaping.
+
+  ## Example
+
+      def render(assigns) do
+        ~F\"\"\"
+        <h1>Hello, <%= @name %></h1>
+        <%= if @show_count do %>
+          <p>Count: <%= @count %></p>
+        <% end %>
+        <ul>
+          <%= for item <- @items do %>
+            <li><%= item.name %></li>
+          <% end %>
+        </ul>
+        \"\"\"
+      end
+  """
+  defmacro sigil_F({:<<>>, _meta, [template]}, _modifiers) do
+    # Pre-process: @var → assigns.var
+    # The lookbehind prevents matching email addresses (user@example.com)
+    # or dotted paths (map.@key) — only standalone @word is transformed.
+    processed = Regex.replace(~r/(?<![.\w:\/])@(\w+)/, template, "assigns.\\1")
+    EEx.compile_string(processed, engine: Ignite.LiveView.FEExEngine)
+  end
+
+  @doc """
+  Marks a value as safe HTML, bypassing auto-escaping in `~F` templates.
+
+  Use this when you have pre-built HTML that should be rendered as-is:
+
+      <%= raw(render_header(assigns)) %>
+      <%= raw("<strong>bold</strong>") %>
+  """
+  def raw(val), do: {:safe, val}
+
   defmacro __using__(_opts) do
     quote do
       @behaviour Ignite.LiveView
@@ -175,7 +220,9 @@ defmodule Ignite.LiveView do
         push_redirect: 3,
         live_component: 3,
         collect_components: 1,
-        sigil_L: 2
+        sigil_L: 2,
+        sigil_F: 2,
+        raw: 1
       ]
       import Ignite.LiveView.Stream, only: [
         stream: 3,
