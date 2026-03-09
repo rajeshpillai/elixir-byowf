@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Todo App — Ignite</title>
+  <link rel="stylesheet" href="<%= Ignite.Static.static_path("todo.css") %>">
+</head>
+<body>
+  <div id="ignite-app" data-live-path="/live/todo" data-live-routes='<%= @live_routes || "{}" %>'>
+    <div class="loading-screen">Connecting...</div>
+  </div>
+  <script src="<%= Ignite.Static.static_path("morphdom.min.js") %>"></script>
+  <script src="<%= Ignite.Static.static_path("hooks.js") %>"></script>
+  <script src="<%= Ignite.Static.static_path("ignite.js") %>"></script>
+</body>
+</html>

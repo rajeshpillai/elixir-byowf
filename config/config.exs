@@ -20,7 +20,7 @@ config :ignite, MyApp.Repo,
 
 config :ignite,
   ecto_repos: [MyApp.Repo],
-  port: 4000
+  port: 4001
 
 # Rate limiting — per-IP sliding window.
 # Override per-environment or at runtime via RATE_LIMIT_MAX / RATE_LIMIT_WINDOW_MS.

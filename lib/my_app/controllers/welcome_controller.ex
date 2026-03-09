@@ -16,7 +16,8 @@ defmodule MyApp.WelcomeController do
                  "/hooks" => "/live/hooks",
                  "/streams" => "/live/streams",
                  "/upload-demo" => "/live/upload-demo",
-                 "/presence" => "/live/presence"
+                 "/presence" => "/live/presence",
+                 "/todo" => "/live/todo"
                })
 
   def index(conn) do
@@ -62,6 +63,7 @@ defmodule MyApp.WelcomeController do
       <li><a href="/upload-demo">/upload-demo</a> — LiveView uploads (chunked WebSocket)</li>
       <li><a href="/users">/users</a> — Resource route (JSON index)</li>
       <li><a href="/crash">/crash</a> — Error handler (500 page)</li>
+      <li><a href="/todo"><strong>/todo</strong></a> — Full Todo App example (auth, CRUD, pagination, search, favorites, categories, subtasks)</li>
     </ul>
     <h2>Flash Messages</h2>
     <form action="/users" method="POST" style="background:#f4f4f4;padding:1em;border-radius:6px;margin-bottom:1em;">
@@ -178,6 +180,14 @@ defmodule MyApp.WelcomeController do
     render(conn, "live",
       title: "Who's Online — Ignite",
       live_path: "/live/presence",
+      live_routes: @live_routes
+    )
+  end
+
+  def todo(conn) do
+    render(conn, "todo_live",
+      title: "Todo App — Ignite",
+      live_path: "/live/todo",
       live_routes: @live_routes
     )
   end

@@ -66,13 +66,7 @@ defmodule Ignite.LiveView.FEExEngine do
         # Block expression (if/for/case/cond) written as <%= if ... do %>.
         # The body was compiled by handle_begin/handle_end and contains
         # already-escaped inner expressions. Don't escape again.
-        quote do
-          case unquote(expr) do
-            nil -> ""
-            list when is_list(list) -> Enum.join(list)
-            val -> to_string(val)
-          end
-        end
+        quote do: Ignite.LiveView.FEExEngine.block_to_string(unquote(expr))
       else
         # Simple value expression: auto-escape HTML
         quote do: Ignite.LiveView.FEExEngine.escape(unquote(expr))
@@ -86,14 +80,7 @@ defmodule Ignite.LiveView.FEExEngine do
     # Same as above but triggered via <% %> syntax.
     {statics, dynamics, pending} = state
 
-    wrapped =
-      quote do
-        case unquote(expr) do
-          nil -> ""
-          list when is_list(list) -> Enum.join(list)
-          val -> to_string(val)
-        end
-      end
+    wrapped = quote do: Ignite.LiveView.FEExEngine.block_to_string(unquote(expr))
 
     {[pending | statics], [wrapped | dynamics], ""}
   end
@@ -115,6 +102,19 @@ defmodule Ignite.LiveView.FEExEngine do
   end
 
   # ─── Runtime helpers ──────────────────────────────────────────────
+
+  @doc """
+  Converts block expression results to strings.
+
+  Handles the three return types from block expressions:
+  - `nil` from `if` without `else` → empty string
+  - `list` from `for` comprehension → joined string
+  - anything else → converted to string
+  """
+  def block_to_string(nil), do: ""
+  def block_to_string(list) when is_list(list), do: Enum.join(list)
+  def block_to_string(val) when is_binary(val), do: val
+  def block_to_string(val), do: to_string(val)
 
   @doc """
   Escapes HTML entities for safe rendering.
