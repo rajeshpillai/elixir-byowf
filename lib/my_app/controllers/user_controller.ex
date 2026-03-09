@@ -14,4 +14,15 @@ defmodule MyApp.UserController do
     username = conn.params["username"] || "anonymous"
     text(conn, "User '#{username}' created successfully!", 201)
   end
+
+  def update(conn) do
+    user_id = conn.params[:id]
+    username = conn.params["username"] || "unknown"
+    json(conn, %{updated: true, id: user_id, username: username})
+  end
+
+  def delete(conn) do
+    user_id = conn.params[:id]
+    json(conn, %{deleted: true, id: user_id})
+  end
 end

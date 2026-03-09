@@ -86,12 +86,45 @@ defmodule Ignite.Router do
   end
 
   @doc """
+  Defines a PUT route. Supports dynamic segments with `:param`.
+
+  ## Examples
+
+      put "/users/:id", to: UserController, action: :update
+  """
+  defmacro put(path, to: controller, action: action) do
+    build_route("PUT", path, controller, action)
+  end
+
+  @doc """
+  Defines a PATCH route. Supports dynamic segments with `:param`.
+
+  ## Examples
+
+      patch "/users/:id", to: UserController, action: :update
+  """
+  defmacro patch(path, to: controller, action: action) do
+    build_route("PATCH", path, controller, action)
+  end
+
+  @doc """
+  Defines a DELETE route. Supports dynamic segments with `:param`.
+
+  ## Examples
+
+      delete "/users/:id", to: UserController, action: :delete
+  """
+  defmacro delete(path, to: controller, action: action) do
+    build_route("DELETE", path, controller, action)
+  end
+
+  @doc """
   Adds a catch-all 404 route. Must be the last route definition.
   """
   defmacro finalize_routes do
     quote do
       defp dispatch(conn, _segments) do
-        Ignite.Controller.text(conn, "404 — Not Found", 404)
+        Ignite.Controller.text(conn, "404 - Not Found", 404)
       end
     end
   end
