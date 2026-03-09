@@ -68,6 +68,7 @@ Or follow along commit-by-commit and build everything yourself.
 | 40 | [Release + Rate Limit](tutorial/40-release-and-rate-limit.md) | Production deploy | `mix release`, ETS rate limiter |
 | 41 | [Stream Upsert & Limit](tutorial/41-stream-upsert-limit.md) | Stream enhancements | Upsert, client-side limits |
 | 42 | [FEEx Templates](tutorial/42-feex-templates.md) | `~F` sigil (Flame EEx) | `@` shorthand, blocks, auto-escaping |
+| 43 | [Todo App](tutorial/43-todo-app.md) | Capstone project | Full app using LiveView, Streams, Ecto, FEEx |
 
 ## Project Structure
 

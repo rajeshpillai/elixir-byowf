@@ -495,4 +495,4 @@ Our `~F` covers the three most impactful features (shorthand, blocks, escaping) 
 
 ---
 
-[← Previous: Step 41 - Stream Upsert & Limit](41-stream-upsert-limit.md)
+[← Previous: Step 41 - Stream Upsert & Limit](41-stream-upsert-limit.md) | [Next: Step 43 - Todo App →](43-todo-app.md)
