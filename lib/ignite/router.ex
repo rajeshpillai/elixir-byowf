@@ -2,10 +2,14 @@ defmodule Ignite.Router do
   @moduledoc """
   The Router DSL — provides macros for defining routes.
 
-  Supports both static and dynamic routes:
+  Supports static routes, dynamic routes, and scoped route groups:
 
       get "/hello", to: MyController, action: :hello
       get "/users/:id", to: UserController, action: :show
+
+      scope "/api" do
+        get "/status", to: ApiController, action: :status
+      end
 
   Routes are compiled into pattern-matching function clauses.
   Dynamic segments (`:id`) are captured into `conn.params`.
@@ -119,6 +123,38 @@ defmodule Ignite.Router do
   end
 
   @doc """
+  Groups routes under a common path prefix.
+
+  All routes defined inside the `do` block will have the scope's
+  path prepended. Scopes can be nested.
+
+  ## How it works
+
+  The `scope` macro walks the AST of the block and prepends the prefix
+  to the path argument of every route macro (`get`, `post`, `put`,
+  `patch`, `delete`) and nested `scope` calls. This happens at compile
+  time — no runtime overhead.
+
+  ## Examples
+
+      scope "/api" do
+        get "/status", to: ApiController, action: :status
+        # → matches GET /api/status
+
+        scope "/v1" do
+          get "/users", to: ApiController, action: :users_v1
+          # → matches GET /api/v1/users
+        end
+      end
+  """
+  defmacro scope(prefix, do: block) do
+    # Transform the AST: prepend prefix to all route paths in the block.
+    # This is an AST-level transformation — it rewrites the macro calls
+    # before they are expanded, so `get "/status"` becomes `get "/api/status"`.
+    prepend_prefix(block, prefix)
+  end
+
+  @doc """
   Adds a catch-all 404 route. Must be the last route definition.
   """
   defmacro finalize_routes do
@@ -128,6 +164,30 @@ defmodule Ignite.Router do
       end
     end
   end
+
+  # --- AST Transformation for Scoped Routes ---
+
+  # A block with multiple expressions: transform each one
+  defp prepend_prefix({:__block__, meta, exprs}, prefix) do
+    {:__block__, meta, Enum.map(exprs, &prepend_prefix(&1, prefix))}
+  end
+
+  # Route macros: prepend prefix to the path argument
+  defp prepend_prefix({method, meta, [path | rest]}, prefix)
+       when method in [:get, :post, :put, :patch, :delete] and is_binary(path) do
+    {method, meta, [prefix <> path | rest]}
+  end
+
+  # Nested scope: prepend prefix to the inner scope's prefix
+  defp prepend_prefix({:scope, meta, [inner_prefix | rest]}, prefix)
+       when is_binary(inner_prefix) do
+    {:scope, meta, [prefix <> inner_prefix | rest]}
+  end
+
+  # Anything else (comments, other macros): pass through unchanged
+  defp prepend_prefix(expr, _prefix), do: expr
+
+  # --- Route Building ---
 
   # Shared logic for building route function clauses.
   # Converts the path string into a list pattern that captures dynamic segments.

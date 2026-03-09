@@ -1,6 +1,6 @@
 # Ignite — Build a Phoenix-like Web Framework from Scratch
 
-A step-by-step tutorial that teaches Elixir by building **Ignite**, a real web framework inspired by [Phoenix](https://www.phoenixframework.org/). You'll go from a raw TCP socket to a full-stack framework with LiveView, WebSockets, PubSub, and DOM diffing — all in 20 incremental commits.
+A step-by-step tutorial that teaches Elixir by building **Ignite**, a real web framework inspired by [Phoenix](https://www.phoenixframework.org/). You'll go from a raw TCP socket to a full-stack framework with LiveView, WebSockets, PubSub, and DOM diffing — all in 23 incremental commits.
 
 By the end, you'll understand every layer that powers production Elixir web applications: the conn pipeline, macro-based routing, OTP supervision, EEx templates, middleware plugs, real-time LiveView with efficient DOM patching, and PubSub for cross-process broadcasting.
 
@@ -9,7 +9,10 @@ By the end, you'll understand every layer that powers production Elixir web appl
 ### Framework Core
 - **Macro-based Router DSL** — `get "/users/:id", to: Controller, action: :show` with dynamic path params
 - **Conn Pipeline** — immutable request/response struct flows through the system, just like Phoenix
-- **Controller Helpers** — `text/3`, `html/3`, `render/3` for clean response building
+- **Controller Helpers** — `text/3`, `html/3`, `json/3`, `render/3` for clean response building
+- **JSON API Support** — automatic JSON body parsing and `json/3` response helper
+- **Full HTTP Methods** — `get`, `post`, `put`, `patch`, `delete` route macros
+- **Scoped Routes** — `scope "/api" do ... end` for grouping routes under a common prefix
 - **Middleware (Plugs)** — composable `plug :log_request` pipeline with halting support
 - **EEx Templates** — server-side rendering with `<%= @name %>` assigns
 - **POST Body Parsing** — form-urlencoded body parsing with `URI.decode_query/1`
@@ -56,6 +59,10 @@ By the end, you'll understand every layer that powers production Elixir web appl
 | `/hooks` | JS Hooks demo | Clipboard copy, local time, pushEvent |
 | `/crash` | Error page | Error handler + 500 page |
 | `POST /users` | Create user | POST body parsing |
+| `PUT /users/42` | Update user | PUT/PATCH methods + JSON response |
+| `DELETE /users/42` | Delete user | DELETE method |
+| `/api/status` | API status | JSON response helper |
+| `POST /api/echo` | Echo API | JSON body parsing |
 
 ## What You Can Build With Ignite
 
@@ -88,6 +95,9 @@ Ignite is a real framework. You can use it to build:
 | Navigation | LiveView Navigation | 18 |
 | Components | LiveComponents | 19 |
 | JS Interop | JS Hooks | 20 |
+| API | JSON helpers | 21 |
+| REST | PUT/PATCH/DELETE | 22 |
+| Organization | Scoped routes | 23 |
 
 ## Prerequisites
 
@@ -135,6 +145,9 @@ Or follow along commit-by-commit and build everything yourself.
 | 18 | [LiveView Navigation](tutorial/18-live-navigation.md) | SPA-like transitions | `history.pushState`, `ignite-navigate` |
 | 19 | [LiveComponents](tutorial/19-live-components.md) | Reusable stateful widgets | Behaviours, process dictionary, event namespacing |
 | 20 | [JS Hooks](tutorial/20-js-hooks.md) | Client-side JS interop | Lifecycle callbacks, `pushEvent`, DOM cleanup |
+| 21 | [JSON API](tutorial/21-json-api.md) | `json/3` helper + body parsing | `Jason.encode!`, content-type matching |
+| 22 | [HTTP Methods](tutorial/22-http-methods.md) | PUT/PATCH/DELETE macros | REST conventions, macro reuse |
+| 23 | [Scoped Routes](tutorial/23-scoped-routes.md) | `scope "/api" do ... end` | `__CALLER__`, compile-time state, nesting |
 
 ## Quick Start
 
@@ -161,6 +174,10 @@ iex -S mix
 # http://localhost:4000/hooks         → JS Hooks demo (clipboard, time)
 # http://localhost:4000/crash      → Error handler (500 page)
 # curl -X POST -d "username=Jose" http://localhost:4000/users  → POST parsing
+# http://localhost:4000/api/status   → JSON API response
+# curl -X POST -H "Content-Type: application/json" -d '{"name":"Jose"}' http://localhost:4000/api/echo
+# curl -X PUT -H "Content-Type: application/json" -d '{"username":"Updated"}' http://localhost:4000/users/42
+# curl -X DELETE http://localhost:4000/users/42
 ```
 
 ## Project Structure
@@ -213,11 +230,11 @@ Steps 1-9 use **zero external dependencies** — only Elixir's standard library 
 Features that would bring Ignite closer to Phoenix for production use:
 
 ### Routing & Controllers
-- [ ] Scoped routes (`scope "/api" do ... end`)
+- [x] ~~Scoped routes (`scope "/api" do ... end`)~~ (Step 23)
 - [ ] Path helpers (`user_path(conn, :show, 42)` generating `/users/42`)
 - [ ] Resource routes (`resources "/posts", PostController`)
-- [ ] PUT/PATCH/DELETE HTTP methods
-- [ ] JSON response helper (`json(conn, %{ok: true})`)
+- [x] ~~PUT/PATCH/DELETE HTTP methods~~ (Step 22)
+- [x] ~~JSON response helper (`json(conn, %{ok: true})`)~~ (Step 21)
 
 ### LiveView
 - [ ] Fine-grained diffing (track individual dynamic expressions, not whole HTML)
