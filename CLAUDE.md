@@ -69,6 +69,7 @@ Or follow along commit-by-commit and build everything yourself.
 | 41 | [Stream Upsert & Limit](tutorial/41-stream-upsert-limit.md) | Stream enhancements | Upsert, client-side limits |
 | 42 | [FEEx Templates](tutorial/42-feex-templates.md) | `~F` sigil (Flame EEx) | `@` shorthand, blocks, auto-escaping |
 | 43 | [Todo App](tutorial/43-todo-app.md) | Capstone project | Full app using LiveView, Streams, Ecto, FEEx |
+| 44 | [LiveView Resilience](tutorial/44-liveview-resilience.md) | Production hardening | Reconnection, scoped events, status UI, keydown |
 
 ## Project Structure
 
