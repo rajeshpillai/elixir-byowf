@@ -14,6 +14,31 @@ LiveView controls the DOM from the server. But what if you need to:
 
 You can't do these from Elixir. You need a way to run JavaScript when DOM elements are created, updated, or removed by the server.
 
+## What We're Building
+
+```
+┌───────────────────────────────────────────────────────────┐
+│  Server (Elixir)              Client (JavaScript)         │
+│                                                           │
+│  ┌──────────────┐             ┌────────────────────────┐  │
+│  │ HooksDemoLive│◀──pushEvent─┤ CopyToClipboard hook   │  │
+│  │              │             │  mounted() → bind click │  │
+│  │ handle_event │             │  click → clipboard API  │  │
+│  │ ("clipboard_ │             │  → pushEvent(result)    │  │
+│  │  result")    │             └────────────────────────┘  │
+│  │              │                                         │
+│  │ handle_event │◀──pushEvent─┌────────────────────────┐  │
+│  │ ("local_time │             │ LocalTime hook          │  │
+│  │  ")          │             │  mounted() → setInterval│  │
+│  │              │             │  click → pushEvent(time)│  │
+│  └──────────────┘             │  destroyed() → clear   │  │
+│         │                     └────────────────────────┘  │
+│         │ re-render                                       │
+│         ▼                                                 │
+│  morphdom patches DOM ──▶ updated() called on hooks       │
+└───────────────────────────────────────────────────────────┘
+```
+
 ## The Architecture
 
 JS Hooks are plain JavaScript objects with lifecycle callbacks:
@@ -205,6 +230,31 @@ After every DOM update (mount or event response), Ignite runs three phases:
 2. **Mount** — Find new `[ignite-hook]` elements → call `mounted()`
 3. **Update** — Find existing hooks whose elements were re-rendered → call `updated()`
 
+```
+  Server sends update
+         │
+         ▼
+  ┌──────────────┐
+  │   morphdom    │
+  │  patches DOM  │
+  └──────┬───────┘
+         │
+         ▼
+  ┌──────────────┐     Hook IDs in DOM vs mountedHooks map
+  │ cleanupHooks │     ──▶ destroyed() for removed elements
+  └──────┬───────┘
+         │
+         ▼
+  ┌──────────────┐     New [ignite-hook] elements found
+  │  mountHooks  │     ──▶ mounted() for new elements
+  └──────┬───────┘
+         │
+         ▼
+  ┌──────────────┐     Existing hooks still in DOM
+  │ updateHooks  │     ──▶ updated() with refreshed this.el
+  └──────────────┘
+```
+
 Add the three calls at the end of `applyUpdate`, after morphdom has patched the DOM:
 
 ```javascript
@@ -244,6 +294,25 @@ function applyUpdate(container, newHtml) {
 ```
 
 ### Navigation Cleanup
+
+```
+  Navigate /hooks ──▶ /counter
+         │
+         ▼
+  destroyAllHooks()
+  ┌─────────────────────────────────┐
+  │ LocalTime.destroyed()           │
+  │   └─ clearInterval(this._interval)
+  │                                 │
+  │ CopyToClipboard.destroyed()     │
+  │   └─ (cleanup)                  │
+  │                                 │
+  │ mountedHooks = {}  (reset)      │
+  └─────────────────────────────────┘
+         │
+         ▼
+  connect("/live")  ──▶ new WS, new view, fresh hooks
+```
 
 When navigating between LiveViews, call `destroyAllHooks()` at the top of `connect` before opening the new WebSocket:
 

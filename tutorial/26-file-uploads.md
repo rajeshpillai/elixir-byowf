@@ -6,6 +6,36 @@ File upload support for Ignite, implemented in two parts:
 - **Part A**: Traditional multipart HTTP POST for controller routes
 - **Part B**: LiveView uploads over WebSocket with chunked binary frames and real-time progress
 
+```
+Part A: HTTP Multipart Upload          Part B: LiveView WebSocket Upload
+
+Browser                Server          Browser                Server
+  │                      │               │                      │
+  │  POST multipart      │               │  1. File metadata    │
+  │  ──────────────────▶ │               │  (JSON text frame)   │
+  │  boundary-separated  │               │  ──────────────────▶ │
+  │  parts with files    │               │                      │
+  │                      │               │  2. Validation        │
+  │  Stream to           │               │  (JSON text frame)   │
+  │  temp files ─────────│               │  ◀────────────────── │
+  │                      │               │                      │
+  │  %Ignite.Upload{}    │               │  3. Binary chunks    │
+  │  in conn.params      │               │  (binary frames)     │
+  │                      │               │  ══════════════════▶ │
+  │  Response            │               │  ══════════════════▶ │
+  │  ◀────────────────── │               │                      │
+  │                      │               │  4. Progress updates │
+  │  (temp files auto-   │               │  (JSON text frame)   │
+  │   deleted on exit)   │               │  ◀────────────────── │
+                                         │                      │
+                                         │  5. Upload complete  │
+                                         │  (JSON text frame)   │
+                                         │  ──────────────────▶ │
+                                         │                      │
+                                         │  consume_uploaded_   │
+                                         │  entries/3           │
+```
+
 ## The Problem
 
 Ignite's body parser only handles `application/x-www-form-urlencoded` and `application/json`. A browser form with `enctype="multipart/form-data"` sends a completely different format — binary boundaries separating parts — that our parser can't read.
@@ -137,6 +167,43 @@ defp extract_header_param(header, param_name) do
 end
 ```
 
+```
+Cowboy Multipart Parsing Loop
+─────────────────────────────
+                    ┌──────────────────┐
+                    │ read_multipart/2 │
+                    └────────┬─────────┘
+                             │
+                    ┌────────▼─────────┐
+                    │ :cowboy_req.      │
+                    │ read_part(req)    │
+                    └────────┬─────────┘
+                             │
+                ┌────────────┴────────────┐
+                │                         │
+         {:ok, headers}             {:done, req}
+                │                         │
+        ┌───────▼───────┐          Return params
+        │ Has filename? │
+        └───────┬───────┘
+           ┌────┴────┐
+           │         │
+          Yes        No
+           │         │
+    ┌──────▼──────┐  │  ┌──────────────┐
+    │ Create temp │  └─▶│ Read body as │
+    │ file, stream│     │ string value │
+    │ chunks to   │     └──────┬───────┘
+    │ disk        │            │
+    └──────┬──────┘     Store in params
+           │
+    Store %Upload{}
+    in params
+           │
+           └──────────▶ Loop back to
+                        read_multipart/2
+```
+
 The `read_part`/`read_part_body` loop reads one part at a time. For large file bodies, Cowboy returns `{:more, data, req}` — the recursive `read_part_body_to_file/2` keeps writing chunks until `{:ok, data, req}` signals the end. No data accumulates in memory.
 
 ### The Upload Struct
@@ -208,6 +275,28 @@ def upload(conn) do
   size = File.stat!(upload.path).size
   text(conn, "Uploaded #{upload.filename}: #{size} bytes")
 end
+```
+
+```
+Temp File Cleanup via Process Monitoring
+────────────────────────────────────────
+Request Process              Cleanup Process
+     │                            │
+     │  spawn ──────────────────▶ │
+     │                            │
+     │                   Process.monitor(parent)
+     │                            │
+     │  (handle request,          │
+     │   write temp file,    (waiting for
+     │   send response)      :DOWN message)
+     │                            │
+     ╳  process exits             │
+                                  │
+                         {:DOWN, ref, ...}
+                                  │
+                          File.rm(tmp_path)
+                                  │
+                                  ╳
 ```
 
 When the Cowboy handler process exits (after sending the response), the monitor fires and the temp file is deleted. No manual cleanup needed.
@@ -383,6 +472,16 @@ At runtime, an entry looks like:
 The `upload` field is only present after validation events — it tells the JS client the chunk size and which entries are valid for upload.
 
 **Step 3: Chunk transfer (binary frame, client → server)**
+
+```
+Binary Frame Layout
+───────────────────────────────────────────────────────
+│ ref_len (2 bytes) │ ref (ref_len bytes) │ chunk_data │
+───────────────────────────────────────────────────────
+      big-endian         e.g. "0"          file bytes
+       uint16           (ASCII)            (up to 64KB)
+```
+
 ```
 [2 bytes: ref_len][ref_len bytes: ref_string][rest: chunk_data]
 ```

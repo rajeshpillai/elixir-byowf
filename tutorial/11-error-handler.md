@@ -9,6 +9,26 @@ the user should see a helpful error page — not a blank screen or a
 We're wrapping our adapter's request handling in `try/rescue` to catch
 any exception, log the stacktrace, and return a styled 500 error page.
 
+```
+┌─ Request Flow With Error Handling ───────────────────────┐
+│                                                          │
+│  Request ──▶ Adapter ──┬──▶ Router ──▶ Controller        │
+│              (try)     │                   │              │
+│                        │              raise "boom!"      │
+│                        │                   │              │
+│                        │    (rescue) ◀─────┘              │
+│                        │        │                        │
+│                        │        ▼                        │
+│                        │   Log stacktrace               │
+│                        │   Return 500 page              │
+│                        │        │                        │
+│                        ▼        ▼                        │
+│              ◀── Response to Browser ──                  │
+│                                                          │
+│  Server stays running! Other requests unaffected.        │
+└──────────────────────────────────────────────────────────┘
+```
+
 ## Concepts You'll Learn
 
 ### try/rescue
@@ -57,13 +77,23 @@ In Elixir, you don't wrap every function in try/catch. Instead, you
 define **boundaries** where errors are caught:
 
 ```
-Controller (let it crash freely)
-    ↓
-Router (let it crash freely)
-    ↓
-Adapter (CATCHES HERE — the boundary)
-    ↓
-Cowboy (always replies to the browser)
+┌──────────────────────────────────────────────┐
+│  "Let it crash" zone                         │
+│  (no try/rescue needed)                      │
+│                                              │
+│  ┌────────────────────────────────────────┐  │
+│  │  Controller   ──▶  crash freely       │  │
+│  │  Router       ──▶  crash freely       │  │
+│  └────────────────────┬───────────────────┘  │
+│                       │                      │
+│ ══════════════════════╪══════════════════════ │
+│   Error Boundary      │                      │
+│                       ▼                      │
+│  ┌────────────────────────────────────────┐  │
+│  │  Adapter      ──▶  try/rescue HERE    │  │
+│  │  Cowboy       ──▶  always replies     │  │
+│  └────────────────────────────────────────┘  │
+└──────────────────────────────────────────────┘
 ```
 
 The adapter is our error boundary. Everything inside can crash without

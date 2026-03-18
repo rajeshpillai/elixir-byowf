@@ -12,6 +12,31 @@ This step makes Ignite production-deployable. We fix runtime issues that break i
 | Updated `Ignite.Session` | Configurable secret key (reads from config instead of hardcoded) |
 | Updated `Ignite.DebugPage` | Fixed `Mix.env()` → config-based environment check |
 
+```
+┌──────────────────────────────────────────────────────────┐
+│                  Release + Rate Limit                    │
+│                                                          │
+│  Build Time                    Boot Time                 │
+│  ──────────                    ─────────                 │
+│  config/config.exs             config/runtime.exs        │
+│  config/prod.exs               reads env vars:           │
+│       │                        $PORT, $DATABASE_PATH,    │
+│       │                        $SECRET_KEY_BASE,         │
+│       │                        $SSL_CERTFILE, ...        │
+│       ▼                              │                   │
+│  mix release                         ▼                   │
+│       │                        Application starts        │
+│       ▼                              │                   │
+│  _build/prod/rel/ignite/             ├── Repo (Ecto)     │
+│       │                              ├── PubSub          │
+│       │                              ├── RateLimiter     │
+│       │                              └── Cowboy (SSL)    │
+│       │                                                  │
+│       └── bin/ignite eval "Ignite.Release.migrate()"     │
+│           bin/ignite start                               │
+└──────────────────────────────────────────────────────────┘
+```
+
 ## Part A: `mix release` Support
 
 ### The Problem: `Mix.env()` at Runtime
@@ -217,6 +242,32 @@ The `:tar` step packages the release as a `.tar.gz` for easy deployment.
 ## Part B: Rate Limiting
 
 ### The Algorithm: Sliding Window
+
+```
+┌───────────────────────────────────────────────────────┐
+│          Sliding Window Rate Limiter                  │
+│                                                       │
+│  ETS :bag table (:ignite_rate_limiter)                │
+│  ┌──────────────┬───────────────────┐                 │
+│  │ IP           │ timestamp (mono)  │                 │
+│  ├──────────────┼───────────────────┤                 │
+│  │ 192.168.1.1  │ 10001             │                 │
+│  │ 192.168.1.1  │ 10250             │                 │
+│  │ 192.168.1.1  │ 10800             │  ◀── window     │
+│  │ 10.0.0.5     │ 10500             │                 │
+│  │ 192.168.1.1  │ 10900             │  ◀── window     │
+│  └──────────────┴───────────────────┘                 │
+│                                                       │
+│  Request from 192.168.1.1:                            │
+│    now = 11000, window = 60000                        │
+│    cutoff = 11000 - 60000 = -49000                    │
+│    count entries where ts >= cutoff ──▶ 4             │
+│    4 <= 100 (max) ──▶ ALLOW                           │
+│                                                       │
+│  GenServer cleanup (periodic):                        │
+│    select_delete where ts < cutoff ──▶ prune old      │
+└───────────────────────────────────────────────────────┘
+```
 
 We use a **sliding window counter** stored in an ETS `:bag` table. Each request inserts `{client_ip, timestamp}`. To check the rate, we count entries within the last N milliseconds.
 
@@ -507,6 +558,30 @@ Match specs are Erlang's way of querying ETS tables efficiently. The format is `
 - `[true]` — result: return `true` (for `select_delete`, this means "delete this row")
 
 The `:"$1"` syntax is an atom that acts as a numbered variable in the match spec language.
+
+### Config Loading Timeline
+
+```
+┌──────────────────────────────────────────────────┐
+│           Config File Evaluation Order            │
+│                                                   │
+│  Compile Time (mix compile / mix release)         │
+│  ─────────────────────────────────────            │
+│  1. config/config.exs     ──▶ base settings       │
+│       │                       env: config_env()   │
+│       ▼                                           │
+│  2. config/dev.exs         (if MIX_ENV=dev)       │
+│     config/test.exs        (if MIX_ENV=test)      │
+│     config/prod.exs        (if MIX_ENV=prod)      │
+│                                                   │
+│  Boot Time (app start / release start)            │
+│  ─────────────────────────────────────            │
+│  3. config/runtime.exs    ──▶ reads $PORT,        │
+│                               $DATABASE_PATH,     │
+│                               $SECRET_KEY_BASE    │
+│                               (overrides above)   │
+└──────────────────────────────────────────────────┘
+```
 
 ### `config_env()` vs `Mix.env()`
 

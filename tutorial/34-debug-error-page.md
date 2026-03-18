@@ -4,6 +4,28 @@
 
 A rich development error page that shows the exception type, message, full stacktrace with file:line info, and request context (method, path, headers, params, session) — like Phoenix's colorful dev error page. In production, a generic "Something went wrong" page is shown instead, leaking no internal details.
 
+```
+  Request hits a crash
+         │
+         ▼
+  ┌──────────────────┐       ┌──────────────────────────────┐
+  │  Cowboy Adapter   │       │  Ignite.DebugPage.render/3   │
+  │                  │       │                              │
+  │  try do          │       │  env == :prod?               │
+  │    Router.call() │       │  ┌─────┐      ┌──────┐      │
+  │  rescue          │──────▶│  │ Yes │      │  No  │      │
+  │    exception +   │       │  └──┬──┘      └──┬───┘      │
+  │    __STACKTRACE__│       │     │            │           │
+  │    + conn        │       │     ▼            ▼           │
+  │  end             │       │  Generic    Rich debug       │
+  └──────────────────┘       │  500 page   page with:      │
+                             │             - Exception     │
+                             │             - Stacktrace    │
+                             │             - Request info  │
+                             │             - Session data  │
+                             └──────────────────────────────┘
+```
+
 ## The Problem
 
 Before this step, when a controller crashes, the user sees:
@@ -294,6 +316,21 @@ end
 ```
 
 **Why move `conn` out?** Variables assigned inside a `try` block are not accessible in `rescue`. By building the conn before `try`, we can pass it to the debug page even when the router or controller crashes.
+
+```
+  ┌─ init/2 ───────────────────────────────────┐
+  │                                            │
+  │  conn = cowboy_to_conn(req)   ◀── outside  │
+  │                                   try      │
+  │  ┌─ try ─────────────────────────────┐     │
+  │  │  conn = Router.call(conn)         │     │
+  │  │  :cowboy_req.reply(...)           │     │
+  │  ├─ rescue ──────────────────────────┤     │
+  │  │  conn is available here! ✓        │     │
+  │  │  DebugPage.render(ex, trace, conn)│     │
+  │  └──────────────────────────────────┘     │
+  └────────────────────────────────────────────┘
+```
 
 ### 5. Production Safety
 

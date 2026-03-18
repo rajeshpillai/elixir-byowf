@@ -4,6 +4,28 @@
 
 An upgrade to the LiveView diffing engine that sends only the values that actually changed, instead of the entire rendered HTML. The Dashboard (which auto-refreshes 8 stats every second) goes from ~2000 bytes/tick to ~50 bytes/tick.
 
+```
+  Compile Time (~L sigil)              Runtime (each render)
+  ═══════════════════════              ═════════════════════
+
+  ~L"<h1><%= count %></h1>"           prev_dynamics: ["0"]
+          │                           new_dynamics:  ["1"]
+          ▼                                   │
+  ┌─────────────────────┐                     ▼
+  │ EEx Engine splits   │            ┌──────────────────┐
+  │ into:               │            │ Sparse Diff      │
+  │                     │            │                  │
+  │ statics: ["<h1>",   │            │ "0" != "1"       │
+  │           "</h1>"]   │            │  ──▶ {"0": "1"}  │
+  │                     │            │                  │
+  │ dynamics: [count]   │            │ Send only the    │
+  └─────────────────────┘            │ changed indices  │
+                                     └──────────────────┘
+
+  Mount payload:   {"s": ["<h1>","</h1>"], "d": ["0"]}    (statics + all dynamics)
+  Update payload:  {"d": {"0": "1"}}                       (only changed dynamics)
+```
+
 ## The Problem
 
 In Step 14, we built a diffing engine that splits templates into "statics" and "dynamics." But our implementation was a shortcut:
@@ -135,6 +157,28 @@ end
 ```
 
 **How the callbacks fire** for `<h1>Count: <%= assigns.count %></h1>`:
+
+```
+  Template: <h1>Count: <%= assigns.count %></h1>
+  ═══════════════════════════════════════════════
+
+  Step   Callback              Input               State After
+  ────   ────────              ─────               ───────────
+   1     handle_text           "<h1>Count: "       pending = "<h1>Count: "
+                                                   statics = []
+                                                   dynamics = []
+
+   2     handle_expr("=",...)  assigns.count       pending = ""
+                                                   statics = ["<h1>Count: "]
+                                                   dynamics = [assigns.count]
+
+   3     handle_text           "</h1>"             pending = "</h1>"
+                                                   statics = ["<h1>Count: "]
+                                                   dynamics = [assigns.count]
+
+   4     handle_body           (finalize)           statics = ["<h1>Count: ", "</h1>"]
+                                                   dynamics = [to_string(assigns.count)]
+```
 
 1. `handle_text` → `"<h1>Count: "` (accumulates in pending buffer)
 2. `handle_expr("=", ...)` → flushes `"<h1>Count: "` as statics[0], records `assigns.count` as dynamics[0]
@@ -279,6 +323,35 @@ end
 ```
 
 The key insight: `Engine.render/2` calls `normalize` internally, so the handler doesn't care whether the view uses `~L` or plain strings. Both return `{statics, dynamics}`. The handler just stores `prev_dynamics` and passes old + new to `Engine.diff/2`.
+
+```
+  Handler Lifecycle
+  ═════════════════
+
+  Mount:
+  ┌──────────┐    render/1     ┌────────────┐   normalize   ┌────────────────┐
+  │ LiveView │ ──────────────▶ │ %Rendered{} │ ───────────▶  │ {statics,      │
+  │  module  │                 │  or string  │               │  dynamics}     │
+  └──────────┘                 └────────────┘               └───────┬────────┘
+                                                                    │
+                                    Send {"s": [...], "d": [...]}   │
+                                    Store prev_dynamics ◀───────────┘
+
+  Update:
+  ┌──────────┐    render/1     ┌────────────┐   normalize   ┌────────────────┐
+  │ LiveView │ ──────────────▶ │ %Rendered{} │ ───────────▶  │ {_, new_dyn}   │
+  │  module  │                 │  or string  │               └───────┬────────┘
+  └──────────┘                 └────────────┘                       │
+                                                                    ▼
+                                                  ┌─────────────────────────┐
+                          prev_dynamics ────────▶  │    Engine.diff/2        │
+                                                  │ old[i] == new[i]? skip  │
+                                                  └────────────┬────────────┘
+                                                               │
+                                                               ▼
+                                                  Send {"d": {"0": "1"}}
+                                                  (sparse — only changed)
+```
 
 ## Using It
 

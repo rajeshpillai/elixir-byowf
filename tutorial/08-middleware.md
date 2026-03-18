@@ -19,7 +19,39 @@ plug :authenticate
 If any plug sets `halted: true` on the conn, the pipeline stops and
 the controller never runs — perfect for auth checks.
 
+```
+┌──────────────────────────────────────────────────────────────────┐
+│                     Plug Pipeline                                │
+│                                                                  │
+│  Request ──▶ plug 1 ──▶ plug 2 ──▶ ... ──▶ Router ──▶ Response  │
+│              │           │                                       │
+│              │ conn      │ conn                                  │
+│              ▼           ▼                                       │
+│         (may halt)  (may halt)                                   │
+│              │           │                                       │
+│              └───────────┴──▶ 401 Unauthorized (if halted)       │
+└──────────────────────────────────────────────────────────────────┘
+```
+
 ## Concepts You'll Learn
+
+### Compile-Time Plug Registration
+
+The `plug` macro registers function names at compile time. The `@before_compile`
+callback then generates a `call/1` function that runs all plugs in order:
+
+```
+┌─ Compile Time ──────────────────────────────┐
+│                                             │
+│  plug :log_request      @plugs accumulates  │
+│  plug :add_header       ──────────────────▶ │
+│  plug :authenticate     [:auth, :add, :log] │
+│                                             │
+│  @before_compile ──▶ generates call/1       │
+│                      with reversed list:    │
+│                      [:log, :add, :auth]    │
+└─────────────────────────────────────────────┘
+```
 
 ### Module Attributes with Accumulation
 

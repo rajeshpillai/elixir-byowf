@@ -6,6 +6,39 @@ Two features that eliminate boilerplate and prevent broken links:
 - **Path helpers**: Functions that generate URL strings from route names — `user_path(:show, 42)` instead of hardcoding `"/users/42"`
 - **Resource routes**: `resources "/users", UserController` expands into all standard CRUD routes in one line
 
+```
+Compile-Time Code Generation Pipeline
+──────────────────────────────────────
+
+Router Module (compile time)
+  │
+  │  get "/users", to: UserController, action: :index
+  │  get "/users/:id", to: UserController, action: :show
+  │  post "/users", to: UserController, action: :create
+  │  ...
+  │
+  ▼
+@route_info accumulates metadata
+  │
+  │  [{"GET", "/users", UserController, :index},
+  │   {"GET", "/users/:id", UserController, :show},
+  │   ...]
+  │
+  ▼
+@before_compile hook fires
+  │
+  ▼
+MyApp.Router.Helpers module generated
+  │
+  │  def user_path(:index),    do: "/users"
+  │  def user_path(:show, id), do: "/users/" <> to_string(id)
+  │  def user_path(:create),   do: "/users"
+  │  ...
+  │
+  ▼
+Use at runtime:  user_path(:show, 42)  ──▶  "/users/42"
+```
+
 ## The Problem
 
 ### Hardcoded Paths Break Silently
@@ -229,6 +262,22 @@ derive_name("/users/:id")  #=> :user_path
 derive_name("/api/status") #=> :api_status_path
 ```
 
+```
+Name Derivation Algorithm
+─────────────────────────
+Path: "/api/users/:id"
+  │
+  ├── Split:    ["api", "users", ":id"]
+  │
+  ├── Remove dynamic: ["api", "users"]
+  │
+  ├── Singularize last: ["api", "user"]
+  │
+  ├── Join with "_":   "api_user"
+  │
+  └── Append "_path":  :api_user_path
+```
+
 **Algorithm:**
 1. Split path into segments, filter out dynamic (`:param`) segments
 2. Singularize the last segment (naive: strip trailing "s")
@@ -312,6 +361,20 @@ This handles 90%+ of English nouns used in web APIs. Phoenix uses the `Inflex` l
 ### The `resources/3` Macro
 
 **Update `lib/ignite/router.ex`** — add the `resources/3` macro:
+
+```
+resources "/users", UserController
+         │
+         ▼  expands at compile time to:
+  ┌──────────────────────────────────────────┐
+  │ GET    /users      → :index              │
+  │ GET    /users/:id  → :show               │
+  │ POST   /users      → :create             │
+  │ PUT    /users/:id  → :update             │
+  │ PATCH  /users/:id  → :update             │
+  │ DELETE /users/:id  → :delete             │
+  └──────────────────────────────────────────┘
+```
 
 ```elixir
 resources "/users", MyApp.UserController

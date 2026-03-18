@@ -22,6 +22,28 @@ def create(conn) do
 end
 ```
 
+```
+┌─ HTTP POST Request ──────────────────────────────────────────┐
+│                                                              │
+│  POST /users HTTP/1.1                                        │
+│  Content-Type: application/x-www-form-urlencoded             │
+│  Content-Length: 25                                           │
+│  ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ headers end ─ ─ ─ ─ ─ ─ ─ ─ ─ ─   │
+│  username=jose&password=123    ◄── body (25 bytes)           │
+│                                                              │
+│           │                                                  │
+│           ▼                                                  │
+│  ┌─────────────────┐     ┌──────────────────────────────┐    │
+│  │  read_body/2    │────▶│  URI.decode_query/1           │    │
+│  │  (raw bytes)    │     │  "username=jose&password=123" │    │
+│  └─────────────────┘     │       │                       │    │
+│                          │       ▼                       │    │
+│                          │  %{"username" => "jose",      │    │
+│                          │    "password" => "123"}       │    │
+│                          └──────────────────────────────────┘ │
+└──────────────────────────────────────────────────────────────┘
+```
+
 ## Concepts You'll Learn
 
 ### HTTP Request Bodies
@@ -36,6 +58,24 @@ The **Content-Type** header tells us how to parse those bytes.
 
 Our socket uses `packet: :http`, which means Erlang automatically
 parses HTTP request lines and headers. But the body is just raw bytes.
+
+```
+┌─ Socket Packet Modes ─────────────────────────────────┐
+│                                                       │
+│  packet: :http (default)     packet: :raw             │
+│  ┌─────────────────────┐     ┌─────────────────────┐  │
+│  │ Erlang auto-parses  │     │ Read raw bytes      │  │
+│  │ request line &      │     │ (no parsing)        │  │
+│  │ headers for us      │     │                     │  │
+│  └────────┬────────────┘     └──────────┬──────────┘  │
+│           │                             │             │
+│   GET /users HTTP/1.1          username=jose&pass=123 │
+│   Content-Type: ...                                   │
+│                                                       │
+│       :inet.setopts(socket, packet: :raw)             │
+│           └────────────────────▶ switch after headers  │
+└───────────────────────────────────────────────────────┘
+```
 
 After reading headers, we switch the socket to raw mode:
 

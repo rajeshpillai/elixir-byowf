@@ -4,6 +4,34 @@
 
 Real database persistence for our User resource. Currently all five CRUD actions in `UserController` return hardcoded or echo data. After this step, they read from and write to a SQLite database using Ecto — Elixir's database library.
 
+```
+Ecto Architecture
+─────────────────
+
+  Controller           Changeset            Repo             Database
+  ──────────           ─────────            ────             ────────
+       │                   │                  │                  │
+       │  attrs = %{       │                  │                  │
+       │    username: "Jo" │                  │                  │
+       │  }                │                  │                  │
+       │                   │                  │                  │
+       ├──▶ User.changeset │                  │                  │
+       │    (%User{},attrs)│                  │                  │
+       │                   │                  │                  │
+       │    cast ──────────┤                  │                  │
+       │    validate ──────┤                  │                  │
+       │    valid? ────────┤                  │                  │
+       │                   │                  │                  │
+       ├───────────────────┼──▶ Repo.insert  │                  │
+       │                   │    (changeset)   │                  │
+       │                   │                  ├──▶ INSERT INTO   │
+       │                   │                  │    users ...     │
+       │                   │                  │                  │
+       │                   │                  │◀── {:ok, %User{}}│
+       │◀──────────────────┼──────────────────┤                  │
+       │  {:ok, user}      │                  │                  │
+```
+
 ## The Problem
 
 Our framework has routing, controllers, templates, flash messages, and sessions — but no data layer. Every time you restart the server, nothing persists because data only exists in function return values. A real web app needs a database.
@@ -119,6 +147,36 @@ defmodule MyApp.User do
 end
 ```
 
+```
+Schema ←→ Table Mapping
+────────────────────────
+
+%MyApp.User{}                    users table
+┌─────────────────┐              ┌──────────────────────────┐
+│ id:          1  │  ◀────────▶  │ id       INTEGER PK      │
+│ username: "Jo" │  ◀────────▶  │ username TEXT NOT NULL    │
+│ email:  "j@.." │  ◀────────▶  │ email    TEXT             │
+│ inserted_at:.. │  ◀────────▶  │ inserted_at DATETIME     │
+│ updated_at:..  │  ◀────────▶  │ updated_at  DATETIME     │
+└─────────────────┘              └──────────────────────────┘
+
+Changeset Validation Pipeline
+─────────────────────────────
+  attrs ──▶ cast([:username, :email])
+              │
+              ▼
+         validate_required([:username])
+              │
+              ▼
+         validate_length(:username, min: 2, max: 50)
+              │
+              ▼
+         unique_constraint(:username)
+              │
+              ▼
+         %Changeset{valid?: true/false}
+```
+
 **Schema**: Maps `%MyApp.User{}` to the `users` table. `timestamps()` adds `inserted_at` and `updated_at` fields.
 
 **Changeset**: The validation pipeline. `cast/3` picks allowed fields from input. `validate_required/2` ensures username is present. `validate_length/3` enforces bounds. `unique_constraint/2` converts a database uniqueness violation into a friendly error message (requires the matching unique index in the migration).
@@ -158,6 +216,27 @@ children = [
   Ignite.Presence,
   # ... Cowboy ...
 ]
+```
+
+```
+Supervision Tree (startup order)
+─────────────────────────────────
+         ┌──────────────┐
+         │  Application │
+         │  Supervisor   │
+         └──────┬───────┘
+                │
+  ┌─────────┬───┴───┬───────────┬──────────┐
+  │         │       │           │          │
+  ▼         ▼       ▼           ▼          ▼
+┌──────┐ ┌──────┐ ┌────────┐ ┌────────┐ ┌──────┐
+│ Repo │ │PubSub│ │Presence│ │  Rate  │ │Cowboy│
+│(DB   │ │      │ │        │ │Limiter │ │(HTTP)│
+│pool) │ │      │ │        │ │        │ │      │
+└──────┘ └──────┘ └────────┘ └────────┘ └──────┘
+   ▲                                       │
+   │         DB ready before HTTP          │
+   └───────────────────────────────────────┘
 ```
 
 The Repo must start before Cowboy so database connections are available when the first HTTP request arrives.

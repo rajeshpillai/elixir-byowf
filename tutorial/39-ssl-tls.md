@@ -14,6 +14,31 @@ Until now, Ignite has been serving everything over plain HTTP. That's fine for l
 
 ## How It Works
 
+```
+┌─────────────────────────────────────────────────────────┐
+│               Config-Driven SSL Architecture            │
+│                                                         │
+│  config :ignite, :ssl                                   │
+│       │                                                 │
+│       ├── nil (dev/test)         set (prod)             │
+│       │                          │                      │
+│       ▼                          ▼                      │
+│  :cowboy.start_clear         :cowboy.start_tls          │
+│  (HTTP on :4000)             (HTTPS on :4443)           │
+│                                  │                      │
+│                                  ├── Optional:          │
+│                                  │   HTTP redirect      │
+│                                  │   listener (:4080)   │
+│                                  │        │             │
+│                                  │        ▼             │
+│                                  │   301 ──▶ HTTPS      │
+│                                  │                      │
+│                                  └── Optional:          │
+│                                      HSTS header        │
+│                                      (strict-transport) │
+└─────────────────────────────────────────────────────────┘
+```
+
 ### Config-Driven: HTTP vs HTTPS
 
 The decision is made entirely by the `:ssl` key in application config.
@@ -413,6 +438,27 @@ The task also prints the exact config snippet to add to `config/prod.exs`.
 **Important:** Self-signed certs trigger browser warnings. Use `curl -k` to skip verification, or add a browser exception. For real production, use [Let's Encrypt](https://letsencrypt.org/) or your CA.
 
 ### Application Boot Changes
+
+```
+┌─────────────────────────────────────────────────┐
+│            Supervision Tree (Prod)              │
+│                                                  │
+│  Ignite.Supervisor                               │
+│       │                                          │
+│       ├── MyApp.Repo                             │
+│       ├── Ignite.PubSub                          │
+│       ├── Ignite.Presence                        │
+│       ├── Ignite.RateLimiter                     │
+│       │                                          │
+│       ├── :cowboy_listener (HTTPS :4443)          │
+│       │   └── Ignite.SSL.child_spec/2            │
+│       │       └── :cowboy.start_tls              │
+│       │                                          │
+│       └── :cowboy_redirect_listener (HTTP :4080)  │
+│           └── Ignite.SSL.redirect_child_spec/2   │
+│               └── 301 ──▶ https://...:4443       │
+└─────────────────────────────────────────────────┘
+```
 
 **Update `lib/ignite/application.ex`** — delegate Cowboy child spec creation to `Ignite.SSL` and add the redirect listener:
 

@@ -2,7 +2,32 @@
 
 ## What We're Building
 
-Structured request logging with two production-essential features: a unique **request ID** for correlating all log lines from the same request, and **response timing** to see how long each request takes. Every log line now looks like:
+Structured request logging with two production-essential features: a unique **request ID** for correlating all log lines from the same request, and **response timing** to see how long each request takes.
+
+```
+  Cowboy Process (one per request)
+  ┌──────────────────────────────────────────────────────┐
+  │                                                      │
+  │  1. request_id = random 16 bytes ──▶ "F3kQ7x_Nz2m"  │
+  │  2. Logger.metadata(request_id: ...)                 │
+  │  3. start_time = monotonic_time()                    │
+  │                                                      │
+  │  ┌─ All log calls in this process ─────────────────┐ │
+  │  │  Logger.info "GET /hello"                       │ │
+  │  │   ──▶ "request_id=F3kQ7x_Nz2m [info] GET ..."  │ │
+  │  │                                                 │ │
+  │  │  Router → Plugs → Controller                    │ │
+  │  │  (any Logger calls here also get request_id)    │ │
+  │  │                                                 │ │
+  │  │  Logger.info "Sent 200 in 1.2ms"                │ │
+  │  │   ──▶ "request_id=F3kQ7x_Nz2m [info] Sent..." │ │
+  │  └─────────────────────────────────────────────────┘ │
+  │                                                      │
+  │  4. Response header: x-request-id: F3kQ7x_Nz2m      │
+  └──────────────────────────────────────────────────────┘
+```
+
+Every log line now looks like:
 
 ```
 14:23:01.456 request_id=F3kQ7x_Nz2mYwA [info] GET /hello
@@ -41,6 +66,26 @@ We log at the **adapter level** because:
 1. The adapter sees the complete request lifecycle — from raw Cowboy request to final response
 2. Logger metadata set per-process naturally scopes to the request (Cowboy runs each request in its own process)
 3. Timing captures the full stack, not just controller execution
+
+```
+  What each approach measures:
+
+  Adapter-level (what we use):
+  ├── parse request ──────────────────────────────┐
+  │   ├── decode session                          │
+  │   ├── router plug pipeline                    │ total
+  │   │   ├── add_server_header                   │ time
+  │   │   ├── verify_csrf_token                   │
+  │   │   └── dispatch to controller              │
+  │   └── encode session + send response          │
+  └───────────────────────────────────────────────┘
+
+  Router plug (old approach):
+                  ├── log here                    │
+                  │   ├── later plugs             │ partial
+                  │   └── controller only         │ time
+                  └───────────────────────────────┘
+```
 
 This means we **remove** the `log_request` plug from the router — the adapter handles it now.
 

@@ -4,6 +4,25 @@
 
 Support for `put`, `patch`, and `delete` route macros in the Router DSL, giving Ignite full REST/CRUD capability.
 
+```
+                    Router DSL Macros
+  ┌──────────────────────────────────────────────┐
+  │                                              │
+  │   get ──┐                                    │
+  │  post ──┤                                    │
+  │   put ──┼──▶ build_route/4 ──▶ dispatch/2    │
+  │ patch ──┤    (shared macro     (pattern-match │
+  │delete ──┘     helper)           on method +   │
+  │                                 path)         │
+  └──────────────────────────────────────────────┘
+
+  Compile Time                    Runtime
+  ─────────────                   ───────
+  get "/users/:id", ...           dispatch("GET", ["users", id])
+  put "/users/:id", ...    ──▶    dispatch("PUT", ["users", id])
+  delete "/users/:id", ...        dispatch("DELETE", ["users", id])
+```
+
 ## The Problem
 
 Our router only supports `get` and `post` macros. REST APIs need all four mutation verbs:

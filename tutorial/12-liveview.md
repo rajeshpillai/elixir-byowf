@@ -11,6 +11,33 @@ We're building:
 2. `Ignite.LiveView.Handler` — a Cowboy WebSocket handler
 3. `MyApp.CounterLive` — a live counter that increments without reloads
 
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                        Architecture                             │
+│                                                                 │
+│  Browser                              Server (BEAM)             │
+│  ┌──────────────┐     HTTP GET        ┌──────────────────────┐  │
+│  │  /counter    │────────────────────▶│  WelcomeController   │  │
+│  │  (host page) │◀────────────────────│  serves host HTML    │  │
+│  └──────┬───────┘     HTML response   └──────────────────────┘  │
+│         │                                                       │
+│         │ WebSocket /live                                       │
+│         ▼                                                       │
+│  ┌──────────────┐     JSON messages   ┌──────────────────────┐  │
+│  │  inline JS   │◀══════════════════▶│  LiveView.Handler    │  │
+│  │  (WebSocket  │   {event, params}   │  (Cowboy WebSocket)  │  │
+│  │   client)    │   {html: "..."}     │         │            │  │
+│  └──────────────┘                     │         ▼            │  │
+│                                       │  ┌────────────────┐  │  │
+│                                       │  │ CounterLive    │  │  │
+│                                       │  │ mount/2        │  │  │
+│                                       │  │ handle_event/3 │  │  │
+│                                       │  │ render/1       │  │  │
+│                                       │  └────────────────┘  │  │
+│                                       └──────────────────────┘  │
+└─────────────────────────────────────────────────────────────────┘
+```
+
 ## Concepts You'll Learn
 
 ### WebSockets vs HTTP
@@ -45,6 +72,24 @@ three callbacks. The compiler warns you if any are missing.
 
 Cowboy provides a WebSocket behaviour with these callbacks:
 
+```
+  Browser                           Server (Handler process)
+    │                                       │
+    │──── HTTP GET /live ──────────────────▶│ init/2
+    │                                       │ (upgrade to WebSocket)
+    │◀═══ WebSocket Handshake ════════════▶│
+    │                                       │ websocket_init/1
+    │                                       │ (connection ready)
+    │                                       │
+    │──── {text, json} ───────────────────▶│ websocket_handle/2
+    │                                       │ (browser message)
+    │                                       │
+    │                        (timer/send)──▶│ websocket_info/2
+    │                                       │ (erlang message)
+    │◀─── {text, json} ───────────────────│
+    │                                       │
+```
+
 ```elixir
 init(req, state)              # HTTP request arrives — upgrade to WS
 websocket_init(state)         # WebSocket connection established
@@ -68,6 +113,21 @@ handler is a **long-lived process**. It remembers state:
 
 Each browser tab gets its own process. If one crashes, others are
 unaffected.
+
+```
+  Tab A                Tab B                Tab C
+    │                    │                    │
+    │   WebSocket        │   WebSocket        │   WebSocket
+    ▼                    ▼                    ▼
+┌────────────┐    ┌────────────┐    ┌────────────┐
+│ Process A  │    │ Process B  │    │ Process C  │
+│ count: 5   │    │ count: 12  │    │ count: 0   │
+└────────────┘    └────────────┘    └────────────┘
+  Independent        Independent        Independent
+  (crash here         (still works)      (still works)
+   won't affect
+   others)
+```
 
 ### Jason (JSON Library)
 

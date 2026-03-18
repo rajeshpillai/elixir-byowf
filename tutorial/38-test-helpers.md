@@ -21,6 +21,36 @@ end
 
 Tests call `Router.call(conn)` directly, running the full plug pipeline and route dispatch — no Cowboy, no TCP, no network overhead.
 
+```
+┌──────────────────────────────────────────────────────────┐
+│  Production Request              Test Request            │
+│                                                          │
+│  Browser                         ExUnit                  │
+│    │                               │                     │
+│    ▼                               │                     │
+│  TCP/HTTP (Cowboy)                 │  (skipped)           │
+│    │                               │                     │
+│    ▼                               │                     │
+│  HTTP Parser                       │  (skipped)           │
+│    │                               │                     │
+│    ▼                               ▼                     │
+│  ┌──────────────────────────────────────────────┐        │
+│  │  %Conn{}                                     │        │
+│  │    │                                         │        │
+│  │    ▼                                         │        │
+│  │  Router.call(conn)                           │        │
+│  │    │                                         │        │
+│  │    ├──▶ Plug: rate_limit                     │        │
+│  │    ├──▶ Plug: add_server_header              │        │
+│  │    ├──▶ Plug: csrf_protect                   │        │
+│  │    │                                         │        │
+│  │    ▼                                         │        │
+│  │  dispatch ──▶ Controller ──▶ Response        │        │
+│  └──────────────────────────────────────────────┘        │
+│                 Same code path                           │
+└──────────────────────────────────────────────────────────┘
+```
+
 ## Concepts You'll Use
 
 ### ExUnit Basics (`use ExUnit.Case`, `test`, `assert`)
@@ -93,6 +123,33 @@ Test → build_conn → Router.call(conn) → plugs → dispatch → controller 
 No Cowboy, no TCP socket, no HTTP parsing. The conn flows through the exact same code path as a real request — middleware, CSRF checks, and all.
 
 ### CSRF in Tests
+
+```
+┌─────────────────────────────────────────────────┐
+│          CSRF Token Flow in Tests               │
+│                                                  │
+│  build_conn(:post, "/users", params)             │
+│       │                                          │
+│       ▼                                          │
+│  init_test_session()                             │
+│       │  generates random token                  │
+│       │  stores in conn.session["_csrf_token"]   │
+│       ▼                                          │
+│  with_csrf()                                     │
+│       │  reads session token                     │
+│       │  XOR-masks it                            │
+│       │  adds to conn.params["_csrf_token"]      │
+│       ▼                                          │
+│  dispatch(router)                                │
+│       │                                          │
+│       ▼                                          │
+│  CSRF plug validates:                            │
+│    unmask(params token) == session token?         │
+│       │                                          │
+│       ├── yes ──▶ request continues              │
+│       └── no  ──▶ 403 Forbidden                  │
+└─────────────────────────────────────────────────┘
+```
 
 Form submissions need CSRF tokens. Two helpers work together:
 
@@ -178,6 +235,27 @@ end
 ```
 
 The fix moves `call/1` to `@before_compile`, which runs after all module-level code has been processed. This is the same pattern Phoenix uses — `Phoenix.Router` defines its pipeline dispatch in `@before_compile`.
+
+```
+┌───────────────────────────────────────────────┐
+│  Module Compilation Timeline                  │
+│                                               │
+│  1. use Ignite.Router                         │
+│     └── __using__ expands                     │
+│         @plugs = []  (empty!)                 │
+│                                               │
+│  2. plug :rate_limit      ──▶ @plugs grows    │
+│  3. plug :add_header      ──▶ @plugs grows    │
+│  4. plug :csrf_protect    ──▶ @plugs grows    │
+│  5. get "/", ...                              │
+│  6. post "/users", ...                        │
+│                                               │
+│  7. @before_compile fires                     │
+│     └── def call(conn) defined HERE           │
+│         @plugs = [:rate_limit, :add_header,   │
+│                   :csrf_protect]  (full!)     │
+└───────────────────────────────────────────────┘
+```
 
 This means the `x-powered-by` header, CSP headers, and CSRF validation are now properly enforced on every request.
 

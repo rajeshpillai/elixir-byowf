@@ -5,6 +5,24 @@
 A custom Mix task that prints every registered route in a formatted table — the same idea as Phoenix's `mix phx.routes`. Run `mix ignite.routes` and see every HTTP method, path, controller, and action at a glance.
 
 ```
+  Compile Time                          Runtime
+  ┌────────────────────────┐            ┌─────────────────────────┐
+  │  router.ex             │            │  mix ignite.routes      │
+  │                        │            │                         │
+  │  get "/", ...          │  compile   │  1. Mix.Task.run        │
+  │  post "/users", ...    │ ────────▶  │     ("compile")         │
+  │  resources "/users"    │            │  2. Code.ensure_loaded! │
+  │  scope "/api" do ... end│            │     (MyApp.Router)      │
+  │                        │            │  3. Router.__routes__() │
+  │  @route_info accumulates│            │  4. Format + print      │
+  │  tuples via macros     │            │                         │
+  │                        │            │  GET   /          ...   │
+  │  __before_compile__    │            │  POST  /users     ...   │
+  │  ──▶ def __routes__    │            │  GET   /api/status ...  │
+  └────────────────────────┘            └─────────────────────────┘
+```
+
+```
 $ mix ignite.routes
 GET     /                MyApp.WelcomeController  :index
 GET     /hello           MyApp.WelcomeController  :hello
@@ -35,9 +53,15 @@ A Mix task is an Elixir module that:
 The naming convention maps the module name to the CLI command:
 
 ```
-Mix.Tasks.Ignite.Routes  →  mix ignite.routes
-Mix.Tasks.Ecto.Migrate   →  mix ecto.migrate
-Mix.Tasks.Phx.Routes     →  mix phx.routes
+  Module name                     CLI command
+  ┌──────────────────────────┐    ┌────────────────────┐
+  │ Mix.Tasks.Ignite.Routes  │───▶│ mix ignite.routes  │
+  │ Mix.Tasks.Ecto.Migrate   │───▶│ mix ecto.migrate   │
+  │ Mix.Tasks.Phx.Routes     │───▶│ mix phx.routes     │
+  └──────────────────────────┘    └────────────────────┘
+         ▲                               ▲
+    Drop "Mix.Tasks."           Lowercase, dots
+    prefix                      replace periods
 ```
 
 ## Design Decision: Runtime Introspection vs File Parsing

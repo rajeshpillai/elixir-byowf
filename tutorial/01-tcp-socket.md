@@ -13,6 +13,18 @@ that:
 In this step, we build exactly that: a TCP server that responds "Hello, Ignite!" to
 every request.
 
+```
+┌──────────┐    TCP connect     ┌──────────────────┐
+│  Browser ├───────────────────▶│  Ignite Server   │
+│          │                    │  (port 4000)     │
+│          │  "GET / HTTP/1.1"  │                  │
+│          ├───────────────────▶│  1. Accept conn  │
+│          │                    │  2. Read request │
+│          │  "HTTP/1.1 200 OK" │  3. Build resp   │
+│          │◀───────────────────┤  4. Send & close │
+└──────────┘                    └──────────────────┘
+```
+
 ## Concepts You'll Learn
 
 ### Modules and Functions
@@ -84,6 +96,18 @@ end
 This runs forever, waiting for connections. The BEAM VM optimizes this
 so it doesn't use extra stack space (tail-call optimization).
 
+```
+loop_acceptor(socket)
+    │
+    ├─ accept() ──▶ client_1 ──▶ spawn(serve)
+    │
+    ├─ accept() ──▶ client_2 ──▶ spawn(serve)
+    │
+    ├─ accept() ──▶ client_3 ──▶ spawn(serve)
+    │
+    └─ ... (forever)
+```
+
 ### BEAM Processes
 
 `spawn/1` creates a new lightweight process:
@@ -96,6 +120,19 @@ BEAM processes are NOT operating system threads. They are:
 - **Extremely lightweight** (~2KB of memory each)
 - **Isolated** — if one crashes, others keep running
 - **Concurrent** — thousands can run at the same time
+
+```
+BEAM VM
+┌──────────────────────────────────────────┐
+│  Process 1       Process 2    Process 3  │
+│  ┌──────────┐   ┌─────────┐  ┌────────┐ │
+│  │serve     │   │serve    │  │serve   │ │
+│  │client_1  │   │client_2 │  │client_3│ │
+│  │  ~2KB    │   │  ~2KB   │  │  ~2KB  │ │
+│  └──────────┘   └─────────┘  └────────┘ │
+│     isolated      isolated    isolated   │
+└──────────────────────────────────────────┘
+```
 
 This is why we can handle each request in its own process.
 
@@ -157,6 +194,17 @@ We pattern match to extract the method (`:GET`) and path (`"/hello"`).
 
 This is raw HTTP protocol. The `\r\n` (carriage return + line feed) and
 the blank line between headers and body are required by the HTTP spec.
+
+```
+HTTP Response Structure
+──────────────────────────────────────
+HTTP/1.1 200 OK\r\n              ← status line
+Content-Type: text/plain\r\n     ← header
+Content-Length: 14\r\n           ← header
+Connection: close\r\n           ← header
+\r\n                             ← blank line (end of headers)
+Hello, Ignite!                   ← body
+```
 
 ### Complete `lib/ignite/server.ex`
 

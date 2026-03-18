@@ -4,6 +4,20 @@
 
 A `scope` macro that groups routes under a common path prefix, reducing repetition and organizing routes logically. Scopes can also be nested.
 
+```
+  Before (flat)                  After (scoped)
+  ─────────────                  ──────────────
+  get "/api/status", ...         scope "/api" do
+  post "/api/echo", ...            get "/status", ...
+  get "/api/v1/users", ...         post "/echo", ...
+  get "/api/v1/posts", ...
+                                   scope "/v1" do
+                                     get "/users", ...
+                                     get "/posts", ...
+                                   end
+                                 end
+```
+
 ## The Problem
 
 Without scoping, API routes look like this:
@@ -93,6 +107,55 @@ defp prepend_prefix(expr, _prefix), do: expr
 ```
 
 **How it works:**
+
+```
+  AST Transformation (compile time)
+  ══════════════════════════════════
+
+  Input AST                           Output AST
+  ─────────                           ──────────
+  {:scope, _, ["/api",                {:__block__, _, [
+    {:__block__, _, [                   {:get, _, ["/api/status", ...]},
+      {:get, _, ["/status", ...]},      {:get, _, ["/api/v1/users", ...]}
+      {:scope, _, ["/v1",             ]}
+        {:__block__, _, [
+          {:get, _, ["/users", ...]}
+        ]}
+      ]}
+    ]}
+  ]}
+
+  Step by step:
+  ┌────────────────────────┐
+  │ 1. Receive do block    │
+  │    as raw AST tuples   │
+  └──────────┬─────────────┘
+             ▼
+  ┌────────────────────────┐
+  │ 2. Walk tree, find     │
+  │    route macro calls   │
+  └──────────┬─────────────┘
+             ▼
+  ┌────────────────────────┐
+  │ 3. Prepend prefix to   │
+  │    path arguments      │
+  │    "/status" ──▶       │
+  │    "/api/status"       │
+  └──────────┬─────────────┘
+             ▼
+  ┌────────────────────────┐
+  │ 4. For nested scopes,  │
+  │    prepend to their    │
+  │    prefix argument     │
+  │    "/v1" ──▶ "/api/v1" │
+  └──────────┬─────────────┘
+             ▼
+  ┌────────────────────────┐
+  │ 5. Return transformed  │
+  │    AST (no quote       │
+  │    needed)             │
+  └────────────────────────┘
+```
 
 1. The compiler sees `scope "/api" do ... end` and calls our macro
 2. We receive the `do` block as raw AST (a tree of tuples)

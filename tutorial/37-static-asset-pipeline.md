@@ -10,6 +10,29 @@ A cache-busting static asset system. Instead of hardcoding `<script src="/assets
 
 When the file contents change, the hash changes, forcing browsers to fetch the new version. When the contents haven't changed, browsers serve from cache — zero unnecessary downloads.
 
+```
+┌─────────────────────────────────────────────────────┐
+│                  Boot Time                          │
+│                                                     │
+│  assets/               ETS Table                    │
+│  ├── ignite.js    ──▶  (:ignite_static_manifest)    │
+│  ├── hooks.js          ┌──────────────┬──────────┐  │
+│  └── morphdom.js       │ filename     │ hash     │  │
+│        │               ├──────────────┼──────────┤  │
+│     MD5 hash           │ ignite.js    │ a1b2c3d4 │  │
+│     (first 8           │ hooks.js     │ e5f6g7h8 │  │
+│      hex chars)        │ morphdom.js  │ f4e8a2b1 │  │
+│                        └──────────────┴──────────┘  │
+│                                                     │
+│                  Render Time                         │
+│                                                     │
+│  static_path("ignite.js")                           │
+│       │                                             │
+│       ▼                                             │
+│  ETS lookup ──▶ "/assets/ignite.js?v=a1b2c3d4"      │
+└─────────────────────────────────────────────────────┘
+```
+
 ## The Problem
 
 Before this step, templates hardcoded asset paths:
@@ -197,6 +220,32 @@ end
 Controllers that `import Ignite.Controller` can call `static_path("app.css")` directly, just like Phoenix's `Routes.static_path(@conn, "/assets/app.css")`.
 
 ### 7. Hot Reloader Integration
+
+```
+┌─────────────────────────────────────────────────┐
+│             Dev: Reloader Watch Loop             │
+│                                                  │
+│  Reloader (GenServer)                            │
+│       │                                          │
+│       ├──▶ check lib/**/*.ex   ──▶ hot reload    │
+│       │    (every 1s)              modules        │
+│       │                                          │
+│       └──▶ check assets/**/*   ──▶ rebuild ETS   │
+│            (every 1s)              manifest       │
+│                                                  │
+│  File changed:                                   │
+│    assets/ignite.js modified                     │
+│         │                                        │
+│         ▼                                        │
+│    Ignite.Static.rebuild()                       │
+│         │                                        │
+│         ▼                                        │
+│    ETS: ignite.js → NEW hash                     │
+│         │                                        │
+│         ▼                                        │
+│    Next render picks up new ?v= param            │
+└─────────────────────────────────────────────────┘
+```
 
 **Update `lib/ignite/reloader.ex`** — watch `assets/` directory and rebuild manifest on changes:
 

@@ -14,6 +14,23 @@ Instead of implementing all that ourselves (thousands of lines), we'll
 use **Cowboy** — the same HTTP server Phoenix uses. We'll write an
 **adapter** that translates between Cowboy and our `%Ignite.Conn{}`.
 
+```
+┌─ Before (Steps 1-9) ────────────────────────────────────────┐
+│                                                              │
+│  Browser ──▶ :gen_tcp (our server) ──▶ Parser ──▶ Router     │
+│              single accept loop                              │
+│              no SSL, no HTTP/2                               │
+└──────────────────────────────────────────────────────────────┘
+
+┌─ After (Step 10) ────────────────────────────────────────────┐
+│                                                              │
+│  Browser ──▶ Cowboy ──▶ Adapter ──▶ Router                   │
+│              100+ acceptors   translates                     │
+│              SSL, HTTP/2      Cowboy req ←→ %Conn{}          │
+│              keep-alive                                      │
+└──────────────────────────────────────────────────────────────┘
+```
+
 ## Concepts You'll Learn
 
 ### Dependencies in Mix
@@ -48,6 +65,23 @@ Cowboy (speaks Cowboy requests) ←→ Adapter ←→ Ignite (speaks %Conn{})
 
 Our framework doesn't know Cowboy exists. Cowboy doesn't know our
 framework exists. The adapter sits in the middle and translates.
+
+```
+┌───────────┐     ┌─────────────────┐     ┌───────────────┐
+│  Cowboy    │     │    Adapter      │     │    Ignite     │
+│           ─┼────▶│                 │────▶│               │
+│  speaks    │     │  Cowboy req ──▶ │     │  speaks       │
+│  Cowboy    │◀────┤  %Conn{}   ◀── │◀────┤  %Conn{}      │
+│  requests  │     │                 │     │               │
+└───────────┘     └─────────────────┘     └───────────────┘
+                         │
+                  ┌──────┴──────┐
+                  │  Swappable! │
+                  │  Bandit,    │
+                  │  another    │
+                  │  server...  │
+                  └─────────────┘
+```
 
 This means we could swap Cowboy for another server (like Bandit) by
 writing a different adapter — no framework code changes needed.
@@ -133,6 +167,26 @@ In Step 6, we used the shorthand `{Ignite.Server, 4000}` to tell the supervisor 
 ```
 
 The `start:` value is an **MFA tuple** (Module, Function, Arguments) — the supervisor calls `apply(module, function, args)` to start the child.
+
+```
+┌─ Supervision Tree ──────────────────────────────────┐
+│                                                     │
+│            Ignite.Supervisor                        │
+│            (one_for_one)                            │
+│                  │                                  │
+│                  ▼                                  │
+│          :cowboy_listener                           │
+│          ┌──────────────────────┐                   │
+│          │ Cowboy HTTP Server   │                   │
+│          │ port: 4000           │                   │
+│          │ dispatch ──▶ Adapter │                   │
+│          └──────────────────────┘                   │
+│                  │                                  │
+│          ┌───────┴───────┐                          │
+│          ▼               ▼                          │
+│     Ranch Acceptor  Ranch Acceptor  ...  (100+)     │
+└─────────────────────────────────────────────────────┘
+```
 
 ## The Code
 

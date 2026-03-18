@@ -4,6 +4,26 @@
 
 Flash messages — one-time notifications that survive a redirect. When a user creates a resource, the controller sets a flash message, redirects, and the next page displays the message once, then it disappears.
 
+```
+Flash Message Lifecycle
+───────────────────────
+
+  Request 1: POST /users          Request 2: GET /          Request 3: GET /
+  ─────────────────────           ────────────────          ────────────────
+  put_flash(:info, "Created!")    get_flash → "Created!"   get_flash → %{}
+  redirect(to: "/")              Render green banner       No banner
+       │                                │                        │
+       ▼                                ▼                        ▼
+  ┌─────────────────┐           ┌─────────────────┐     ┌─────────────────┐
+  │ Set-Cookie:     │           │ Set-Cookie:     │     │ Set-Cookie:     │
+  │ session = {     │           │ session = {}    │     │ session = {}    │
+  │   _flash: {     │──cookie──▶│                 │     │                 │
+  │     info: "..." │  sent to  │ Flash CLEARED   │     │ No flash        │
+  │   }             │  browser  │ on response     │     │                 │
+  │ }               │           └─────────────────┘     └─────────────────┘
+  └─────────────────┘
+```
+
 ## The Problem
 
 Right now, `POST /users` returns `"User 'Jose' created!"` as a plain text 201 response. There's no way to:
@@ -178,6 +198,31 @@ end
 def get_flash(conn, key) do
   conn |> get_flash() |> Map.get(to_string(key))
 end
+```
+
+```
+Flash Data Flow Through conn
+────────────────────────────
+
+On Request (adapter reads cookie):
+  ┌──────────────────────────────────────────────┐
+  │ raw_session = decode(cookie)                 │
+  │   = %{"_flash" => %{"info" => "Created!"}}  │
+  │                                              │
+  │ {flash, session} = Map.pop(raw_session,      │
+  │                            "_flash")         │
+  │                                              │
+  │ conn.session  = %{}         (flash removed)  │
+  │ conn.private  = %{flash: %{"info" => "..."}} │
+  └──────────────────────────────────────────────┘
+
+In Controller:
+  put_flash  ──▶ writes to conn.session["_flash"]  (NEXT request)
+  get_flash  ──▶ reads from conn.private.flash      (THIS request)
+
+On Response (adapter writes cookie):
+  encode(conn.session)  ──▶  cookie value
+  (has _flash only if put_flash was called)
 ```
 
 `put_flash` writes to `conn.session["_flash"]` (for the NEXT request's cookie), while `get_flash` reads from `conn.private.flash` (the CURRENT request's inherited flash). This separation is what gives flash messages their one-time semantics.

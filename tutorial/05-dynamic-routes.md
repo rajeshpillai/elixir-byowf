@@ -19,6 +19,14 @@ def show(conn) do
 end
 ```
 
+```
+  Route definition              URL match             Captured params
+  ──────────────────────        ─────────────────      ─────────────────
+  get "/users/:id"         ──▶  /users/42          ──▶ %{id: "42"}
+  get "/posts/:slug"       ──▶  /posts/my-blog     ──▶ %{slug: "my-blog"}
+  get "/users/:id/edit"    ──▶  /users/7/edit      ──▶ %{id: "7"}
+```
+
 ## Concepts You'll Learn
 
 ### String.split with `trim: true`
@@ -61,6 +69,18 @@ name  #=> "id"
 
 This is how the router detects dynamic segments: if a path segment
 starts with `":"`, it's dynamic; otherwise it's a literal match.
+
+```
+  Path: "/users/:id"
+         │         │
+         ▼         ▼
+      "users"    ":id"
+         │         │
+         ▼         ▼
+      literal    dynamic ──▶ ":" <> "id" ──▶ variable `id`
+      (match     (capture
+      exact)     any value)
+```
 
 ### Macro.var/2
 
@@ -184,6 +204,17 @@ end
 For `"/users/:id"`, this produces:
 - `patterns` = `["users", {:id, [], nil}]` — a list with a literal and a variable
 - `param_names` = `[:id]` — which segments to capture into params
+
+```
+  build_match_pattern(["users", ":id"])
+
+  Segment     Type       Pattern            Param name
+  ─────────   ────────   ────────────────   ──────────
+  "users"     static  ──▶ "users"            nil
+  ":id"       dynamic ──▶ {:id, [], nil}     :id
+
+  Result: {["users", {:id, [], nil}], [:id]}
+```
 
 **5. Add `build_params_map/1`** — generates a map expression in the AST:
 

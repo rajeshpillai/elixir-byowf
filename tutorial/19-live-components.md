@@ -15,6 +15,27 @@ LiveComponents solve this — write it once, use it everywhere.
 
 ## The Architecture
 
+```
+┌─────────────────────────────────────────────────────────────┐
+│  Parent LiveView Process (e.g., ComponentsDemoLive)         │
+│                                                             │
+│  assigns: %{clicks: 0, __components__: %{...}}             │
+│                                                             │
+│  ┌───────────────────────────────────────────────────────┐  │
+│  │  render/1                                             │  │
+│  │                                                       │  │
+│  │  ┌─────────────────────┐  ┌────────────────────────┐  │  │
+│  │  │ <div ignite-        │  │ <div ignite-           │  │  │
+│  │  │  component="alerts">│  │  component="dark-mode">│  │  │
+│  │  │                     │  │                        │  │  │
+│  │  │ NotificationBadge   │  │ ToggleButton           │  │  │
+│  │  │ %{count: 3,         │  │ %{on: false,           │  │  │
+│  │  │  dismissed: false}  │  │  label: "Dark Mode"}   │  │  │
+│  │  └─────────────────────┘  └────────────────────────┘  │  │
+│  └───────────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────┘
+```
+
 Our LiveComponent system has four parts:
 
 1. **`Ignite.LiveComponent`** — a behaviour that components implement
@@ -119,6 +140,33 @@ end
 ### Why the Process Dictionary?
 
 This is the trickiest part. `render/1` is a **pure function** — it takes assigns and returns a string. It can't modify the parent's assigns. But we need to persist component state (especially newly mounted components) back to the handler.
+
+```
+┌──────────────────────────────────────────────────────────┐
+│  Handler Process                                         │
+│                                                          │
+│  1. Call render(assigns)                                 │
+│     │                                                    │
+│     ▼                                                    │
+│  2. render calls live_component(assigns, Module, opts)   │
+│     │                                                    │
+│     ├──▶ Process.put(:__ignite_components__,             │
+│     │       %{"alerts" => {Badge, %{count: 3}}})         │
+│     │    (side-channel write to process dictionary)      │
+│     │                                                    │
+│     ▼                                                    │
+│  3. render returns HTML string                           │
+│     │                                                    │
+│     ▼                                                    │
+│  4. collect_components(assigns)                          │
+│     │                                                    │
+│     ├──▶ Process.delete(:__ignite_components__)          │
+│     │    (reads and clears the side-channel)             │
+│     │                                                    │
+│     ▼                                                    │
+│  5. Merges component state into assigns.__components__   │
+└──────────────────────────────────────────────────────────┘
+```
 
 The solution: during render, `live_component/3` writes component state to the **process dictionary** (a per-process mutable store). After render completes, the handler calls `collect_components/1` to read it back:
 
@@ -423,23 +471,44 @@ The WebSocket route `/live/components` is registered in `lib/ignite/application.
 ## How Events Flow
 
 ```
-Browser: User clicks "Dismiss" inside the "alerts" component
-  ↓
-ignite.js: Detects ignite-click="dismiss" inside [ignite-component="alerts"]
-  ↓
-WebSocket: Sends {"event": "alerts:dismiss", "params": {}}
-  ↓
-Handler: Splits "alerts:dismiss" → component_id="alerts", event="dismiss"
-  ↓
-Handler: Looks up {NotificationBadge, assigns} from __components__["alerts"]
-  ↓
-NotificationBadge.handle_event("dismiss", ...) → updates component assigns
-  ↓
-Handler: Re-renders entire LiveView (including all components)
-  ↓
-WebSocket: Sends updated dynamics to browser
-  ↓
-morphdom: Patches only the changed elements
+ Browser                    WebSocket              Server (Handler)
+ ───────                    ─────────              ────────────────
+ User clicks "Dismiss"
+ inside [ignite-component
+  ="alerts"]
+    │
+    ▼
+ ignite.js resolveEvent()
+ "dismiss" → "alerts:dismiss"
+    │
+    │  {"event":"alerts:dismiss"}
+    ├──────────────────────────────▶┐
+    │                               │
+    │                               ▼
+    │                    Split "alerts:dismiss"
+    │                    ┌─────────┴────────────┐
+    │                    │ id="alerts"          │
+    │                    │ event="dismiss"      │
+    │                    └─────────┬────────────┘
+    │                              │
+    │                              ▼
+    │                    __components__["alerts"]
+    │                    → {NotificationBadge, assigns}
+    │                              │
+    │                              ▼
+    │                    NotificationBadge
+    │                      .handle_event("dismiss")
+    │                              │
+    │                              ▼
+    │                    Re-render entire LiveView
+    │                    (parent + all components)
+    │                              │
+    │       {d: [...dynamics]}     │
+    │◀─────────────────────────────┤
+    │                              │
+    ▼
+ morphdom patches
+ only changed elements
 ```
 
 ## Key Concepts

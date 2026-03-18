@@ -4,6 +4,39 @@
 
 A "Who's Online" system that tracks which LiveView processes are connected, broadcasts joins and leaves in real time, and auto-cleans when a WebSocket disconnects. Built on top of our existing PubSub (Step 17).
 
+```
+Presence Architecture
+─────────────────────
+                     ┌──────────────────────────────┐
+                     │     Ignite.Presence           │
+                     │     (GenServer)               │
+                     │                               │
+                     │  presences:                   │
+                     │    %{"room:lobby" =>           │
+                     │       %{"alice" => %{pid,     │
+                     │                      meta,    │
+                     │                      ref}}}   │
+                     │                               │
+                     │  refs:                        │
+                     │    %{#Ref<1> =>               │
+                     │       {"room:lobby","alice"}} │
+                     └──────┬──────────┬────────────┘
+                            │          │
+                   monitor  │          │  monitor
+                ┌───────────┘          └──────────┐
+                │                                 │
+        ┌───────▼───────┐                ┌────────▼──────┐
+        │ LiveView Proc │                │ LiveView Proc │
+        │ (alice)       │                │ (bob)         │
+        │               │                │               │
+        │ WebSocket     │                │ WebSocket     │
+        └───────────────┘                └───────────────┘
+                │                                 │
+           On disconnect:                    On disconnect:
+           :DOWN ──▶ auto-untrack            :DOWN ──▶ auto-untrack
+                     + broadcast leave                  + broadcast leave
+```
+
 ## The Problem
 
 We have PubSub for broadcasting messages between processes, but no way to know *who* is currently connected. Questions like "how many users are on this page?" or "who's in this chat room?" have no answer yet.
@@ -171,6 +204,27 @@ end
 Note: For `:DOWN` handling, we send directly rather than using `PubSub.broadcast/2` because the dead process can't be excluded as a sender.
 
 ### 4. Supervision
+
+```
+Supervision Tree (relevant children)
+─────────────────────────────────────
+         ┌──────────────┐
+         │  Application │
+         │  Supervisor   │
+         └──────┬───────┘
+                │
+    ┌───────────┼──────────────┐
+    │           │              │
+    ▼           ▼              ▼
+┌────────┐ ┌──────────┐ ┌──────────┐
+│ PubSub │ │ Presence │ │  Cowboy  │
+│        │ │(GenServer│ │ (HTTP +  │
+│  (:pg) │ │  + mon.) │ │   WS)   │
+└────────┘ └──────────┘ └──────────┘
+     ▲           │
+     │           │  uses PubSub
+     └───────────┘  for broadcasts
+```
 
 Presence starts after PubSub in the supervision tree.
 

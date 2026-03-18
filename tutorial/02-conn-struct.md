@@ -12,11 +12,42 @@ We'll create two things:
 This is the same pattern Phoenix uses with `%Plug.Conn{}`. The conn flows through
 your entire application: parser → router → controller → response.
 
+```
+┌──────────┐      ┌──────────┐      ┌──────────┐      ┌──────────┐
+│  Browser  │─────▶│  Parser  │─────▶│  Router  │─────▶│Controller│
+│  Request  │      │          │      │          │      │          │
+└──────────┘      └────┬─────┘      └────┬─────┘      └────┬─────┘
+                       │                 │                  │
+                       ▼                 ▼                  ▼
+                  %Conn{            %Conn{             %Conn{
+                    method: "GET",    method: "GET",     method: "GET",
+                    path: "/fire"     path: "/fire"      path: "/fire",
+                  }                 }                    status: 200,
+                                                         resp_body: "..."
+                                                       }
+```
+
 ## Concepts You'll Learn
 
 ### Structs
 
-A **struct** is a map with a fixed set of keys and default values:
+A **struct** is a map with a fixed set of keys and default values. Think of it as a blueprint:
+
+```
+┌─────────────────────────────────────────────────────┐
+│                  %Ignite.Conn{}                     │
+├─────────────────────┬───────────────────────────────┤
+│   Request Fields    │   Response Fields              │
+│   (from parser)     │   (from controller)            │
+├─────────────────────┼───────────────────────────────┤
+│  method:  "GET"     │  status:       200             │
+│  path:    "/hello"  │  resp_headers: %{"content-..."}│
+│  headers: %{...}    │  resp_body:    ""              │
+│  params:  %{}       │                                │
+├─────────────────────┴───────────────────────────────┤
+│   Control: halted: false                             │
+└─────────────────────────────────────────────────────┘
+```
 
 ```elixir
 defmodule Ignite.Conn do
@@ -64,11 +95,14 @@ The `0` means "read whatever is available" (as opposed to a fixed number of byte
 Because we set `packet: :http_bin` on the socket in Step 1, Erlang's built-in
 HTTP parser automatically breaks the raw bytes into structured tuples:
 
-| Raw bytes | Erlang returns |
-|-----------|----------------|
-| `GET /hello HTTP/1.1\r\n` | `{:ok, {:http_request, :GET, {:abs_path, "/hello"}, ...}}` |
-| `Host: localhost:4000\r\n` | `{:ok, {:http_header, _, :Host, _, "localhost:4000"}}` |
-| `\r\n` (blank line = end of headers) | `{:ok, :http_eoh}` |
+```
+Raw HTTP bytes                    Erlang's :gen_tcp.recv/2 returns
+─────────────────────────────     ──────────────────────────────────────────────
+GET /hello HTTP/1.1\r\n      ──▶ {:ok, {:http_request, :GET, {:abs_path, "/hello"}, ...}}
+Host: localhost:4000\r\n     ──▶ {:ok, {:http_header, _, :Host, _, "localhost:4000"}}
+Accept: text/html\r\n        ──▶ {:ok, {:http_header, _, :"Accept", _, "text/html"}}
+\r\n  (blank line)           ──▶ {:ok, :http_eoh}   ← end of headers signal
+```
 
 This means we never have to manually split strings or parse HTTP ourselves —
 Erlang does the heavy lifting, and we pattern match on the results.
@@ -77,6 +111,19 @@ Erlang does the heavy lifting, and we pattern match on the results.
 
 When reading headers, we use a common Elixir pattern — passing an accumulator
 through recursive calls:
+
+```
+read_headers(socket, %{})
+    │
+    ├─ recv → {:http_header, _, :Host, _, "localhost:4000"}
+    │         acc = %{"host" => "localhost:4000"}
+    │
+    ├─ recv → {:http_header, _, :"Accept", _, "text/html"}
+    │         acc = %{"host" => "localhost:4000", "accept" => "text/html"}
+    │
+    └─ recv → :http_eoh   ← stop! return acc
+              ✓ %{"host" => "localhost:4000", "accept" => "text/html"}
+```
 
 ```elixir
 defp read_headers(socket, acc \\ %{}) do
@@ -181,15 +228,37 @@ the framework will always work with `%Ignite.Conn{}` — never raw sockets.
 ## How It Works
 
 ```
-TCP Socket ──→ Ignite.Parser.parse/1 ──→ %Ignite.Conn{
-                                             method: "GET",
-                                             path: "/fire",
-                                             headers: %{"host" => "localhost:4000"}
-                                           }
+                        Ignite.Parser.parse/1
+                    ┌──────────────────────────┐
+                    │                          │
+  TCP Socket ──────▶│  1. read_request_line/1  │──▶ {method, path}
+  (raw bytes)       │         │                │
+                    │         ▼                │
+                    │  2. read_headers/1       │──▶ %{"host" => "...", ...}
+                    │         │                │
+                    │         ▼                │
+                    │  3. Build %Conn{}        │──▶ %Ignite.Conn{
+                    │                          │      method: "GET",
+                    └──────────────────────────┘      path: "/fire",
+                                                      headers: %{...}
+                                                    }
 ```
 
 The parser is the **bridge** between the network layer (bytes on a wire)
 and the application layer (Elixir data structures).
+
+```
+  Layer Diagram
+  ─────────────────────────────────────────
+  Application    %Conn{method: "GET", ...}    ← Elixir structs
+  ─────────────────────────────────────────
+  Parser         Ignite.Parser.parse/1        ← this step!
+  ─────────────────────────────────────────
+  Erlang HTTP    {:http_request, :GET, ...}   ← :gen_tcp + packet: :http_bin
+  ─────────────────────────────────────────
+  TCP            raw bytes on the wire        ← Step 1
+  ─────────────────────────────────────────
+```
 
 ## Try It Out
 

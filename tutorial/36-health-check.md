@@ -4,6 +4,23 @@
 
 A dedicated `GET /health` endpoint that returns JSON with system metrics — uptime, memory usage, process count, scheduler info, and version numbers. Load balancers, monitoring tools, and deployment scripts can hit this endpoint to verify the application is alive and healthy.
 
+```
+  Load Balancer / Monitor            Ignite App
+  ┌─────────────────────┐            ┌───────────────────────────┐
+  │                     │  GET       │                           │
+  │  Every 30 seconds:  │ /health   │  BEAM Runtime             │
+  │  ──────────────────────────────▶│  ┌───────────────────────┐│
+  │                     │            │  │ :erlang.memory()      ││
+  │  200 OK?            │  JSON     │  │ :erlang.statistics()  ││
+  │  ◀──────────────────────────────│  │ :erlang.system_info() ││
+  │                     │            │  └───────────────────────┘│
+  │  Yes ──▶ healthy    │            │                           │
+  │  No  ──▶ remove     │            │  ──▶ { status: "ok",     │
+  │          from pool  │            │       uptime, memory,     │
+  └─────────────────────┘            │       processes, ... }    │
+                                     └───────────────────────────┘
+```
+
 ```json
 {
   "status": "ok",
@@ -83,6 +100,23 @@ end
 ```
 
 ### 3. BEAM Runtime Functions
+
+```
+  BEAM VM Memory Layout (:erlang.memory/0)
+  ┌──────────────────────────────────────────────┐
+  │                  :total                      │
+  │  ┌──────────────────┐  ┌──────────────────┐  │
+  │  │   :processes     │  │    :system       │  │
+  │  │   (heaps, stacks,│  │  ┌────────────┐  │  │
+  │  │    mailboxes)    │  │  │  :atom      │  │  │
+  │  │                  │  │  │  :binary    │  │  │
+  │  │                  │  │  │  :ets       │  │  │
+  │  │                  │  │  │  :code      │  │  │
+  │  └──────────────────┘  │  └────────────┘  │  │
+  │                        └──────────────────┘  │
+  └──────────────────────────────────────────────┘
+  We report :total and :processes in MB
+```
 
 **`:erlang.memory/0`** — Returns a keyword list of memory usage broken down by category:
 - `:total` — total bytes allocated by the VM

@@ -14,6 +14,38 @@ file that:
 We'll also serve static files via Cowboy and use a reusable EEx template
 for LiveView pages.
 
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                     Request Flow                                │
+│                                                                 │
+│  Browser                                                        │
+│    │                                                            │
+│    │── GET /counter ──▶ Cowboy ──▶ Router ──▶ Controller        │
+│    │◀── live.html.eex ──────────────────────────┘               │
+│    │                                                            │
+│    │── GET /assets/ignite.js ──▶ Cowboy ──▶ :cowboy_static      │
+│    │◀── assets/ignite.js ──────────────────────┘                │
+│    │                                                            │
+│    │══ WebSocket /live ═══════▶ Cowboy ──▶ LiveView.Handler     │
+│    │◀══ {html: "..."} ═══════════════════════════┘              │
+│    │                                                            │
+│  ┌─▼──────────────────────────────────────┐                     │
+│  │  ignite.js                             │                     │
+│  │  ┌─────────────────────────────────┐   │                     │
+│  │  │ Event Delegation (document)     │   │                     │
+│  │  │  click ──▶ walk DOM tree        │   │                     │
+│  │  │  find ignite-click="event"      │   │                     │
+│  │  │  send JSON over WebSocket       │   │                     │
+│  │  └─────────────────────────────────┘   │                     │
+│  │  ┌─────────────────────────────────┐   │                     │
+│  │  │ WebSocket onmessage             │   │                     │
+│  │  │  receive {html: "..."}          │   │                     │
+│  │  │  update #ignite-app innerHTML   │   │                     │
+│  │  └─────────────────────────────────┘   │                     │
+│  └────────────────────────────────────────┘                     │
+└─────────────────────────────────────────────────────────────────┘
+```
+
 ## Concepts You'll Learn
 
 ### Event Delegation
@@ -40,6 +72,25 @@ Why delegation?
 - One listener instead of hundreds
 - Walking up the DOM tree catches clicks on child elements (e.g., icon
   inside a button)
+
+```
+  User clicks here
+        │
+        ▼
+  ┌─────────────────────────┐
+  │ <button ignite-click=   │
+  │   "increment">          │
+  │   ┌───────────────┐     │  ◀── click lands on <span>
+  │   │ <span>+1</span│     │
+  │   └───────────────┘     │
+  └─────────────────────────┘
+        │
+        │  Walk up the DOM tree:
+        │  1. <span> — no ignite-click
+        │  2. <button> — found ignite-click="increment"!
+        ▼
+  Send: {event: "increment", params: {}}
+```
 
 ### Custom HTML Attributes
 

@@ -15,6 +15,24 @@ same approach.
 
 To build this, we need **macros** — Elixir's most powerful feature.
 
+```
+  What you write (DSL)              What the compiler generates
+  ─────────────────────             ──────────────────────────────────
+  get "/", to: Ctrl,    ──macro──▶  defp dispatch(%Conn{method: "GET",
+      action: :index                              path: "/"} = conn) do
+                                      apply(Ctrl, :index, [conn])
+                                    end
+
+  get "/hello", to: Ctrl,──macro──▶ defp dispatch(%Conn{method: "GET",
+      action: :hello                              path: "/hello"} = conn) do
+                                      apply(Ctrl, :hello, [conn])
+                                    end
+
+  finalize_routes()     ──macro──▶  defp dispatch(conn) do
+                                      # 404 Not Found
+                                    end
+```
+
 ## Concepts You'll Learn
 
 ### What Are Macros?
@@ -78,6 +96,16 @@ end
 
 Think of `quote` as a template and `unquote` as the placeholder slots.
 
+```
+  quote do                              AST (Abstract Syntax Tree)
+  ┌─────────────────────────┐          ┌─────────────────────────────┐
+  │  "Hello, " <> unquote(  │   ──▶    │  {:<>, [], ["Hello, ",      │
+  │    name                 │          │             "world"]}       │
+  │  )                      │          │                             │
+  └─────────────────────────┘          └─────────────────────────────┘
+        template                          code as data (tuples)
+```
+
 > **Try it in IEx!** Open a terminal and run `iex` to explore the AST yourself:
 >
 > ```elixir
@@ -111,9 +139,14 @@ get "/hello", ...            # Clean! This is what we want in a DSL
 ```
 
 Rule of thumb:
-- **`alias`** — "I want a shorter name" (`Ignite.Conn` → `Conn`)
-- **`import`** — "I want to use functions/macros without any prefix"
-- **`use`** — "Run this module's `__using__` macro to set me up" (often calls `import` for you)
+
+```
+  Directive    Effect                          Example
+  ──────────   ─────────────────────────────   ──────────────────────
+  alias        Shorter name for a module       Ignite.Conn → Conn
+  import       Use functions without prefix    text(conn, "Hi")
+  use          Run __using__ macro to setup    use Ignite.Router
+```
 
 ### use and __using__
 
@@ -134,6 +167,17 @@ end
 After `use Ignite.Router`, your module has:
 - The `call/1` function
 - Access to `get`, `finalize_routes` macros
+
+```
+  use Ignite.Router
+       │
+       ▼ calls __using__/1
+  ┌────────────────────────────┐
+  │ Injects into your module:  │
+  │  ├── import Ignite.Router  │──▶ get/2, finalize_routes/0 available
+  │  └── def call(conn)        │──▶ entry point defined
+  └────────────────────────────┘
+```
 
 ### apply/3
 

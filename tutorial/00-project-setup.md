@@ -25,6 +25,18 @@ Mix project called **Ignite** that compiles and runs.
 **Mix** is Elixir's build tool. It's like `npm` for Node.js, `cargo` for
 Rust, or `maven` for Java. Mix handles:
 
+```
+┌─────────────────────────────────────────────┐
+│                    Mix                       │
+├─────────────┬───────────────────────────────┤
+│ mix new     │ Create a new project          │
+│ mix compile │ Compile source code           │
+│ mix test    │ Run tests                     │
+│ mix deps.get│ Install dependencies          │
+│ iex -S mix  │ Interactive shell with project│
+└─────────────┴───────────────────────────────┘
+```
+
 - Creating new projects (`mix new`)
 - Compiling code (`mix compile`)
 - Running tests (`mix test`)
@@ -50,6 +62,15 @@ ignite/
 
 The key convention: a module named `Ignite.Server` lives in the file
 `lib/ignite/server.ex`. The directory structure mirrors the module name.
+
+```
+Module Name              File Path
+───────────────────      ─────────────────────────
+Ignite                   lib/ignite.ex
+Ignite.Server            lib/ignite/server.ex
+Ignite.Application       lib/ignite/application.ex
+MyApp.Router             lib/my_app/router.ex
+```
 
 ### mix.exs
 
@@ -80,6 +101,26 @@ defmodule Ignite.MixProject do
     []   # No dependencies for Steps 1-9!
   end
 end
+```
+
+```
+┌─────────────── mix.exs ───────────────┐
+│                                       │
+│  project/0        General metadata    │
+│    ├── app name                       │
+│    ├── version                        │
+│    └── elixir version                 │
+│                                       │
+│  application/0    OTP config          │
+│    ├── extra_applications             │
+│    └── mod: entry point ──────────┐   │
+│                                   │   │
+│  deps/0           Dependencies    │   │
+│    └── (empty for Steps 1-9)     │   │
+│                                   │   │
+└───────────────────────────────────┘   │
+                                        ▼
+                          Ignite.Application.start/2
 ```
 
 Key parts:

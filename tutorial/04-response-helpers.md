@@ -19,6 +19,20 @@ html(conn, "<h1>Hello</h1>")  # HTML
 We'll also move the HTTP response building out of the server into a
 proper `send_resp/1` function.
 
+```
+  Before (manual):                    After (helpers):
+  ─────────────────────               ──────────────────────
+  %Conn{conn |                        text(conn, "Hello!")
+    status: 200,                        │
+    resp_body: "Hello!",                ▼
+    resp_headers: %{                  Sets status, body, content-type,
+      "content-type" =>               and halted flag automatically
+        "text/plain"
+    },
+    halted: true
+  }
+```
+
 ## Concepts You'll Learn
 
 ### Import (Recap)
@@ -45,6 +59,17 @@ new_conn.status  #=> 404  (new copy)
 
 Read it as: "create a new `Ignite.Conn` starting from `conn`, but with
 `status` set to 404 and `resp_body` set to `"Not Found"`."
+
+```
+  Immutability: new copies, never mutation
+
+  conn           ──▶  %Conn{status: 200, resp_body: ""}         (original)
+       │
+       ▼
+  new_conn       ──▶  %Conn{status: 404, resp_body: "Not Found"} (copy)
+
+  conn is still  ──▶  %Conn{status: 200, resp_body: ""}         (unchanged!)
+```
 
 This is **immutability** in action. You never modify data — you create
 new versions. This makes debugging easier because you can always trace
@@ -145,6 +170,23 @@ defmodule Ignite.Controller do
   defp status_text(500), do: "Internal Server Error"
   defp status_text(_),   do: "OK"
 end
+```
+
+```
+  Controller Pipeline
+  ───────────────────────────────────────────────────────────
+
+  text(conn, "Hi")         send_resp(conn)
+       │                        │
+       ▼                        ▼
+  %Conn{                   "HTTP/1.1 200 OK\r\n
+    status: 200,            content-type: text/plain\r\n
+    resp_body: "Hi",        content-length: 2\r\n
+    halted: true            \r\n
+  }                         Hi"
+
+  ◀── returns a conn ──▶   ◀── returns a string ──▶
+  (data, not sent yet)      (raw HTTP, ready to send)
 ```
 
 Three things to notice:

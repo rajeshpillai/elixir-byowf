@@ -219,6 +219,39 @@ end
 
 ### How Block Compilation Works
 
+```
+┌─────────────────────────────────────────────────────────┐
+│  Template:  <%= if @show do %>                          │
+│               <p>Count: <%= @count %></p>               │
+│             <% end %>                                   │
+│                                                         │
+│  EEx Engine Callback Sequence:                          │
+│  ─────────────────────────────                          │
+│  1. handle_begin()         ──▶ fresh sub-buffer {[],[],""} │
+│       │                                                 │
+│  2. handle_text(_, "<p>Count: ")                        │
+│       │                                                 │
+│  3. handle_expr("=", @count)                            │
+│       │  └── escape(@count)  (auto-escaped)             │
+│       │                                                 │
+│  4. handle_text(_, "</p>")                               │
+│       │                                                 │
+│  5. handle_end()           ──▶ body_ast                  │
+│       │  └── IO.iodata_to_binary(["<p>Count: ",         │
+│       │       escaped_count, "</p>"])                    │
+│       │                                                 │
+│  6. EEx plugs body_ast into:                            │
+│       if assigns.show do body_ast end                   │
+│       │                                                 │
+│  7. handle_expr("=", full_if_block)                     │
+│       └── block_expr? == true ──▶ skip escaping         │
+│                                   (already escaped)     │
+│       │                                                 │
+│       ▼                                                 │
+│  %Rendered{statics: [...], dynamics: [if_block_result]} │
+└─────────────────────────────────────────────────────────┘
+```
+
 When EEx encounters `<% if @show do %>...<% end %>`, it orchestrates these callbacks:
 
 1. **`handle_begin/1`** — EEx calls this to start a sub-buffer for the block body. We return a fresh `{[], [], ""}` state, independent of the parent.
@@ -258,6 +291,34 @@ defp block_expr?(_), do: false
 ```
 
 This checks two things: (1) the expression is one of the known block-forming keywords, and (2) its arguments include a `do:` keyword — the telltale sign of a block. Simple expressions like `<%= if(x, do: y) %>` also match, which is correct since they behave the same way.
+
+### Auto-Escape vs Raw Decision Tree
+
+```
+  <%= expression %>
+       │
+       ▼
+  block_expr?
+  (if/for/case/cond)
+       │
+  ┌────┴────┐
+  │         │
+  YES       NO
+  │         │
+  ▼         ▼
+  Pass      escape()
+  through     │
+  (inner    ┌─┴──────────────┐
+  already   │                │
+  escaped)  {:safe, val}     binary
+            │                │
+            ▼                ▼
+            val as-is        & → &amp;
+                             < → &lt;
+                             > → &gt;
+                             " → &quot;
+                             ' → &#39;
+```
 
 ### Step 2: Auto HTML Escaping
 

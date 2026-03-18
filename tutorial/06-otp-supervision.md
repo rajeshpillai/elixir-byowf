@@ -11,6 +11,21 @@ whose only job is to watch other processes and restart them when they crash.
 After this change, the server starts automatically when the app boots and
 self-heals on failure.
 
+```
+  Before (Step 5)                     After (Step 6)
+  ────────────────                    ─────────────────────────────
+  Manual start:                       Auto-start + self-healing:
+  iex> Ignite.Server.start()          iex -S mix  ← starts automatically!
+
+  If crash → dead forever             If crash → supervisor restarts it
+
+                                      Supervisor
+                                          │
+                                          ├── watches ──▶ Ignite.Server
+                                          │
+                                          └── crash? ──▶ restart!
+```
+
 ## Concepts You'll Learn
 
 ### What Is OTP?
@@ -29,7 +44,16 @@ The key OTP components we'll use:
 A GenServer is a process with a well-defined lifecycle:
 
 ```
-start_link → init → (handle_continue) → (handle_call/handle_cast/handle_info) → ...
+  GenServer Lifecycle
+  ───────────────────────────────────────────────────────────
+
+  start_link ──▶ init ──▶ handle_continue ──▶ ready!
+                  │                              │
+                  │   {:continue, :listen}       │
+                  │                              ▼
+                  └── returns fast ──▶    handle_call   (sync request)
+                      (don't block         handle_cast   (async request)
+                       supervisor)         handle_info   (other messages)
 ```
 
 When you write `use GenServer`, Elixir injects default implementations of
@@ -115,8 +139,17 @@ opts = [strategy: :one_for_one, name: Ignite.Supervisor]
 ```
 
 Other strategies:
-- `:one_for_all` — if one crashes, restart ALL children
-- `:rest_for_one` — if one crashes, restart it and all children started after it
+
+```
+  :one_for_one                :one_for_all             :rest_for_one
+  ────────────                ────────────             ──────────────
+  Supervisor                  Supervisor               Supervisor
+  ├── A                       ├── A                    ├── A
+  ├── B  ← crash!             ├── B  ← crash!          ├── B  ← crash!
+  └── C                       └── C                    └── C
+
+  Only B restarts             A, B, C all restart      B and C restart
+```
 
 ### The "Let It Crash" Philosophy
 
@@ -203,6 +236,23 @@ Key things to notice:
 - **`init` returns `{:continue, :listen}`** — the socket opens in `handle_continue`, not `init`
 - **`spawn_link`** connects the acceptor loop to the GenServer (crash propagation)
 - **`Task.start`** handles individual requests (no link — one bad request won't kill the server)
+
+```
+  Crash propagation design
+  ─────────────────────────────────────────────────
+  Supervisor ──watches──▶ GenServer ──linked──▶ Acceptor
+                              │
+                          Task.start (no link)
+                              │
+                    ┌─────────┼─────────┐
+                    ▼         ▼         ▼
+                 serve()   serve()   serve()
+                 crash?    crash?    crash?
+                   │         │         │
+                   ▼         ▼         ▼
+              only this   only this   only this
+              task dies   task dies   task dies
+```
 
 ### `mix.exs` (Tell OTP About Our Application)
 

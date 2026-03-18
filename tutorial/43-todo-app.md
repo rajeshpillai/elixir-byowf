@@ -45,6 +45,35 @@ priv/repo/migrations/
 └── 20260306000001_create_todo_app_tables.exs
 ```
 
+```
+┌─────────────────────────────────────────────────────────┐
+│                    Todo App Architecture                 │
+│                                                         │
+│  Browser                                                │
+│    │                                                    │
+│    │  WebSocket                                         │
+│    ▼                                                    │
+│  TodoLive (LiveView)                                    │
+│    ├── render ──▶ TodoHTML (~F sigil)                    │
+│    │               ├── todo_list/1                       │
+│    │               ├── todo_item/1                       │
+│    │               └── todo_form/1                       │
+│    │                                                    │
+│    ├── Streams ──▶ :todos stream                         │
+│    │               (efficient list rendering)            │
+│    │                                                    │
+│    └── Ecto ──▶ MyApp.Repo (SQLite)                     │
+│                  ├── TodoItem                            │
+│                  │   └── has_many :subtasks              │
+│                  ├── Category                            │
+│                  │   └── has_many :todos                 │
+│                  ├── Subtask                             │
+│                  │   └── belongs_to :todo_item           │
+│                  └── User                                │
+│                      └── has_many :todos                 │
+└─────────────────────────────────────────────────────────┘
+```
+
 ## Key Implementation Details
 
 ### Schemas

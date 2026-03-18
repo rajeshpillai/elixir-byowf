@@ -4,6 +4,30 @@
 
 Cross-Site Request Forgery protection for all state-changing HTTP requests. After this step, every form submission includes a hidden token that proves the request came from our own site — not from a malicious third party.
 
+```
+                         ┌──────────────┐
+                         │  Your Server │
+                         └──────┬───────┘
+                                │
+              ┌─────────────────┼─────────────────┐
+              │                 │                  │
+     GET / (render form)   POST /users         POST /users
+              │            (with token)        (without token)
+              ▼                 ▼                  ▼
+     ┌────────────────┐  ┌───────────┐      ┌───────────┐
+     │ Generate CSRF  │  │ Unmask &  │      │ No token  │
+     │ token, store   │  │ compare   │      │ found     │
+     │ in session     │  │ against   │      │           │
+     │                │  │ session   │      │           │
+     │ Render masked  │  │           │      │           │
+     │ token in form  │  │  ✓ Match  │      │  ✗ Reject │
+     └────────────────┘  └───────────┘      └───────────┘
+              │                 │                  │
+              ▼                 ▼                  ▼
+        200 + form         Controller          403 Forbidden
+        + Set-Cookie        action
+```
+
 ## The Problem
 
 Without CSRF protection, an attacker can create a page like this:
@@ -45,13 +69,43 @@ We use **masked tokens** — the same approach as Phoenix. The real token stays 
 ### How Masking Works
 
 ```
-Real token:   [32 bytes]
-Random mask:  [32 bytes]  (generated per-render)
-Masked:       mask ++ xor(mask, token)  →  [64 bytes, base64-encoded]
+  Masking (each form render):
+  ┌──────────────────────┐   ┌──────────────────────┐
+  │  Real token (32 B)   │   │  Random mask (32 B)   │
+  │  AAAA AAAA AAAA ...  │   │  MMMM MMMM MMMM ...  │
+  └──────────┬───────────┘   └──────────┬────────────┘
+             │                          │
+             └────────┐  ┌─────────────┘
+                      ▼  ▼
+                   XOR(M, A)
+                      │
+                      ▼
+  ┌──────────────────────────────────────────────┐
+  │  mask ++ xor(mask, token)  =  64 bytes       │
+  │  MMMM MMMM ... XXXX XXXX ...                │
+  └──────────────────┬───────────────────────────┘
+                     │ base64url encode
+                     ▼
+            Masked token in form
 
-To validate:
-  Split in half → first half is mask, second half is masked
-  xor(mask, masked) → should equal real token
+  Unmasking (validation):
+  ┌──────────────────────────────────────────────┐
+  │  Submitted token (64 bytes decoded)          │
+  │  MMMM MMMM ... XXXX XXXX ...                │
+  └──────────────────┬───────────────────────────┘
+                     │ split in half
+          ┌──────────┴──────────┐
+          ▼                     ▼
+  ┌──────────────┐     ┌──────────────┐
+  │  mask (32 B) │     │ masked (32 B)│
+  └──────┬───────┘     └──────┬───────┘
+         └───────┐  ┌─────────┘
+                 ▼  ▼
+              XOR(M, X) ──▶ original token
+                 │
+                 ▼
+         secure_compare
+        with session token
 ```
 
 ## Concepts You'll Learn

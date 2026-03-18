@@ -2,7 +2,23 @@
 
 ## What We're Building
 
-A stream system for efficiently managing large collections in LiveView. Instead of re-rendering and re-sending an entire list when one item is added, streams send only the individual insert/delete operation — O(1) per update instead of O(N).
+A stream system for efficiently managing large collections in LiveView. Instead of re-rendering and re-sending an entire list when one item is added, streams send only the individual insert/delete operation -- O(1) per update instead of O(N).
+
+```
+  Without Streams                    With Streams
+  ═══════════════                    ════════════
+
+  100 items in list                  100 items in list
+  Add 1 new item                    Add 1 new item
+         │                                  │
+         ▼                                  ▼
+  Re-render all 101 items           Send 1 insert operation
+  Send ~15KB of HTML                Send ~150 bytes
+         │                                  │
+         ▼                                  ▼
+  Client replaces entire DOM        Client appends 1 DOM node
+  O(N) wire + DOM cost              O(1) wire + DOM cost
+```
 
 ## The Problem
 
@@ -334,6 +350,49 @@ The pattern is the same in both places: call `extract_stream_ops/1` to drain the
 
 ### How Operations Flow
 
+```
+  ┌───────────┐  stream_insert   ┌────────────────────┐
+  │ LiveView  │ ──────────────▶  │ assigns.__streams__ │
+  │ handle_*  │  queues op       │ ops: [{:insert,     │
+  └───────────┘                  │   item, dom_id, []} │
+                                 │  ]                  │
+                                 └─────────┬──────────┘
+                                           │
+                                           ▼
+                                 ┌────────────────────┐
+                                 │ Handler: render/1   │
+                                 │ (statics/dynamics)  │
+                                 └─────────┬──────────┘
+                                           │
+                                           ▼
+                                 ┌────────────────────┐
+                                 │ extract_stream_ops  │
+                                 │ - render each item  │
+                                 │   via render_fn     │
+                                 │ - build wire payload│
+                                 │ - clear ops queue   │
+                                 └─────────┬──────────┘
+                                           │
+                                           ▼
+                                 ┌────────────────────┐
+                                 │ Wire payload:       │
+                                 │ {"d": {"0": "5"},   │
+                                 │  "streams": {       │
+                                 │    "events": {      │
+                                 │      "inserts": [..]│
+                                 │    }}}              │
+                                 └─────────┬──────────┘
+                                           │
+                                           ▼
+                                 ┌────────────────────┐
+                                 │ JS Client:          │
+                                 │ 1. morphdom (diffs) │
+                                 │ 2. applyStreamOps   │
+                                 │    (insert/delete   │
+                                 │     DOM nodes)      │
+                                 └────────────────────┘
+```
+
 1. LiveView calls `stream_insert(assigns, :events, item)` — queues `{:insert, item, "events-42", [at: 0]}`
 2. Handler calls `render/1` → produces statics/dynamics as usual
 3. Handler calls `Stream.extract_stream_ops(assigns)` → renders each queued item via `render_fn`, builds wire payload, clears the ops queue
@@ -467,6 +526,24 @@ There's a subtle but critical interaction between morphdom and streams. The temp
 ```
 
 But at runtime, `applyStreamOps` has populated it with children. When morphdom runs on the next update, it compares the current DOM (with children) against the new HTML (empty container) and **removes all children** — wiping out the stream items.
+
+```
+  The Morphdom vs Streams Conflict
+  ═════════════════════════════════
+
+  Template renders:          Runtime DOM (after stream ops):
+  <div ignite-stream>        <div ignite-stream>
+  </div>   (empty)             <div id="events-1">...</div>
+                               <div id="events-2">...</div>
+                               <div id="events-3">...</div>
+                             </div>
+
+  morphdom compares ──▶ "template says empty, DOM has children"
+                       ──▶ REMOVES all children!
+
+  Fix: onBeforeElUpdated returns false for stream containers
+       ──▶ morphdom skips them, applyStreamOps manages children
+```
 
 The fix: tell morphdom to skip stream containers entirely in `applyUpdate`:
 

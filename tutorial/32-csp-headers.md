@@ -4,6 +4,25 @@
 
 A Content Security Policy that tells the browser exactly which sources of scripts, styles, images, and connections are allowed. Even if an attacker manages to inject HTML via an XSS vulnerability, the browser will refuse to execute any script that doesn't match the policy.
 
+```
+  Server                              Browser
+  ┌─────────────────────┐             ┌───────────────────────────┐
+  │ Generate nonce       │             │                           │
+  │ "Rk9fX2..."         │  Response   │  Parse CSP header         │
+  │                      │ ────────▶  │                           │
+  │ Set CSP header:      │            │  For each resource:       │
+  │  script-src 'self'   │            │  ┌───────────────────┐    │
+  │  'nonce-Rk9fX2...'  │            │  │ Has nonce match?  │    │
+  │                      │            │  │ From same origin? │    │
+  │ Render HTML with     │            │  └────────┬──────────┘    │
+  │ <script nonce=...>   │            │       ┌───┴───┐           │
+  │                      │            │      Yes     No           │
+  └─────────────────────┘            │       │       │           │
+                                      │    Execute  Block        │
+                                      │    ✓        ✗            │
+                                      └───────────────────────────┘
+```
+
 ## The Problem
 
 Without CSP, an XSS attack can do anything:
@@ -104,6 +123,24 @@ end
 **`build_header/1`** — Constructs the full CSP directive string.
 
 ### 2. The CSP Policy Explained
+
+```
+  CSP Directive Map
+  ┌─────────────────────────────────────────────────────────┐
+  │                  default-src 'self'                     │
+  │                  (fallback for all)                     │
+  ├────────────┬──────────┬──────────┬──────────────────────┤
+  │ script-src │ style-src│ img-src  │ connect-src          │
+  │ 'self'     │ 'self'   │ 'self'   │ 'self'               │
+  │ 'nonce-…'  │ 'unsafe- │  data:   │  ws:  wss:           │
+  │            │  inline' │          │  (for LiveView)      │
+  ├────────────┼──────────┴──────────┼──────────────────────┤
+  │ object-src │ base-uri            │ form-action           │
+  │ 'none'     │ 'self'              │ 'self'                │
+  │ (block     │ (prevent base       │ (forms submit         │
+  │  plugins)  │  tag hijack)        │  to same origin only) │
+  └────────────┴─────────────────────┴──────────────────────┘
+```
 
 ```
 default-src 'self'

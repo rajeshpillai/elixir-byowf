@@ -4,6 +4,16 @@
 
 A `json/3` helper for controllers that encodes Elixir maps/lists into JSON responses, plus automatic JSON body parsing for incoming `application/json` requests. This lets Ignite serve as a JSON API backend.
 
+```
+  ┌─────────┐    JSON body     ┌──────────────┐    conn.params    ┌────────────┐
+  │  Client  │ ──────────────▶ │ Cowboy Adapter│ ──────────────▶  │ Controller │
+  │ (curl /  │                 │  parse_body/2 │                  │  json/3    │
+  │ browser) │ ◀────────────── │               │ ◀──────────────  │            │
+  └─────────┘  JSON response   └──────────────┘   %Conn{} +      └────────────┘
+               Content-Type:                      Jason.encode!
+               application/json
+```
+
 ## The Problem
 
 Our controllers can return plain text (`text/3`) and HTML (`html/3`), but modern apps need JSON APIs. Right now, if you wanted to return JSON, you'd have to manually encode and set headers:
@@ -57,6 +67,21 @@ end
 ```
 
 **Why three cases?**
+
+```
+                         ┌──────────────────────┐
+  Raw JSON body ──────▶  │   Jason.decode(body)  │
+                         └──────────┬───────────┘
+                                    │
+                 ┌──────────────────┼──────────────────┐
+                 ▼                  ▼                   ▼
+           {:ok, map}        {:ok, non-map}       {:error, _}
+                │                  │                    │
+                ▼                  ▼                    ▼
+          %{"name" => "Jose"}  %{"_json" => [...]}  %{"_body" => raw}
+          merges into params   wraps in key         graceful fallback
+```
+
 - **Map**: Most common — `{"name": "Jose"}` becomes `%{"name" => "Jose"}` and merges naturally into `conn.params`
 - **Non-map** (arrays, scalars): Stored under `"_json"` key since params must be a map
 - **Parse error**: Falls back to raw body under `"_body"` — graceful degradation

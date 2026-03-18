@@ -13,6 +13,30 @@ The diffing engine splits HTML into:
 On mount, the server sends both. On updates, it sends **only dynamics**.
 The browser zips them together to reconstruct the full HTML.
 
+```
+┌───────────────────────────────────────────────────────────────┐
+│                    Diffing Architecture                        │
+│                                                               │
+│  Server                            Browser                    │
+│  ┌────────────────────┐            ┌────────────────────┐     │
+│  │ Engine.render/2    │            │ ignite.js          │     │
+│  │                    │──mount────▶│                    │     │
+│  │ {statics, dynamics}│  {s, d}    │ save statics       │     │
+│  │                    │            │ zip s+d ──▶ HTML    │     │
+│  │                    │            │                    │     │
+│  │ Engine             │──update──▶│                    │     │
+│  │ .render_dynamics/2 │  {d}       │ reuse statics      │     │
+│  │                    │            │ zip s+d ──▶ HTML    │     │
+│  └────────────────────┘            └────────────────────┘     │
+│                                                               │
+│  Mount:   ───── {s: ["<h1>Count: ","</h1>"], d: ["0"]} ────▶ │
+│  Update:  ───── {d: ["1"]}  ────────────────────────────────▶ │
+│  Update:  ───── {d: ["2"]}  ────────────────────────────────▶ │
+│                   ▲                                           │
+│                   └── Only the changed values cross the wire  │
+└───────────────────────────────────────────────────────────────┘
+```
+
 ## Concepts You'll Learn
 
 ### Statics and Dynamics
@@ -25,6 +49,22 @@ Consider this template:
 Split into:
 - Statics: `["<h1>Count: ", "</h1><p>Hello</p>"]`
 - Dynamics: `["42"]`
+
+```
+  Template: "<h1>Count: #{count}</h1><p>Hello</p>"
+                        ─────────
+            ┌───────┐   │dynamic│   ┌──────────────┐
+            │static │   └───┬───┘   │   static     │
+            │  [0]  │       │       │    [1]       │
+            ▼       ▼       ▼       ▼              ▼
+           "<h1>Count: "   "42"   "</h1><p>Hello</p>"
+
+  Statics:  [ "<h1>Count: ",        "</h1><p>Hello</p>" ]
+  Dynamics: [                 "42"                       ]
+
+  Zip:      statics[0] + dynamics[0] + statics[1]
+          = "<h1>Count: "  +  "42"  +  "</h1><p>Hello</p>"
+```
 
 The statics **never change** between renders. Only the `42` changes.
 So on updates, we only send `["43"]` instead of the full HTML.

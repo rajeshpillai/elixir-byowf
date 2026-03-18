@@ -22,6 +22,39 @@ assigns = stream_insert(assigns, :events, updated_event)
 # When the 21st item arrives, the oldest is automatically pruned
 ```
 
+```
+┌───────────────────────────────────────────────────────────┐
+│                Stream Upsert & Limit                      │
+│                                                           │
+│  stream_insert(assigns, :events, item, at: 0)             │
+│       │                                                   │
+│       ▼                                                   │
+│  ┌─ DOM ID exists? ──────────────────────────────┐        │
+│  │                                               │        │
+│  │  NO (new item)           YES (upsert)         │        │
+│  │  ├── add to order list   ├── keep order list  │        │
+│  │  ├── add to items map    ├── keep items map   │        │
+│  │  └── emit :insert op     └── emit :insert op  │        │
+│  │       │                        │               │        │
+│  └───────┼────────────────────────┘               │        │
+│          ▼                                        │        │
+│  ┌─ Limit exceeded? ────────────────────┐         │        │
+│  │                                      │         │        │
+│  │  NO              YES (limit: 20)     │         │        │
+│  │  └── done        ├── prune opposite  │         │        │
+│  │                  │   end             │         │        │
+│  │                  └── emit :delete    │         │        │
+│  │                      ops for excess  │         │        │
+│  └──────────────────────────────────────┘         │        │
+│                                                           │
+│  Client (JS):                                             │
+│  ┌────────────────────────────────┐                       │
+│  │  insert → morphdom (new/patch) │                       │
+│  │  delete → remove element by ID │                       │
+│  └────────────────────────────────┘                       │
+└───────────────────────────────────────────────────────────┘
+```
+
 ## Concepts You'll Learn
 
 ### Upsert Pattern
@@ -184,6 +217,19 @@ The pruning direction is intentional:
   so prune from the end of the order list.
 - If you append items (`at: -1`), the oldest items are at the **top**,
   so prune from the front of the order list.
+
+```
+  Prepend (at: 0)              Append (at: -1)
+  ┌──────────────┐             ┌──────────────┐
+  │ NEW ◀── add  │             │ old ──▶ PRUNE│
+  │ item-5       │             │ item-1       │
+  │ item-4       │             │ item-2       │
+  │ item-3       │             │ item-3       │
+  │ item-2       │             │ item-4       │
+  │ old ──▶ PRUNE│             │ NEW ◀── add  │
+  └──────────────┘             └──────────────┘
+  limit: 5                     limit: 5
+```
 
 ### Updated Stream Demo
 
