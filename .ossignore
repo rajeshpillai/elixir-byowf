@@ -1,0 +1,11 @@
+# LLM artifacts
+CLAUDE.md
+.claude
+skills.md
+.ossignore
+
+# Tutorial folder (published separately)
+tutorial
+
+# Build artifacts
+scripts/ebook
