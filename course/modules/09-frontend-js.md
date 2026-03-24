@@ -22,7 +22,7 @@ The client-side half of Ignite's LiveView. A single vanilla JavaScript file — 
 ## Architecture
 
 ```mermaid
-graph TD
+flowchart TD
     subgraph Browser["Browser (ignite.js)"]
         Events["Event Listeners<br/>click · input · submit"]
         Nav["Live Navigation<br/>pushState · popstate"]

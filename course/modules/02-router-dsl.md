@@ -23,7 +23,7 @@ The router also generates a middleware pipeline (plugs), path helper functions, 
 ## Architecture
 
 ```mermaid
-graph TD
+flowchart TD
     subgraph "Compile Time — Macro Expansion"
         Use["use Ignite.Router<br/>(line 29)"] -->|"imports macros,<br/>registers @plugs, @route_info"| Macros
         Macros["get / post / put / patch / delete<br/>(lines 77-123)"]
@@ -31,10 +31,10 @@ graph TD
         Resources["resources macro<br/>(line 153)"] -->|"expands into<br/>6 route calls"| Macros
         Plug["plug :name<br/>(line 63)"] -->|"accumulates into<br/>@plugs attribute"| BeforeCompile
         Macros -->|"build_route/4<br/>generates defp dispatch/2"| DispatchClauses["dispatch/2 clauses"]
-        Macros -->|"accumulates<br/>{method, path, ctrl, action}"| RouteInfo["@route_info"]
+        Macros -->|"accumulates<br/>method, path, ctrl, action"| RouteInfo["@route_info"]
     end
 
-    subgraph "@before_compile (line 328)"
+    subgraph before_compile["before_compile hook - line 328"]
         DispatchClauses --> Call["def call/1<br/>plugs → dispatch"]
         RouteInfo --> Helpers["defmodule Helpers<br/>path helper functions"]
         RouteInfo --> Routes["def __routes__/0<br/>introspection list"]

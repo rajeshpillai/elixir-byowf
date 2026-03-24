@@ -7,14 +7,14 @@
 ## System Architecture
 
 ```mermaid
-graph TD
+flowchart TD
     Browser[Browser / curl] -->|HTTP| Cowboy[Cowboy HTTP Server]
     Browser -->|WebSocket| WSHandler[LiveView Handler]
 
-    subgraph "Ignite Framework"
+    subgraph Ignite_Framework["Ignite Framework"]
         Cowboy -->|init/2| Adapter[Cowboy Adapter]
-        Adapter -->|%Conn{}| Middleware[Middleware Pipeline]
-        Middleware -->|plugs| Security[CSRF · CSP · HSTS · Rate Limit]
+        Adapter -->|%Conn| Middleware[Middleware Pipeline]
+        Middleware -->|plugs| Security["CSRF · CSP · HSTS · Rate Limit"]
         Security --> Router[Router DSL]
         Router -->|dispatch| Controllers[Controllers]
         Controllers -->|render| Templates[EEx Templates]
@@ -25,30 +25,20 @@ graph TD
         LiveView -->|components| Components[LiveComponents]
         Diffing -->|JSON patches| Browser
 
-        PubSub[PubSub :pg] <-->|broadcast| LiveView
+        PubSub["PubSub :pg"] <-->|broadcast| LiveView
         Presence[Presence Tracker] --> PubSub
     end
 
-    subgraph "Persistence"
+    subgraph Persistence
         Controllers -->|Ecto| Repo[(SQLite via Ecto)]
         LiveView -->|Ecto| Repo
     end
 
-    subgraph "Frontend"
-        Browser --- JS[ignite.js]
+    subgraph Frontend
+        Browser --> JS[ignite.js]
         JS -->|morphdom| DOM[DOM Patching]
         JS -->|hooks| Hooks[JS Hooks]
     end
-
-    click Adapter "?page=modules/03-cowboy-adapter.md" "View Cowboy Adapter module"
-    click Security "?page=modules/06-security.md" "View Security module"
-    click Router "?page=modules/02-router-dsl.md" "View Router DSL module"
-    click Controllers "?page=modules/12-sample-app.md" "View Sample App module"
-    click LiveView "?page=modules/04-liveview.md" "View LiveView module"
-    click PubSub "?page=modules/05-pubsub-presence.md" "View PubSub & Presence module"
-    click Presence "?page=modules/05-pubsub-presence.md" "View PubSub & Presence module"
-    click Repo "?page=modules/08-persistence.md" "View Persistence module"
-    click JS "?page=modules/09-frontend-js.md" "View Frontend JS module"
 ```
 
 ## Module Dependencies

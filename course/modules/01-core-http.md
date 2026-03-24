@@ -37,9 +37,9 @@ flowchart LR
 
     Client -- "TCP connection" --> Server
     Server -- "client_socket" --> Parser
-    Parser -- "%Conn{method, path, headers}" --> Router
-    Router -- "%Conn{} (routed)" --> Controller
-    Controller -- "%Conn{status, resp_body}" --> SendResp
+    Parser -- "Conn with method, path, headers" --> Router
+    Router -- "Conn routed" --> Controller
+    Controller -- "Conn with status, resp_body" --> SendResp
     SendResp -- "raw HTTP string" --> Server
     Server -- "HTTP response" --> Client
 ```

@@ -102,15 +102,15 @@ sequenceDiagram
 
     UA->>LVA: click "increment"
     LVA->>LVA: handle_event → count = 6
-    LVA->>PS: broadcast("shared_counter", {:count_updated, 6})
-    PS->>PS: get_members → [LVA, LVB]
-    PS->>LVB: send(pid_B, {:count_updated, 6})
-    Note over PS: Skips LVA (pid == self())
-    LVA->>UA: diff {d: {"0": "6"}}
+    LVA->>PS: broadcast shared_counter, count_updated 6
+    PS->>PS: get_members returns LVA, LVB
+    PS->>LVB: send count_updated 6
+    Note over PS: Skips LVA (pid == self)
+    LVA->>UA: sparse diff with new count
 
-    LVB->>LVB: handle_info → count = 6
+    LVB->>LVB: handle_info, count = 6
     LVB->>LVB: Engine.render + diff
-    LVB->>UB: diff {d: {"0": "6"}}
+    LVB->>UB: sparse diff with new count
 ```
 
 ## State Transitions

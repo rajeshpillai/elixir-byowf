@@ -23,10 +23,10 @@ Adds database persistence via Ecto and SQLite. Ecto provides a unified API (Repo
 ## Architecture
 
 ```mermaid
-graph TD
+flowchart TD
     App["Application Code"] -->|"Repo.insert/get/all"| Repo["MyApp.Repo<br/>repo.ex"]
     App -->|"User.changeset/2"| CS["Changeset<br/>validate & cast"]
-    CS -->|"%Ecto.Changeset{}"| Repo
+    CS -->|"Ecto.Changeset"| Repo
     Repo -->|"SQL via adapter"| Adapter["Ecto.Adapters.SQLite3"]
     Adapter -->|"read/write"| DB[("ignite_dev.db")]
     Mig["Migrations<br/>priv/repo/migrations/"] -->|"mix ecto.migrate"| Adapter

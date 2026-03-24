@@ -22,7 +22,7 @@ PubSub enables cross-process messaging so LiveView processes can broadcast state
 ## Architecture
 
 ```mermaid
-graph TD
+flowchart TD
     subgraph PubSub ["PubSub (pub_sub.ex)"]
         PG[":pg Process Groups"]
     end

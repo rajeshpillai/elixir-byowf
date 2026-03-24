@@ -33,7 +33,7 @@ Demo application showcasing every Ignite framework feature end-to-end: a plug mi
 ## Architecture
 
 ```mermaid
-graph TD
+flowchart TD
     Request["HTTP Request"] --> Router["MyApp.Router"]
 
     subgraph Plugs["Middleware Pipeline"]

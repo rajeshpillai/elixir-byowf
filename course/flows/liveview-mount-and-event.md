@@ -128,25 +128,25 @@ sequenceDiagram
     B->>WS: Connect to /live
     WS->>H: init(req, state)
     H->>H: Parse cookies, decode session
-    H->>V: mount(%{}, session)
-    V-->>H: {:ok, %{count: 0}}
+    H->>V: mount(params, session)
+    V-->>H: ok with count = 0
     H->>E: Engine.render(view, assigns)
     E->>V: render(assigns)
-    V-->>E: %Rendered{statics, dynamics}
-    E-->>H: {statics, dynamics}
-    H->>B: JSON {s: [...], d: ["0"]}
+    V-->>E: Rendered with statics + dynamics
+    E-->>H: statics, dynamics
+    H->>B: JSON with s and d arrays
     B->>B: Build DOM with morphdom
 
     Note over B,V: User clicks +1 button
 
-    B->>H: JSON {event: "increment", params: {}}
-    H->>V: handle_event("increment", %{}, assigns)
-    V-->>H: {:noreply, %{count: 1}}
+    B->>H: JSON event increment
+    H->>V: handle_event increment
+    V-->>H: noreply with count = 1
     H->>E: Engine.render(view, new_assigns)
-    E-->>H: {statics, new_dynamics}
-    H->>E: Engine.diff(prev_dynamics, new_dynamics)
-    E-->>H: %{"0" => "1"}
-    H->>B: JSON {d: {"0": "1"}}
+    E-->>H: statics, new_dynamics
+    H->>E: Engine.diff(prev, new)
+    E-->>H: sparse diff index 0 changed
+    H->>B: JSON diff d only
     B->>B: Merge diff, morphdom patch
 ```
 

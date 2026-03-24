@@ -112,21 +112,21 @@ sequenceDiagram
     T->>EE: handle_text("</h1>")
     EE->>EE: pending = "</h1>"
     T->>EE: handle_body
-    EE->>C: AST for %Rendered{statics, dynamics}
+    EE->>C: AST for Rendered struct
 
     Note over RT,JS: Runtime — Mount
     RT->>E: Engine.render(view, assigns)
-    E-->>RT: {["<h1>Count: ", "</h1>"], ["42"]}
-    RT->>WS: {s: statics, d: dynamics}
+    E-->>RT: statics + dynamics tuple
+    RT->>WS: s=statics, d=dynamics
     WS->>JS: Full payload
     JS->>JS: Cache statics, build DOM
 
     Note over RT,JS: Runtime — Update
     RT->>E: Engine.render(view, new_assigns)
-    E-->>RT: {statics, ["43"]}
-    RT->>E: Engine.diff(["42"], ["43"])
-    E-->>RT: {"0": "43"}
-    RT->>WS: {d: {"0": "43"}}
+    E-->>RT: statics + new dynamics
+    RT->>E: Engine.diff(prev, new)
+    E-->>RT: sparse diff - index 0 changed
+    RT->>WS: d = sparse diff only
     WS->>JS: Sparse diff only
     JS->>JS: Merge diff, morphdom patch
 ```

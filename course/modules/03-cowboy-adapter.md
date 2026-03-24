@@ -19,7 +19,7 @@ Bridges Cowboy's Erlang-native request format with Ignite's `%Conn{}` struct pip
 ## Architecture
 
 ```mermaid
-graph TD
+flowchart TD
     Client["Browser / curl"] -->|HTTP Request| Cowboy["Cowboy Server"]
     Cowboy -->|calls| Init["init/2<br/>cowboy.ex:15"]
 
@@ -47,7 +47,6 @@ graph TD
     Reply --> Client
     ErrorReply --> Client
 
-    click Route "?page=modules/02-router-dsl.md" "Router DSL"
 ```
 
 ## How It Works

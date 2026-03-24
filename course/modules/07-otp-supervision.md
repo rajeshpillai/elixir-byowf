@@ -17,7 +17,7 @@ OTP (Open Telecom Platform) supervision is the backbone of fault tolerance in El
 ## Architecture
 
 ```mermaid
-graph TD
+flowchart TD
     APP["Ignite.Application<br/><i>use Application</i>"]
     SUP["Ignite.Supervisor<br/><i>strategy: :one_for_one</i>"]
     REPO["MyApp.Repo<br/><i>Ecto DB pool</i>"]

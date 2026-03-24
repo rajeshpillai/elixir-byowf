@@ -22,7 +22,7 @@ Developer experience tooling for the Ignite framework: a rich debug error page t
 ## Architecture
 
 ```mermaid
-graph TD
+flowchart TD
     subgraph "Debug Error Page"
         EXC[Exception raised] --> Adapter["Cowboy Adapter<br/>try/rescue"]
         Adapter --> DP["DebugPage.render/3"]
@@ -41,7 +41,7 @@ graph TD
         MR["mix ignite.routes"] --> Routes["Router.__routes__/0"]
         Routes --> Print["Aligned table output"]
         MC["mix ignite.gen.cert"] --> OpenSSL["openssl req -x509"]
-        OpenSSL --> Certs["priv/ssl/{cert,key}.pem"]
+        OpenSSL --> Certs["priv/ssl/cert.pem + key.pem"]
     end
 ```
 

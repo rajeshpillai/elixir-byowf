@@ -23,13 +23,13 @@ Traditional web apps force a hard choice: server-rendered HTML (simple but stati
 ## Architecture
 
 ```mermaid
-graph TD
+flowchart TD
     Browser["Browser (ignite.js)"]
     WS["WebSocket Connection"]
     Handler["Handler<br/>(cowboy_websocket)"]
     ViewModule["View Module<br/>(user code)"]
     Engine["Engine<br/>(statics/dynamics)"]
-    Rendered["%Rendered{}"]
+    Rendered["Rendered struct"]
     Components["LiveComponents<br/>(__components__)"]
     Streams["Streams<br/>(__streams__)"]
     Uploads["Uploads<br/>(__uploads__)"]
@@ -41,7 +41,7 @@ graph TD
     ViewModule -- "render(assigns)" --> Engine
     Engine -- "normalize" --> Rendered
     Engine -- "diff(prev, new)" --> Handler
-    Handler -- "{s:, d:} or {d:}" --> WS
+    Handler -- "s + d or d only" --> WS
     WS -- "DOM patch" --> Browser
 
     ViewModule -- "live_component/3" --> Components

@@ -113,7 +113,7 @@ sequenceDiagram
     Dev->>Mac: get "/users/:id", to: UserController, action: :show
     Mac->>Mac: build_route("GET", "/users/:id", ...)
     Mac->>Mac: Split path, build_match_pattern
-    Mac->>Comp: defp dispatch(%Conn{method: "GET"}, ["users", id])
+    Mac->>Comp: defp dispatch(Conn method GET, [users, id])
 
     Dev->>Mac: scope "/api" do ... end
     Mac->>Mac: prepend_prefix walks AST, rewrites paths

@@ -20,7 +20,7 @@ Defense-in-depth security for the Ignite framework. This module covers five comp
 ## Architecture
 
 ```mermaid
-graph TD
+flowchart TD
     REQ["Incoming HTTP Request"] --> ADAPTER["Cowboy Adapter"]
     ADAPTER -->|parse cookies| SESSION["Session Decode<br/>Plug.Crypto.MessageVerifier"]
     SESSION -->|populate conn.session| CSRF_GEN["Ensure _csrf_token<br/>in session"]
@@ -227,9 +227,9 @@ sequenceDiagram
     B->>A: Request with Cookie: _ignite_session=SFMy...
     A->>S: decode(cookie_value)
     S->>P: MessageVerifier.verify(cookie_value, secret)
-    P-->>S: {:ok, binary}
+    P-->>S: ok, verified binary
     S->>S: :erlang.binary_to_term(binary, [:safe])
-    S-->>A: {:ok, %{"user_id" => 42, "_csrf_token" => "..."}}
+    S-->>A: ok with session map (user_id, csrf_token)
     A->>A: Populate conn.session
 
     Note over B,P: Response Phase

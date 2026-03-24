@@ -131,7 +131,7 @@ sequenceDiagram
     S->>S: verify_csrf_token (skip GET)
     S->>R: dispatch(conn, ["hello"])
     R->>Ctrl: WelcomeController.hello(conn)
-    Ctrl-->>R: %Conn{status: 200, resp_body: "..."}
+    Ctrl-->>R: Conn with status 200 and resp_body
     R-->>A: conn with response set
     A->>A: encode session cookie
     A->>A: log "Sent 200 in 1.2ms"
