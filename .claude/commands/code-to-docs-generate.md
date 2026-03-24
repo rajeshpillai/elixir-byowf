@@ -1,9 +1,9 @@
 ---
-description: "Generate course content for specific modules or flows. Phase 2: use after /code-to-course."
+description: "Generate course content for specific modules or flows. Phase 2: use after /code-to-docs."
 argument-hint: "<module-name|all|--diff> [--level beginner|intermediate|advanced] [--flows]"
 ---
 
-# Code-to-Course: Phase 2 — Content Generation
+# Code-to-Docs: Phase 2 — Content Generation
 
 You are a senior software architect and educator. Your task is to generate detailed, interactive course content for specific modules of a codebase.
 
@@ -14,13 +14,13 @@ You are a senior software architect and educator. Your task is to generate detai
 ## BEFORE YOU BEGIN
 
 1. Read the shared reference file for templates and conventions:
-   `.claude/commands/code-to-course-reference.md`
+   `.claude/commands/code-to-docs-reference.md`
 
 2. Read the course index to understand the codebase structure:
    `course/00-index.json`
 
 3. If `course/00-index.json` does not exist, tell the user:
-   > "No course index found. Run `/code-to-course` first to index the codebase and generate a plan."
+   > "No course index found. Run `/code-to-docs` first to index the codebase and generate a plan."
    Then STOP.
 
 ---
@@ -184,7 +184,7 @@ At least 1 interactive exercise (`drag-match` or `spot-the-bug`) + 1 markdown qu
 
 1. Write the current git HEAD SHA to `course/.last-generation-sha`
 2. Update `course/00-index.json` with generation timestamps
-3. **Copy theme assets** — Copy `templates/viewer.html` and `templates/theme.css` from the code-to-course repo into `course/assets/`. If the template files are not available locally, look for them at `.claude/commands/` or generate them following the Asset Generation specs in the reference file. These provide an interactive HTML viewer with:
+3. **Copy theme assets** — Copy `templates/viewer.html` and `templates/theme.css` from the code-to-docs repo into `course/assets/`. If the template files are not available locally, look for them at `.claude/commands/` or generate them following the Asset Generation specs in the reference file. These provide an interactive HTML viewer with:
    - Dark/light theme toggle (persisted in localStorage)
    - Sidebar navigation from `00-index.json`
    - Interactive rendering of `mermaid`, `dep-graph`, `flow-trace`, `chat`, `code-walkthrough`, `drag-match`, `spot-the-bug`, `complexity-heatmap`, and `arch-minimap` blocks
@@ -221,7 +221,7 @@ At least 1 interactive exercise (`drag-match` or `spot-the-bug`) + 1 markdown qu
     .last-generation-sha   ✓ updated
 
 To browse: open course/assets/viewer.html in a browser
-To regenerate after code changes: /code-to-course-generate --diff
+To regenerate after code changes: /code-to-docs-generate --diff
 ```
 
 ---

@@ -3,7 +3,7 @@ description: "Transform a codebase into a structured, multi-page interactive cou
 argument-hint: "[target-directory-path]"
 ---
 
-# Code-to-Course: Phase 1 — Index, Architecture & Plan
+# Code-to-Docs: Phase 1 — Index, Architecture & Plan
 
 You are a senior software architect and educator. Your task is to analyze a codebase and produce an index, architecture overview, and a generation plan for a structured multi-page course.
 
@@ -14,8 +14,8 @@ You are a senior software architect and educator. Your task is to analyze a code
 ## BEFORE YOU BEGIN
 
 Read the shared reference file for output conventions and templates:
-`.claude/commands/code-to-course-reference.md`
-(If that file is not found at that path, search for `code-to-course-reference.md` in the repo.)
+`.claude/commands/code-to-docs-reference.md`
+(If that file is not found at that path, search for `code-to-docs-reference.md` in the repo.)
 
 ---
 
@@ -189,9 +189,9 @@ After writing the index files, present the generation plan to the user:
 ### Estimated course pages: N
 
 To generate, run:
-  /code-to-course-generate all        — generate everything
-  /code-to-course-generate <module>   — generate one module
-  /code-to-course-generate --diff     — regenerate changed modules only
+  /code-to-docs-generate all        — generate everything
+  /code-to-docs-generate <module>   — generate one module
+  /code-to-docs-generate --diff     — regenerate changed modules only
 ```
 
 Then STOP. Do not generate module content in this phase.
@@ -208,4 +208,4 @@ Then STOP. Do not generate module content in this phase.
 
 4. **ARCHITECTURE FROM EVIDENCE:** Base all architectural claims on actual code evidence (imports, configs, entry points). Never guess system properties.
 
-5. **STOP AFTER PLAN:** Phase 1 ends with a plan. Content generation happens in Phase 2 (`/code-to-course-generate`).
+5. **STOP AFTER PLAN:** Phase 1 ends with a plan. Content generation happens in Phase 2 (`/code-to-docs-generate`).

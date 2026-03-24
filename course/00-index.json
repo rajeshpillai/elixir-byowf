@@ -1,28 +1,182 @@
 {
   "generated": "2026-03-24",
   "repo": "elixir-byof",
-  "system_type": "Modular monolith (framework + sample application)",
+  "system_type": "Modular monolith (web framework + sample application)",
   "languages": ["Elixir", "JavaScript"],
   "modules": [
-    {"name": "core-http", "path": "lib/ignite", "complexity": "Moderate", "files": 6, "depends_on": [], "entry_file": "lib/ignite/conn.ex", "description": "Conn struct, HTTP parser, TCP server, Controller response helpers", "course_file": "modules/01-core-http.md", "last_generated": "2026-03-24"},
-    {"name": "router-dsl", "path": "lib/ignite/router.ex", "complexity": "Complex", "files": 2, "depends_on": ["core-http"], "entry_file": "lib/ignite/router.ex", "description": "Macro-based routing DSL with compile-time code generation", "course_file": "modules/02-router-dsl.md", "last_generated": "2026-03-24"},
-    {"name": "cowboy-adapter", "path": "lib/ignite/adapters", "complexity": "Complex", "files": 1, "depends_on": ["core-http", "router-dsl", "security"], "entry_file": "lib/ignite/adapters/cowboy.ex", "description": "Bridges Cowboy HTTP server to Ignite Conn", "course_file": "modules/03-cowboy-adapter.md", "last_generated": "2026-03-24"},
-    {"name": "liveview", "path": "lib/ignite/live_view", "complexity": "Critical", "files": 8, "depends_on": ["core-http", "cowboy-adapter", "pubsub-presence", "frontend-js"], "entry_file": "lib/ignite/live_view.ex", "description": "LiveView behaviour, WebSocket handler, diffing engine, sigils, streams, components", "course_file": "modules/04-liveview.md", "last_generated": "2026-03-24"},
-    {"name": "pubsub-presence", "path": "lib/ignite", "complexity": "Moderate", "files": 2, "depends_on": [], "entry_file": "lib/ignite/pub_sub.ex", "description": "PubSub via Erlang :pg, Presence tracking with Process.monitor", "course_file": "modules/05-pubsub-presence.md", "last_generated": "2026-03-24"},
-    {"name": "security", "path": "lib/ignite", "complexity": "Moderate", "files": 5, "depends_on": ["core-http"], "entry_file": "lib/ignite/csrf.ex", "description": "CSRF, CSP, HSTS, signed sessions, SSL, rate limiting", "course_file": "modules/06-security.md", "last_generated": "2026-03-24"},
-    {"name": "otp-supervision", "path": "lib/ignite", "complexity": "Moderate", "files": 3, "depends_on": ["cowboy-adapter", "pubsub-presence", "security"], "entry_file": "lib/ignite/application.ex", "description": "OTP Application, Supervisor tree, hot code reloader", "course_file": "modules/07-otp-supervision.md", "last_generated": "2026-03-24"},
-    {"name": "persistence", "path": "lib/my_app", "complexity": "Moderate", "files": 4, "depends_on": ["core-http"], "entry_file": "lib/my_app/repo.ex", "description": "Ecto + SQLite: Repo, Schema, Changeset, migrations", "course_file": "modules/08-persistence.md", "last_generated": "2026-03-24"},
-    {"name": "frontend-js", "path": "assets", "complexity": "Moderate", "files": 3, "depends_on": [], "entry_file": "assets/ignite.js", "description": "WebSocket client, event delegation, morphdom, hooks, uploads", "course_file": "modules/09-frontend-js.md", "last_generated": "2026-03-24"},
-    {"name": "static-assets", "path": "lib/ignite", "complexity": "Simple", "files": 2, "depends_on": ["core-http"], "entry_file": "lib/ignite/static.ex", "description": "ETS content-hash manifest, cache-busting URLs", "course_file": "modules/10-static-assets.md", "last_generated": "2026-03-24"},
-    {"name": "devtools", "path": "lib/ignite", "complexity": "Moderate", "files": 4, "depends_on": ["core-http", "router-dsl"], "entry_file": "lib/ignite/debug_page.ex", "description": "Debug error page, hot reloader, mix tasks", "course_file": "modules/11-devtools.md", "last_generated": "2026-03-24"},
-    {"name": "sample-app", "path": "lib/my_app", "complexity": "Moderate", "files": 16, "depends_on": ["core-http", "router-dsl", "liveview", "persistence", "security"], "entry_file": "lib/my_app/router.ex", "description": "Demo app: router, controllers, 9 LiveViews", "course_file": "modules/12-sample-app.md", "last_generated": "2026-03-24"},
-    {"name": "todo-app", "path": "examples/todo", "complexity": "Complex", "files": 6, "depends_on": ["liveview", "persistence", "pubsub-presence"], "entry_file": "examples/todo/live/todo_live.ex", "description": "Capstone: CRUD with Ecto, LiveView, Streams, FEEx", "course_file": "modules/13-todo-app.md", "last_generated": "2026-03-24"}
+    {
+      "name": "Core HTTP",
+      "path": "lib/ignite",
+      "complexity": "Moderate",
+      "files": 5,
+      "depends_on": [],
+      "entry_file": "lib/ignite/conn.ex",
+      "description": "Conn struct, HTTP parser, TCP server, and response helpers",
+      "course_file": "modules/01-core-http.md",
+      "last_generated": "2026-03-24"
+    },
+    {
+      "name": "Router DSL",
+      "path": "lib/ignite/router.ex",
+      "complexity": "Complex",
+      "files": 2,
+      "depends_on": ["Core HTTP"],
+      "entry_file": "lib/ignite/router.ex",
+      "description": "Macro-based routing DSL with dynamic routes, scopes, resources, and path helpers",
+      "course_file": "modules/02-router-dsl.md",
+      "last_generated": "2026-03-24"
+    },
+    {
+      "name": "Cowboy Adapter",
+      "path": "lib/ignite/adapters",
+      "complexity": "Moderate",
+      "files": 1,
+      "depends_on": ["Core HTTP", "Router DSL"],
+      "entry_file": "lib/ignite/adapters/cowboy.ex",
+      "description": "Bridges Cowboy HTTP server to Ignite's Conn-based pipeline",
+      "course_file": "modules/03-cowboy-adapter.md",
+      "last_generated": "2026-03-24"
+    },
+    {
+      "name": "LiveView",
+      "path": "lib/ignite/live_view",
+      "complexity": "Critical",
+      "files": 8,
+      "depends_on": ["Core HTTP", "PubSub & Presence", "Frontend JS"],
+      "entry_file": "lib/ignite/live_view.ex",
+      "description": "Real-time server-rendered views over WebSocket with diffing engine, streams, components, and uploads",
+      "course_file": "modules/04-liveview.md",
+      "last_generated": "2026-03-24"
+    },
+    {
+      "name": "PubSub & Presence",
+      "path": "lib/ignite",
+      "complexity": "Moderate",
+      "files": 2,
+      "depends_on": [],
+      "entry_file": "lib/ignite/pub_sub.ex",
+      "description": "Cross-process messaging via Erlang :pg and presence tracking via Process.monitor",
+      "course_file": "modules/05-pubsub-presence.md",
+      "last_generated": "2026-03-24"
+    },
+    {
+      "name": "Security",
+      "path": "lib/ignite",
+      "complexity": "Complex",
+      "files": 5,
+      "depends_on": ["Core HTTP"],
+      "entry_file": "lib/ignite/csrf.ex",
+      "description": "CSRF protection, CSP headers, HSTS, SSL/TLS configuration, and signed cookie sessions",
+      "course_file": "modules/06-security.md",
+      "last_generated": "2026-03-24"
+    },
+    {
+      "name": "OTP & Supervision",
+      "path": "lib/ignite/application.ex",
+      "complexity": "Moderate",
+      "files": 3,
+      "depends_on": ["Cowboy Adapter", "PubSub & Presence", "Persistence"],
+      "entry_file": "lib/ignite/application.ex",
+      "description": "Application supervisor, rate limiter GenServer, and hot code reloader",
+      "course_file": "modules/07-otp-supervision.md",
+      "last_generated": "2026-03-24"
+    },
+    {
+      "name": "Persistence",
+      "path": "lib/my_app/repo.ex",
+      "complexity": "Moderate",
+      "files": 3,
+      "depends_on": [],
+      "entry_file": "lib/my_app/repo.ex",
+      "description": "Ecto integration with SQLite, schemas, changesets, and migrations",
+      "course_file": "modules/08-persistence.md",
+      "last_generated": "2026-03-24"
+    },
+    {
+      "name": "Frontend JS",
+      "path": "assets",
+      "complexity": "Complex",
+      "files": 3,
+      "depends_on": ["LiveView"],
+      "entry_file": "assets/ignite.js",
+      "description": "WebSocket client, event delegation, morphdom DOM patching, JS hooks",
+      "course_file": "modules/09-frontend-js.md",
+      "last_generated": "2026-03-24"
+    },
+    {
+      "name": "Static Assets",
+      "path": "lib/ignite/static.ex",
+      "complexity": "Simple",
+      "files": 1,
+      "depends_on": [],
+      "entry_file": "lib/ignite/static.ex",
+      "description": "ETS-based content-hashing manifest for cache-busting URLs",
+      "course_file": "modules/10-static-assets.md",
+      "last_generated": "2026-03-24"
+    },
+    {
+      "name": "DevTools",
+      "path": "lib/ignite",
+      "complexity": "Moderate",
+      "files": 4,
+      "depends_on": ["Core HTTP"],
+      "entry_file": "lib/ignite/debug_page.ex",
+      "description": "Debug error page, hot code reloader, mix tasks, logger metadata",
+      "course_file": "modules/11-devtools.md",
+      "last_generated": "2026-03-24"
+    },
+    {
+      "name": "Sample App",
+      "path": "lib/my_app",
+      "complexity": "Moderate",
+      "files": 15,
+      "depends_on": ["Core HTTP", "Router DSL", "LiveView", "Persistence", "Security"],
+      "entry_file": "lib/my_app/router.ex",
+      "description": "Demo application with controllers, LiveViews, and the Todo capstone project",
+      "course_file": "modules/12-sample-app.md",
+      "last_generated": "2026-03-24"
+    }
   ],
   "flows": [
-    {"name": "HTTP Request Lifecycle", "description": "GET request through middleware pipeline to controller response", "modules": ["cowboy-adapter", "core-http", "router-dsl", "security", "sample-app"], "start": "lib/ignite/adapters/cowboy.ex:15", "course_file": "flows/http-request-lifecycle.md", "last_generated": "2026-03-24"},
-    {"name": "LiveView Mount & Event", "description": "WebSocket connection, mount, render, event handling, sparse diff", "modules": ["liveview", "frontend-js", "sample-app"], "start": "lib/ignite/live_view/handler.ex:38", "course_file": "flows/liveview-mount-and-event.md", "last_generated": "2026-03-24"},
-    {"name": "Router Macro Expansion", "description": "How get /path becomes a pattern-matching function clause", "modules": ["router-dsl"], "start": "lib/ignite/router.ex:29", "course_file": "flows/router-macro-expansion.md", "last_generated": "2026-03-24"},
-    {"name": "PubSub Broadcast", "description": "Cross-process messaging for shared counters", "modules": ["pubsub-presence", "liveview", "sample-app"], "start": "lib/ignite/pub_sub.ex:29", "course_file": "flows/pubsub-broadcast.md", "last_generated": "2026-03-24"},
-    {"name": "Fine-Grained Diffing Pipeline", "description": "Template compilation through EEx engine to sparse JSON diff", "modules": ["liveview", "frontend-js"], "start": "lib/ignite/live_view.ex:166", "course_file": "flows/fine-grained-diffing-pipeline.md", "last_generated": "2026-03-24"}
+    {
+      "name": "HTTP Request Lifecycle",
+      "description": "Traces a GET request from Cowboy through middleware pipeline, router dispatch, controller action, template render, and response",
+      "modules": ["Cowboy Adapter", "Security", "Router DSL", "Core HTTP"],
+      "start": "lib/ignite/adapters/cowboy.ex:15",
+      "course_file": "flows/http-request-lifecycle.md",
+      "last_generated": "2026-03-24"
+    },
+    {
+      "name": "LiveView Mount & Event",
+      "description": "Traces WebSocket connection, LiveView mount, initial render with statics+dynamics, and a user click event through to DOM patch",
+      "modules": ["LiveView", "Frontend JS", "PubSub & Presence"],
+      "start": "lib/ignite/live_view/handler.ex:20",
+      "course_file": "flows/liveview-mount-and-event.md",
+      "last_generated": "2026-03-24"
+    },
+    {
+      "name": "Router Macro Expansion",
+      "description": "Shows how `use Ignite.Router`, `get`, `scope`, `resources`, and `finalize_routes` macros compile into pattern-matching dispatch functions",
+      "modules": ["Router DSL"],
+      "start": "lib/ignite/router.ex:29",
+      "course_file": "flows/router-macro-expansion.md",
+      "last_generated": "2026-03-24"
+    },
+    {
+      "name": "PubSub Broadcast",
+      "description": "Traces a PubSub broadcast from one LiveView through :pg process groups to all subscribers, triggering re-renders",
+      "modules": ["PubSub & Presence", "LiveView"],
+      "start": "lib/ignite/pub_sub.ex:29",
+      "course_file": "flows/pubsub-broadcast.md",
+      "last_generated": "2026-03-24"
+    },
+    {
+      "name": "Fine-Grained Diffing Pipeline",
+      "description": "Traces how ~L and ~F sigils compile templates into statics/dynamics at compile time, and how the engine produces sparse diffs at runtime",
+      "modules": ["LiveView", "Frontend JS"],
+      "start": "lib/ignite/live_view/eex_engine.ex:1",
+      "course_file": "flows/fine-grained-diffing-pipeline.md",
+      "last_generated": "2026-03-24"
+    }
   ]
 }

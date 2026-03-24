@@ -1,6 +1,6 @@
-# Code-to-Course: Shared Reference & Templates
+# Code-to-Docs: Shared Reference & Templates
 
-This file defines shared conventions, templates, and standards used by all code-to-course skill files.
+This file defines shared conventions, templates, and standards used by all code-to-docs skill files.
 It is NOT a command itself — it is referenced by the Phase 1 and Phase 2 skills.
 
 ---
@@ -553,7 +553,7 @@ Every course page must include:
 
 After generating all course content, create `course/assets/` with theme.css and viewer.html.
 
-Copy these files from the `templates/` directory in the code-to-course repo:
+Copy these files from the `templates/` directory in the code-to-docs repo:
 - `templates/viewer.html` → `course/assets/viewer.html`
 - `templates/theme.css` → `course/assets/theme.css`
 
