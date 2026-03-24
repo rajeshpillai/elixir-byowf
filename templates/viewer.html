@@ -303,8 +303,11 @@
           const id = 'mermaid-' + Math.random().toString(36).slice(2, 8);
           try {
             const { svg } = await mermaid.render(id, raw);
-            el.querySelector('.mermaid-svg').innerHTML = svg;
-          } catch (e) {}
+            const svgContainer = el.querySelector('.mermaid-svg');
+            if (svgContainer) svgContainer.innerHTML = svg;
+          } catch (e) {
+            document.getElementById(id)?.remove();
+          }
         }
       });
     }
@@ -318,6 +321,7 @@
     if (!window.mermaid) return;
     mermaid.initialize({
       startOnLoad: false,
+      suppressErrors: true,
       theme: isDark() ? 'dark' : 'default',
       themeVariables: isDark() ? {
         primaryColor: '#3B2A35', primaryTextColor: '#CDD6F4',
@@ -334,13 +338,27 @@
   // ============================================================
 
   // ---- 1. Mermaid Diagrams ----
+
+  // markdown-it encodes HTML entities inside <code> blocks, but Mermaid needs raw text
+  function decodeMermaidSource(raw) {
+    return raw
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'")
+      .replace(/&nbsp;/g, ' ')
+      .trim();
+  }
+
   async function renderMermaid(pre, raw) {
+    const decoded = decodeMermaidSource(raw);
     const container = document.createElement('div');
     container.className = 'interactive-container interactive-mermaid';
-    container.setAttribute('data-source', raw);
+    container.setAttribute('data-source', decoded);
     const id = 'mermaid-' + Math.random().toString(36).slice(2, 8);
     try {
-      const { svg } = await mermaid.render(id, raw);
+      const { svg } = await mermaid.render(id, decoded);
       container.innerHTML = `
         <div class="interactive-header"><span class="label">Diagram</span></div>
         <div class="interactive-body">
@@ -352,7 +370,13 @@
           </div>
         </div>`;
     } catch (e) {
-      container.innerHTML = `<div class="interactive-body"><pre>${raw}</pre></div>`;
+      // Clean up any orphan SVG Mermaid may have left in the DOM
+      document.getElementById(id)?.remove();
+      // Show the raw source in a readable code block with error context
+      container.innerHTML = `
+        <div class="interactive-header"><span class="label">Diagram</span> <span style="color:var(--tag-moderate);font-size:0.8em">(render error — showing source)</span></div>
+        <div class="interactive-body"><pre style="white-space:pre-wrap">${escapeHtml(decoded)}</pre></div>`;
+      console.warn('Mermaid render error:', e.message || e, '\nSource:', decoded);
     }
     pre.replaceWith(container);
   }
