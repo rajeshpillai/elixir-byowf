@@ -1,0 +1,49 @@
+/* ===== CSS Custom Properties ===== */
+:root, [data-theme="light"] {
+  --bg-primary: #FAF7F2; --bg-secondary: #F0EDE6; --bg-code: #F5F2EB; --bg-card: #FFFFFF; --bg-blockquote: #FFF8F0;
+  --text-primary: #2C2A28; --text-secondary: #5C5955; --text-muted: #8A8680; --text-inverse: #FAF7F2;
+  --accent: #D94F30; --accent-hover: #C4432A; --accent-subtle: #FFF0EB;
+  --border: #E0DCD4; --border-strong: #C8C3BA;
+  --shadow-sm: 0 1px 3px rgba(44,42,40,0.06); --shadow-md: 0 4px 12px rgba(44,42,40,0.08);
+  --syn-keyword: #D94F30; --syn-string: #2E7D57; --syn-comment: #8A8680; --syn-function: #6B5CE7;
+  --tag-simple: #4CAF50; --tag-moderate: #FF9800; --tag-complex: #F44336; --tag-critical: #9C27B0;
+  --hot-path-bg: #FFF3E0; --hot-path-border: #FF9800;
+}
+[data-theme="dark"] {
+  --bg-primary: #1E1E2E; --bg-secondary: #181825; --bg-code: #252536; --bg-card: #2A2A3C; --bg-blockquote: #2A2535;
+  --text-primary: #CDD6F4; --text-secondary: #A6ADC8; --text-muted: #6C7086; --text-inverse: #1E1E2E;
+  --accent: #F38BA8; --accent-hover: #EBA0B3; --accent-subtle: #3B2A35;
+  --border: #45475A; --border-strong: #585B70;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.3); --shadow-md: 0 4px 12px rgba(0,0,0,0.4);
+  --syn-keyword: #CBA6F7; --syn-string: #A6E3A1; --syn-comment: #6C7086; --syn-function: #89B4FA;
+  --tag-simple: #A6E3A1; --tag-moderate: #FAB387; --tag-complex: #F38BA8; --tag-critical: #CBA6F7;
+  --hot-path-bg: #3B2A1A; --hot-path-border: #FAB387;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'DM Sans', 'Inter', -apple-system, system-ui, sans-serif; background: var(--bg-primary); color: var(--text-primary); line-height: 1.7; transition: background 0.3s, color 0.3s; }
+h1, h2, h3, h4 { font-family: 'Bricolage Grotesque', 'Inter', system-ui, sans-serif; color: var(--text-primary); margin-top: 2rem; margin-bottom: 0.75rem; }
+h1 { font-size: 2rem; border-bottom: 2px solid var(--accent); padding-bottom: 0.5rem; }
+h2 { font-size: 1.5rem; border-bottom: 1px solid var(--border); padding-bottom: 0.3rem; }
+h3 { font-size: 1.25rem; }
+p { margin-bottom: 1rem; color: var(--text-secondary); }
+a { color: var(--accent); text-decoration: none; }
+a:hover { color: var(--accent-hover); text-decoration: underline; }
+code { font-family: 'JetBrains Mono', 'Fira Code', monospace; font-size: 0.875em; background: var(--bg-code); padding: 0.15em 0.4em; border-radius: 4px; border: 1px solid var(--border); }
+pre { background: var(--bg-code); border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem; overflow-x: auto; margin: 1rem 0; box-shadow: var(--shadow-sm); }
+pre code { background: none; border: none; padding: 0; }
+.card, blockquote { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem; margin: 1rem 0; box-shadow: var(--shadow-sm); }
+blockquote { border-left: 4px solid var(--accent); background: var(--bg-blockquote); }
+table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+th, td { padding: 0.75rem; border: 1px solid var(--border); text-align: left; }
+th { background: var(--bg-secondary); font-weight: 600; }
+tr:hover { background: var(--bg-secondary); }
+details { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; margin: 0.75rem 0; box-shadow: var(--shadow-sm); }
+details > summary { padding: 0.75rem 1.25rem; cursor: pointer; font-weight: 600; color: var(--accent); user-select: none; }
+details > summary:hover { background: var(--bg-secondary); border-radius: 8px; }
+details[open] > summary { border-bottom: 1px solid var(--border); border-radius: 8px 8px 0 0; }
+details > :not(summary) { padding: 0 1.25rem; }
+details > :last-child { padding-bottom: 1rem; }
+.theme-toggle { position: fixed; top: 1rem; right: 1rem; z-index: 1000; background: var(--bg-card); border: 1px solid var(--border); border-radius: 50%; width: 44px; height: 44px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; box-shadow: var(--shadow-md); transition: all 0.3s; }
+.theme-toggle:hover { transform: scale(1.1); }
+.progress-bar { position: fixed; top: 0; left: 0; height: 3px; background: var(--accent); z-index: 200; transition: width 0.2s; }
+@media (max-width: 768px) { body { font-size: 0.95rem; } h1 { font-size: 1.5rem; } pre { padding: 0.75rem; font-size: 0.8rem; } .theme-toggle { top: 0.5rem; right: 0.5rem; width: 36px; height: 36px; } }
