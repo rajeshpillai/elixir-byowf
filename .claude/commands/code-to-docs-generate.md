@@ -87,7 +87,7 @@ What this module does and WHY it exists. Not what files it contains — what pro
 Real file paths with brief descriptions. Every path MUST be verified to exist.
 
 #### 3. Internal Architecture
-Use a `mermaid` block (NOT ASCII) showing how components within this module relate. Show connections to other modules. Use `click` directives to make nodes navigable.
+Use a `mermaid` block (NOT ASCII) showing how components within this module relate. Show connections to other modules. Use `flowchart TD` (NOT `graph TD`). Do NOT use `click` directives or curly braces `{}` in labels. See the Mermaid v11 Compatibility Rules in the reference file.
 
 #### 4. How It Works — Multi-Audience
 Use the three-level collapsible section pattern from the reference:

@@ -74,7 +74,7 @@ Determine:
 - **External dependencies:** Databases, APIs, queues, caches
 - **Key abstractions:** The core types/interfaces that define the system's vocabulary
 
-Produce a `mermaid` diagram block (NOT ASCII) showing the architecture. Do NOT add `click` directives to link to module pages yet — those files don't exist until Phase 2. Just show the architecture structure. The `click` directives will be added when modules are generated in Phase 2.
+Produce a `mermaid` diagram block (NOT ASCII) showing the architecture. Use `flowchart TD` (NOT `graph TD`). Do NOT add `click` directives — the viewer handles navigation. Do NOT use curly braces `{}` in labels. See the Mermaid v11 Compatibility Rules in the reference file.
 
 ---
 

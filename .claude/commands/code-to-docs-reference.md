@@ -93,26 +93,48 @@ When generating markdown, use these block types INSTEAD OF ASCII diagrams.
 
 ---
 
+### Mermaid v11 Compatibility Rules (CRITICAL)
+
+ALL Mermaid blocks MUST follow these rules to avoid syntax errors:
+
+1. **Use `flowchart` NOT `graph`:** Always write `flowchart TD` or `flowchart LR`, never `graph TD` or `graph LR`. The `graph` keyword is deprecated in Mermaid v11.
+
+2. **NO curly braces `{}` in labels or messages:** Mermaid interprets `{}` as special syntax. Replace `%Conn{status: 200}` with `Conn with status 200`, `{:ok, result}` with `ok, result`, etc.
+
+3. **NO `click` directives:** The viewer handles navigation via its own JS. Do NOT add `click NodeName "?page=..."` lines — they require `securityLevel: 'loose'` which is a security risk.
+
+4. **NO triple-dash `---` edges:** Use `-->` or `---text-->` instead. Triple-dash alone is ambiguous in Mermaid v11.
+
+5. **Subgraph labels with special characters** need the `id["Label"]` format:
+   - Bad: `subgraph "@before_compile"`
+   - Good: `subgraph before_compile["@before_compile Callback"]`
+
+6. **No `%` or `"` inside edge/node labels:** Replace with plain English descriptions.
+   - Bad: `A -->|"%Ecto.Changeset{}"| B`
+   - Good: `A -->|"Ecto Changeset"| B`
+
+7. **Escape angle brackets** in labels: Use `&lt;` / `&gt;` or rephrase.
+
+---
+
 ### 1. Architecture Diagram (`mermaid`)
 
 Use for system architecture, component relationships, and high-level structure.
-Mermaid.js renders these as interactive SVG diagrams with click-to-navigate and hover tooltips.
+Mermaid.js renders these as interactive SVG diagrams with hover tooltips.
 
 ````markdown
 ```mermaid
-graph TD
+flowchart TD
     Client[Client Browser] -->|HTTP| API[API Gateway]
     API -->|route| Auth[Auth Service]
     API -->|route| Users[User Service]
     Auth -->|query| DB[(PostgreSQL)]
     Users -->|query| DB
-    click Auth "?page=modules/01-auth.md" "View Auth module"
-    click Users "?page=modules/02-users.md" "View Users module"
 ```
 ````
 
-- Use `click` directives to make nodes navigate to module pages
-- Use standard Mermaid syntax: `graph TD`, `graph LR`, `subgraph`
+- Use `flowchart TD` (top-down) or `flowchart LR` (left-right), NEVER `graph`
+- Do NOT add `click` directives — the viewer sidebar handles navigation
 - Supports: flowcharts, class diagrams, ER diagrams, state diagrams
 
 ---
@@ -129,7 +151,7 @@ sequenceDiagram
     participant S as Auth Service
     participant D as Database
 
-    C->>A: POST /login {email, password}
+    C->>A: POST /login with email, password
     A->>S: validate_credentials()
     S->>D: SELECT * FROM users WHERE email=?
     D-->>S: user row
