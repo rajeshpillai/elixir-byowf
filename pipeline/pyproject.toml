@@ -1,0 +1,21 @@
+[project]
+name = "ignite-video-pipeline"
+version = "0.1.0"
+description = "Automated video tutorial generator for Ignite (Elixir BYOF) tutorials"
+requires-python = ">=3.12"
+dependencies = [
+    "manim>=0.18",
+    "kokoro>=0.9",
+    "click>=8.0",
+    "pyyaml>=6.0",
+    "soundfile>=0.12",
+]
+
+[project.optional-dependencies]
+cloud = ["openai>=1.0", "elevenlabs>=1.0"]
+
+[project.scripts]
+tutorial-video = "pipeline.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["pipeline*"]

@@ -564,6 +564,77 @@ my_blog/
 
 This is the same pattern Phoenix uses — `phx_new` is a separate package that generates the scaffolding.
 
+## Video Tutorials
+
+Automated narrated video tutorials can be generated from the markdown docs using the included pipeline (powered by Manim animations + Kokoro TTS).
+
+### Prerequisites
+
+- Python 3.12+
+- FFmpeg (`sudo apt install ffmpeg`)
+
+### Setup
+
+```bash
+cd pipeline
+uv venv .venv
+source .venv/bin/activate
+uv pip install -e .
+```
+
+### Generate a Video
+
+All commands run from inside the `pipeline/` directory:
+
+```bash
+cd pipeline
+source .venv/bin/activate
+
+# Generate video for a single tutorial step
+python -m pipeline generate ../tutorial/01-tcp-socket.md -o output
+
+# Generate video for another step
+python -m pipeline generate ../tutorial/02-conn-struct.md -o output
+
+# Generate videos for ALL tutorials
+python -m pipeline generate-all --tutorials-dir ../tutorial -o output
+```
+
+Or use the installed CLI entry point (works from any directory):
+
+```bash
+tutorial-video generate tutorial/01-tcp-socket.md -o pipeline/output
+```
+
+Output videos are saved to `pipeline/output/<step-number>/video.mp4`.
+
+### Other Commands
+
+```bash
+cd pipeline
+source .venv/bin/activate
+
+# Parse a tutorial and inspect the IR blocks (no rendering)
+python -m pipeline parse ../tutorial/01-tcp-socket.md
+
+# Generate only TTS audio (no video)
+python -m pipeline tts ../tutorial/01-tcp-socket.md -o output
+
+# Check generation status for all tutorials
+python -m pipeline status --tutorials-dir ../tutorial -o output
+```
+
+### Options
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--provider` / `-p` | `auto` | TTS provider: `kokoro` (local, free), `openai`, `elevenlabs` |
+| `--voice` / `-v` | `default` | Voice name (provider-specific) |
+| `--quality` / `-q` | `medium_quality` | Manim quality: `low_quality`, `medium_quality`, `high_quality` |
+| `--output-dir` / `-o` | `output` | Output directory for generated videos |
+
+---
+
 ## License
 
 This project is licensed under the **GNU Affero General Public License v3.0 (AGPL-3.0)**. See [LICENSE](LICENSE) for the full text.
