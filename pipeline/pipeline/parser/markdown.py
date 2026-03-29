@@ -158,13 +158,52 @@ def _derive_narration(block: Block, prev_prose: str | None = None) -> str | None
     return None
 
 
+def _parse_blockquote(quote_lines: list[str], blocks: list[Block]):
+    """Parse blockquote lines, splitting out embedded code fences as CODE blocks.
+
+    Prose portions become BLOCKQUOTE blocks; fenced code becomes CODE blocks.
+    """
+    segments: list[tuple[str, list[str]]] = []  # ("prose"|"code", lines)
+    current_type = "prose"
+    current_lines: list[str] = []
+    code_language = None
+    in_code = False
+
+    for ql in quote_lines:
+        fence_match = re.match(r"^```(\w*)$", ql)
+        if fence_match and not in_code:
+            # Flush preceding prose
+            if current_lines:
+                segments.append(("prose", current_lines))
+                current_lines = []
+            in_code = True
+            code_language = fence_match.group(1) or None
+            continue
+        elif re.match(r"^```\s*$", ql) and in_code:
+            # Close code fence
+            segments.append(("code", current_lines))
+            current_lines = []
+            in_code = False
+            continue
+        current_lines.append(ql)
+
+    # Flush remaining
+    if current_lines:
+        segments.append(("prose" if not in_code else "code", current_lines))
+
+    for seg_type, seg_lines in segments:
+        content = "\n".join(seg_lines) if seg_type == "code" else " ".join(l for l in seg_lines if l)
+        if not content.strip():
+            continue
+        if seg_type == "code":
+            blocks.append(Block(type=BlockType.CODE, content=content, language=code_language))
+        else:
+            blocks.append(Block(type=BlockType.BLOCKQUOTE, content=content))
+
+
 def _extract_tutorial_id(path: str) -> str:
-    """Extract tutorial ID like '01' from path like 'tutorial/01-tcp-socket.md'."""
-    stem = Path(path).stem
-    m = re.match(r"(\d+)", stem)
-    if m:
-        return m.group(1)
-    return stem
+    """Extract tutorial ID like '01-tcp-socket' from path like 'tutorial/01-tcp-socket.md'."""
+    return Path(path).stem
 
 
 def parse_tutorial(filepath: str | Path) -> TutorialIR:
@@ -222,9 +261,10 @@ def parse_tutorial(filepath: str | Path) -> TutorialIR:
         if line.startswith(">"):
             quote_lines = []
             while i < len(lines) and lines[i].startswith(">"):
-                quote_lines.append(lines[i].lstrip("> ").strip())
+                quote_lines.append(lines[i].lstrip("> ").rstrip())
                 i += 1
-            blocks.append(Block(type=BlockType.BLOCKQUOTE, content=" ".join(quote_lines)))
+            # Split blockquote into prose and code sub-blocks
+            _parse_blockquote(quote_lines, blocks)
             continue
 
         # --- Table (lines with | separators) ---
