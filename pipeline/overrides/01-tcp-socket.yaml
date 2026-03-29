@@ -1,0 +1,48 @@
+# Sidecar overrides for Step 1: TCP Socket Foundation
+#
+# Override auto-derived narration and add visual effects per block.
+# Use `python -m pipeline parse ../tutorial/01-tcp-socket.md` to see block indices.
+#
+# Supported effect keys:
+#   effect:           Scene effect name (e.g., line_highlight, pause, zoom_in)
+#   highlight_lines:  Lines to highlight in CODE blocks
+#   pause_after:      Extra pause in seconds after the block
+#   transition:       Transition style (crossfade, wipe) — for future use
+
+blocks:
+  0:
+    narration: >
+      Welcome to Step 1. In this lesson, we'll build a TCP server from scratch
+      using only Elixir's standard library. By the end, you'll have a working
+      HTTP server that responds to browser requests.
+  5:
+    narration: >
+      Here's what our finished server will look like when we test it with curl.
+      A simple HTTP 200 response with Hello World.
+    effect: "zoom_in"
+  9:
+    narration: >
+      Here's a basic Elixir module. The defmodule keyword defines a named container
+      for your functions, similar to a class in other languages.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  13:
+    narration: >
+      Notice the pattern matching here. The equals sign in Elixir doesn't just assign.
+      It asserts that the left side matches the shape of the right side.
+      If gen_tcp.listen returns an error instead of ok, this line will crash
+      immediately — and that's by design.
+    effect: "line_highlight"
+    highlight_lines: [1]
+  21:
+    narration: >
+      This is Erlang interop in action. The colon prefix tells Elixir
+      we're calling an Erlang module directly. gen_tcp is the battle-tested
+      TCP library that Erlang has shipped for decades.
+  25:
+    narration: >
+      Recursion replaces loops in Elixir. This function calls itself forever,
+      waiting for new connections. Don't worry about stack overflow —
+      the BEAM virtual machine optimizes tail calls automatically.
+    effect: "line_highlight"
+    highlight_lines: [3, 4]

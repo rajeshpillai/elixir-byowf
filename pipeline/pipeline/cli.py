@@ -5,6 +5,7 @@ from pathlib import Path
 import click
 
 from .config import PipelineConfig
+from .overrides import apply_overrides, sidecar_path_for
 from .parser.ir import TutorialIR
 from .parser.markdown import parse_tutorial
 
@@ -32,6 +33,7 @@ def parse(path: str):
     """Parse a tutorial markdown file and print the IR blocks."""
     for tut_path in _find_tutorials(path):
         tut = parse_tutorial(tut_path)
+        tut = apply_overrides(tut, sidecar_path_for(tut_path))
         click.echo(f"\n{'='*60}")
         click.echo(f"Tutorial: {tut.title} [{tut.tutorial_id}]")
         click.echo(f"Source: {tut.source_path}")
@@ -40,7 +42,8 @@ def parse(path: str):
         for i, block in enumerate(tut.blocks):
             narr = (block.narration[:60] + "...") if block.narration and len(block.narration) > 60 else block.narration
             lang = f" [{block.language}]" if block.language else ""
-            click.echo(f"  [{i:3d}] {block.type.name:<16}{lang}  narration: {narr}")
+            fx = f"  fx: {list(block.effects.keys())}" if block.effects else ""
+            click.echo(f"  [{i:3d}] {block.type.name:<16}{lang}  narration: {narr}{fx}")
 
 
 @main.command()
@@ -57,6 +60,7 @@ def tts(path: str, provider: str, voice: str, output_dir: str):
 
     for tut_path in _find_tutorials(path):
         tut = parse_tutorial(tut_path)
+        tut = apply_overrides(tut, sidecar_path_for(tut_path))
         out_dir = Path(output_dir) / tut.tutorial_id / "audio"
         out_dir.mkdir(parents=True, exist_ok=True)
 
@@ -95,12 +99,16 @@ def generate(path: str, provider: str, voice: str, quality: str, output_dir: str
 
     for tut_path in _find_tutorials(path):
         tut = parse_tutorial(tut_path)
+        sidecar = sidecar_path_for(tut_path)
+        tut = apply_overrides(tut, sidecar)
         tut_out = Path(output_dir) / tut.tutorial_id
         segments_dir = tut_out / "segments"
         segments_dir.mkdir(parents=True, exist_ok=True)
 
         click.echo(f"\n{'='*60}")
         click.echo(f"Generating: {tut.title}")
+        if sidecar.exists():
+            click.echo(f"Sidecar: {sidecar}")
         click.echo(f"{'='*60}")
 
         # Step 1: Generate TTS audio

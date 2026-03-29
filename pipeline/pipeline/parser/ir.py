@@ -29,6 +29,7 @@ class Block:
     narration: str | None = None
     duration_hint: float | None = None
     metadata: dict = field(default_factory=dict)
+    effects: dict = field(default_factory=dict)
 
 
 @dataclass

@@ -118,15 +118,54 @@ python -m pipeline <command> [options]
 | `--quality / -q` | `medium_quality` | Manim render quality |
 | `--output-dir / -o` | `output` | Output directory |
 
-## Per-Tutorial Overrides
+## Sidecar Overrides
 
-Create `overrides/{tutorial-id}.yaml` to customize settings per tutorial:
+Each tutorial can have a sidecar YAML file in `overrides/` that customizes narration and visual effects per block — without modifying the tutorial markdown.
+
+**File naming**: `overrides/{tutorial-stem}.yaml` matches the markdown filename.
+- `tutorial/01-tcp-socket.md` → `overrides/01-tcp-socket.yaml`
+
+### How It Works
+
+1. Run `python -m pipeline parse ../tutorial/01-tcp-socket.md` to see block indices
+2. Create a sidecar YAML targeting specific blocks by index
+3. The pipeline auto-loads the sidecar during `parse`, `tts`, and `generate`
+
+### Sidecar Format
 
 ```yaml
-# overrides/01.yaml
-tts_voice: "af_heart"
-tts_speed: 0.9
+# overrides/01-tcp-socket.yaml
+blocks:
+  0:
+    narration: >
+      Welcome to Step 1. In this lesson, we'll build a TCP server
+      from scratch using only Elixir's standard library.
+  9:
+    narration: >
+      Here's a basic Elixir module. The defmodule keyword defines
+      a named container for your functions.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  13:
+    effect: "line_highlight"
+    highlight_lines: [1]
+    pause_after: 1.5
+  20:
+    duration: 10.0
 ```
+
+### Supported Override Keys
+
+| Key | Type | Description |
+|-----|------|-------------|
+| `narration` | string | Override auto-derived TTS narration text |
+| `duration` | float | Override block duration in seconds |
+| `effect` | string | Visual effect name (e.g., `line_highlight`, `zoom_in`, `pause`) |
+| `highlight_lines` | list[int] | Lines to highlight in CODE blocks |
+| `pause_after` | float | Extra pause in seconds after the block |
+| `transition` | string | Transition style (`crossfade`, `wipe`) — future use |
+
+Only blocks that need customization need entries — all other blocks use auto-derived narration and default visuals.
 
 ## Output Structure
 
