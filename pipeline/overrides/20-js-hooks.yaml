@@ -1,0 +1,111 @@
+# Sidecar overrides for 20-js-hooks
+# Generated — edit freely to customize narration and effects.
+# Use `python -m pipeline parse ../tutorial/20-js-hooks.md` to see block indices.
+
+blocks:
+  0:
+    narration: >
+      Welcome to Step 20. JavaScript Hooks let us run custom client-side code
+      tied to specific DOM elements. Perfect for charts, maps, or animations.
+  3:
+    narration: >
+      Let's start with: The Problem.
+  11:
+    narration: >
+      Let's look at the code. JS Hooks are plain JavaScript objects with
+      lifecycle callbacks.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  16:
+    narration: >
+      Let's look at the code. In your LiveView's render/1, add id and
+      ignite-hook to an element.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  24:
+    narration: >
+      Let's look at the code. js loads.
+    effect: "line_highlight"
+    highlight_lines: [1, 3, 4]
+  27:
+    narration: >
+      Let's look at the code. When a hooked element is found in the DOM,
+      Ignite creates an instance.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  32:
+    narration: >
+      Let's look at the code. mountHooks — scans the container for new
+      [ignite-hook] elements and calls mounted().
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  34:
+    narration: >
+      Let's look at the code. el reference (morphdom may replace the DOM node)
+      and calls updated().
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 4]
+  36:
+    narration: >
+      Let's look at the code. cleanupHooks — finds hooks whose elements were
+      removed from the DOM and calls destroyed().
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  38:
+    narration: >
+      Let's look at the code. destroyAllHooks — tears down every hook (used
+      during navigation).
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  44:
+    narration: >
+      Let's look at the code. Add the three calls at the end of applyUpdate,
+      after morphdom has patched the DOM.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  48:
+    narration: >
+      Let's look at the code. When navigating between LiveViews, call
+      destroyAllHooks() at the top of connect before opening the new
+      WebSocket.
+    effect: "line_highlight"
+    highlight_lines: [1, 3, 4]
+  51:
+    narration: >
+      Let's look at the code. It sends an event over the existing WebSocket to
+      the server's handle_event/3.
+  53:
+    narration: >
+      Let's look at the code. On the server.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  59:
+    narration: >
+      Let's look at the code. Uses the browser's Clipboard API and reports
+      success/failure to the server.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  62:
+    narration: >
+      Let's look at the code. Shows the client's local time (which the server
+      doesn't know) and lets the user push it to the server.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  66:
+    narration: >
+      Let's look at the code. Events pushed via pushEvent arrive at
+      handle_event/3 like any other event.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 4]
+  69:
+    narration: >
+      Let's look at the code. js so the hooks are registered before the
+      framework initializes.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  82:
+    narration: >
+      Here's how this looks in bash. Unlike component events, hook events are
+      not auto-prefixed.
+    effect: "line_highlight"
+    highlight_lines: [1, 2]

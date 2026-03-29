@@ -1,0 +1,88 @@
+# Sidecar overrides for 37-static-asset-pipeline
+# Generated — edit freely to customize narration and effects.
+# Use `python -m pipeline parse ../tutorial/37-static-asset-pipeline.md` to see block indices.
+
+blocks:
+  0:
+    narration: >
+      Welcome to Step 37. We'll build a static asset pipeline with
+      content-based cache busting. Change a CSS file, and the URL changes
+      automatically.
+  1:
+    narration: >
+      Let's start with: What We're Building.
+  3:
+    narration: >
+      Let's look at the code. js">, templates now use a static_path/1 helper
+      that appends a content hash.
+  8:
+    narration: >
+      Let's look at the code. Before this step, templates hardcoded asset
+      paths.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  21:
+    narration: >
+      Let's look at the code. ex.
+    effect: "line_highlight"
+    highlight_lines: [2, 3, 4]
+  28:
+    narration: >
+      Here's how this looks in elixir. The alternative would be a GenServer,
+      but that serializes all lookups through a single process — a bottleneck
+      under load.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  34:
+    narration: >
+      Let's look at the code. init() at the top of start/2.
+    effect: "line_highlight"
+    highlight_lines: [2, 3, 6]
+  38:
+    narration: >
+      Let's look at the code. eex — replace hardcoded asset paths with
+      static_path/1 calls.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  40:
+    narration: >
+      Let's look at the code. The rendered HTML becomes.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  44:
+    narration: >
+      Let's look at the code. ex — add a static_path/1 convenience delegate.
+    effect: "line_highlight"
+    highlight_lines: [2, 3, 4]
+  50:
+    narration: >
+      Let's look at the code. The reloader's init/1 state now tracks
+      asset_mtimes alongside the existing mtimes for lib/ files.
+    effect: "line_highlight"
+    highlight_lines: [2, 3, 4]
+  52:
+    narration: >
+      Let's look at the code. When asset files change, it rebuilds the static
+      manifest.
+    effect: "line_highlight"
+    highlight_lines: [2, 3, 4]
+  54:
+    narration: >
+      Let's look at the code. The get_asset_mtimes/0 helper scans assets/ for
+      all files and records their modification times, mirroring how
+      get_mtimes/1 works for lib/.
+    effect: "line_highlight"
+    highlight_lines: [2, 3, 4]
+  60:
+    narration: >
+      Let's look at the code. For maximum caching efficiency, configure your
+      reverse proxy to add long-lived cache headers for versioned assets.
+    effect: "line_highlight"
+    highlight_lines: [2, 4, 5]
+  63:
+    narration: >
+      Here's how this looks in bash. The immutable directive tells the browser
+      to never even check if the file has changed — it trusts the URL
+      completely.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 5]

@@ -1,0 +1,62 @@
+# Sidecar overrides for 23-scoped-routes
+# Generated — edit freely to customize narration and effects.
+# Use `python -m pipeline parse ../tutorial/23-scoped-routes.md` to see block indices.
+
+blocks:
+  0:
+    narration: >
+      Welcome to Step 23. Scoped routes let us group related routes under a
+      common prefix, like slash admin or slash API.
+  1:
+    narration: >
+      Let's start with: What We're Building.
+  6:
+    narration: >
+      Let's look at the code. Without scoping, API routes look like this.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  8:
+    narration: >
+      Let's look at the code. In Phoenix, you'd use scope to group them.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 4]
+  12:
+    narration: >
+      Let's look at the code. A naive approach would be to use a module
+      attribute (@scope_prefix) as compile-time state.
+    effect: "line_highlight"
+    highlight_lines: [2, 3, 4]
+  16:
+    narration: >
+      Let's look at the code. The scope macro walks the block's syntax tree
+      and rewrites every route macro call to include the prefix.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  21:
+    narration: >
+      Let's look at the code. ex — add the scope macro and the private
+      prepend_prefix helper functions below to the module.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  22:
+    narration: >
+      Let's look at the code. ex — add the scope macro and the private
+      prepend_prefix helper functions below to the module.
+    effect: "line_highlight"
+    highlight_lines: [2, 3, 4]
+  28:
+    narration: >
+      Let's look at the code. Nesting works naturally because of how AST
+      transformation composes.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  33:
+    narration: >
+      Let's look at the code. ex with.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 5]
+  35:
+    narration: >
+      Let's look at the code. ex with.
+    effect: "line_highlight"
+    highlight_lines: [2, 6, 10]

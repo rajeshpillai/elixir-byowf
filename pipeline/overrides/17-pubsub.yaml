@@ -1,0 +1,70 @@
+# Sidecar overrides for 17-pubsub
+# Generated — edit freely to customize narration and effects.
+# Use `python -m pipeline parse ../tutorial/17-pubsub.md` to see block indices.
+
+blocks:
+  0:
+    narration: >
+      Welcome to Step 17. We'll build PubSub — a publish-subscribe system that
+      lets LiveView processes broadcast messages to each other.
+  3:
+    narration: >
+      Let's start with: What You'll Learn.
+  18:
+    narration: >
+      Let's look at the code. self() returns the PID of the process calling
+      it.
+  22:
+    narration: >
+      Let's look at the code. send/2 delivers a message to another process's
+      mailbox.
+  25:
+    narration: >
+      Here's how this looks in elixir. This is the fundamental way processes
+      communicate in Elixir.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  29:
+    narration: >
+      Let's look at the code. , start: {Module, :function, [args]}} map tells
+      the supervisor how to start this process.
+  34:
+    narration: >
+      Let's look at the code. ex.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  39:
+    narration: >
+      Let's look at the code. PubSub to the children list before the Cowboy
+      listener.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  43:
+    narration: >
+      Let's look at the code. ex — add handle_info/2 as an optional callback.
+  47:
+    narration: >
+      Let's look at the code. ex.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 4]
+  61:
+    narration: >
+      Let's look at the code. ).
+    effect: "line_highlight"
+    highlight_lines: [2, 3, 4]
+  65:
+    narration: >
+      Let's look at the code. ex.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 4]
+  69:
+    narration: >
+      Let's look at the code. ex — add WebSocket routes for the new LiveViews.
+  71:
+    narration: >
+      Let's look at the code. ex — add HTTP routes.
+  73:
+    narration: >
+      Let's look at the code. ex — add controller actions.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]

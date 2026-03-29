@@ -1,0 +1,110 @@
+# Sidecar overrides for 27-path-helpers
+# Generated — edit freely to customize narration and effects.
+# Use `python -m pipeline parse ../tutorial/27-path-helpers.md` to see block indices.
+
+blocks:
+  0:
+    narration: >
+      Welcome to Step 27. Path helpers generate URL paths from route names at
+      compile time, so you never have to hardcode URLs.
+  1:
+    narration: >
+      Let's start with: What We're Building.
+  8:
+    narration: >
+      Let's look at the code. Every controller and template in Ignite
+      hardcodes path strings.
+    effect: "line_highlight"
+    highlight_lines: [2, 5]
+  12:
+    narration: >
+      Let's look at the code. Defining a standard RESTful resource requires 6
+      route lines.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  18:
+    narration: >
+      Let's look at the code. ex — register the accumulating attribute in the
+      __using__/1 macro.
+  20:
+    narration: >
+      Let's look at the code. Then add @route_info accumulation to
+      build_route/4.
+  22:
+    narration: >
+      Let's look at the code. By the time all routes are defined, we have a
+      complete manifest.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  25:
+    narration: >
+      Let's look at the code. ex — register a @before_compile callback in
+      __using__/1.
+  28:
+    narration: >
+      Let's look at the code. ex — add the __before_compile__ macro.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  33:
+    narration: >
+      Let's look at the code. Here is the full module.
+    effect: "line_highlight"
+    highlight_lines: [2, 3, 4]
+  35:
+    narration: >
+      Let's look at the code. Name derivation examples.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  41:
+    narration: >
+      Let's look at the code. Routes with the same helper name but different
+      actions become multiple clauses of the same function.
+    effect: "line_highlight"
+    highlight_lines: [2, 3, 4]
+  45:
+    narration: >
+      Let's look at the code. unquote_splicing/1 — Inserts a list of AST nodes
+      as individual expressions.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  48:
+    narration: >
+      Let's look at the code. flat_map/2 — Maps and flattens in one step.
+  51:
+    narration: >
+      Let's look at the code. cond do — An if/else if chain.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  56:
+    narration: >
+      Let's look at the code. We use a simple heuristic.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 4]
+  62:
+    narration: >
+      Let's look at the code. ex — add the resources/3 macro.
+  64:
+    narration: >
+      Let's look at the code. Expands at compile time into.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  66:
+    narration: >
+      Let's look at the code. Expands at compile time into.
+  70:
+    narration: >
+      Let's look at the code. macro calls (not raw dispatch clauses), it
+      automatically.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  74:
+    narration: >
+      Let's look at the code. ex — add a prepend_prefix clause for :resources.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  83:
+    narration: >
+      Here's how this looks in bash. Our implementation covers the core
+      concept — compile-time code generation from route metadata.
+    effect: "line_highlight"
+    highlight_lines: [2, 3, 4]

@@ -1,0 +1,51 @@
+# Sidecar overrides for 14-diffing
+# Generated — edit freely to customize narration and effects.
+# Use `python -m pipeline parse ../tutorial/14-diffing.md` to see block indices.
+
+blocks:
+  0:
+    narration: >
+      Welcome to Step 14. LiveView sends full HTML on every update — wasteful.
+      Let's build a diffing engine that only sends what changed.
+  1:
+    narration: >
+      Let's start with: What We're Building.
+  10:
+    narration: >
+      Take a look at this diagram. It illustrates consider this template:.
+  13:
+    narration: >
+      Take a look at this diagram. It illustrates split into:.
+  17:
+    narration: >
+      Let's look at the code. Mount message (first connection).
+  19:
+    narration: >
+      Let's look at the code. Update message (after event).
+  21:
+    narration: >
+      Take a look at this diagram. It illustrates the frontend saves the
+      statics from the first message and reuses them:.
+  27:
+    narration: >
+      Let's look at the code. The JS reconstruction logic zips two arrays.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  32:
+    narration: >
+      Let's look at the code. ex.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  38:
+    narration: >
+      Let's look at the code. ex with.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 4]
+  41:
+    narration: >
+      Let's look at the code. js with.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 4]
+  45:
+    narration: >
+      Take a look at this diagram. It illustrates the js now:.

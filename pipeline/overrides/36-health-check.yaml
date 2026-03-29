@@ -1,0 +1,49 @@
+# Sidecar overrides for 36-health-check
+# Generated — edit freely to customize narration and effects.
+# Use `python -m pipeline parse ../tutorial/36-health-check.md` to see block indices.
+
+blocks:
+  0:
+    narration: >
+      Welcome to Step 36. A health check endpoint lets load balancers and
+      monitoring systems verify that our application is running.
+  1:
+    narration: >
+      Let's start with: What We're Building.
+  4:
+    narration: >
+      Here's how this looks in json. A dedicated GET /health endpoint that
+      returns JSON with system metrics — uptime, memory usage, process count,
+      scheduler info, and version numbers.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  14:
+    narration: >
+      Let's look at the code. ex — add the health check route.
+  18:
+    narration: >
+      Let's look at the code. ex — add the health/1 action and format_uptime/1
+      helper.
+    effect: "line_highlight"
+    highlight_lines: [2, 3, 4]
+  28:
+    narration: >
+      Let's look at the code. system_info/1 — Queries the VM runtime.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  35:
+    narration: >
+      Here's how this looks in dockerfile. The load balancer hits /health
+      every 30 seconds.
+  36:
+    narration: >
+      Here's how this looks in yaml. The load balancer hits /health every 30
+      seconds.
+    effect: "line_highlight"
+    highlight_lines: [2, 3, 4]
+  40:
+    narration: >
+      Here's how this looks in bash. Monitoring systems can poll /health and
+      graph memory.total_mb, processes, and uptime_seconds over time.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 5]

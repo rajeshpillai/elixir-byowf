@@ -1,0 +1,93 @@
+# Sidecar overrides for 42-feex-templates
+# Generated — edit freely to customize narration and effects.
+# Use `python -m pipeline parse ../tutorial/42-feex-templates.md` to see block indices.
+
+blocks:
+  0:
+    narration: >
+      Welcome to Step 42. FEEx templates bring a new sigil syntax with at-sign
+      shorthand for assigns, blocks, and auto-escaping.
+  1:
+    narration: >
+      Let's start with: What We're Building.
+  7:
+    narration: >
+      Let's look at the code. With the ~L sigil from Step 24, you write
+      templates like this.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  13:
+    narration: >
+      Here's how this looks in elixir. With plain string interpolation (no
+      sigil), it's even worse — you must manually call esc() on every dynamic
+      value.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  20:
+    narration: >
+      Let's look at the code. ex.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 4]
+  34:
+    narration: >
+      Let's look at the code. The fix: inspect the AST to detect block
+      expressions and skip escaping for them.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  40:
+    narration: >
+      Let's look at the code. The escape/1 function wraps every <%= %> output.
+  45:
+    narration: >
+      Let's look at the code. When you have trusted HTML (like output from a
+      render helper), wrap it in raw/1.
+  47:
+    narration: >
+      Here's how this looks in elixir. The escape/1 function recognizes
+      {:safe, _} tuples and passes them through unchanged.
+    effect: "line_highlight"
+    highlight_lines: [2, 5]
+  50:
+    narration: >
+      Let's look at the code. The sigil pre-processes the template string
+      before passing it to EEx.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  57:
+    narration: >
+      Let's look at the code. ex — add the sigil and helper to the module, and
+      import them in __using__.
+    effect: "line_highlight"
+    highlight_lines: [2, 3, 4]
+  62:
+    narration: >
+      Let's look at the code. Before (~L).
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  64:
+    narration: >
+      Let's look at the code. After (~F).
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  66:
+    narration: >
+      Let's look at the code. After (~F).
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  69:
+    narration: >
+      Here's how this looks in elixir. Without ~F, this requires an inline
+      ternary or a separate helper function.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  72:
+    narration: >
+      Here's how this looks in elixir. The for block produces a list of
+      strings (one per iteration).
+    effect: "line_highlight"
+    highlight_lines: [4, 8]
+  75:
+    narration: >
+      Let's look at the code. For render helpers that return pre-built HTML.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 4]

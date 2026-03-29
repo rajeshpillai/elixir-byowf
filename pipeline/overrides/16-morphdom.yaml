@@ -1,0 +1,49 @@
+# Sidecar overrides for 16-morphdom
+# Generated — edit freely to customize narration and effects.
+# Use `python -m pipeline parse ../tutorial/16-morphdom.md` to see block indices.
+
+blocks:
+  0:
+    narration: >
+      Welcome to Step 16. Instead of replacing the entire DOM, let's use
+      morphdom to efficiently patch only the elements that changed.
+  1:
+    narration: >
+      Let's start with: What We're Building.
+  9:
+    narration: >
+      Let's look at the code. innerHTML (before).
+    effect: "line_highlight"
+    highlight_lines: [1]
+  11:
+    narration: >
+      Let's look at the code. morphdom (after).
+    effect: "line_highlight"
+    highlight_lines: [1]
+  19:
+    narration: >
+      Let's look at the code. Morphdom lets you intercept updates with hooks.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 4]
+  23:
+    narration: >
+      Let's look at the code. js falls back to innerHTML.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 4]
+  27:
+    narration: >
+      Let's look at the code. js.
+  29:
+    narration: >
+      Let's look at the code. Alternatively, install via npm and copy the UMD
+      bundle.
+  34:
+    narration: >
+      Let's look at the code. The key changes from Step 14.
+    effect: "line_highlight"
+    highlight_lines: [14, 15]
+  38:
+    narration: >
+      Let's look at the code. js.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]

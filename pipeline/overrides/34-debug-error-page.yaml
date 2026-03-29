@@ -1,0 +1,53 @@
+# Sidecar overrides for 34-debug-error-page
+# Generated — edit freely to customize narration and effects.
+# Use `python -m pipeline parse ../tutorial/34-debug-error-page.md` to see block indices.
+
+blocks:
+  0:
+    narration: >
+      Welcome to Step 34. When an error occurs in development, we want a rich
+      debug page with the stacktrace, request details, and source code.
+  1:
+    narration: >
+      Let's start with: What We're Building.
+  6:
+    narration: >
+      Let's look at the code. Before this step, when a controller crashes, the
+      user sees.
+  18:
+    narration: >
+      Let's look at the code. ex.
+    effect: "line_highlight"
+    highlight_lines: [2, 3, 4]
+  28:
+    narration: >
+      Let's look at the code. Elixir stacktraces are lists of {module,
+      function, arity_or_args, location} tuples.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  30:
+    narration: >
+      Let's look at the code. We format each entry into an HTML table row.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  36:
+    narration: >
+      Let's look at the code. render/3.
+    effect: "line_highlight"
+    highlight_lines: [2, 4, 6]
+  41:
+    narration: >
+      Let's look at the code. In production, the same render/3 call returns a
+      generic page.
+  45:
+    narration: >
+      Let's look at the code. All dynamic content is HTML-escaped before
+      rendering.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  52:
+    narration: >
+      Here's how this looks in bash. The error page uses inline CSS and JS (no
+      external assets).
+    effect: "line_highlight"
+    highlight_lines: [1, 2]

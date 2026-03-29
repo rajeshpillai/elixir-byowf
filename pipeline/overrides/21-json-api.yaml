@@ -1,0 +1,49 @@
+# Sidecar overrides for 21-json-api
+# Generated — edit freely to customize narration and effects.
+# Use `python -m pipeline parse ../tutorial/21-json-api.md` to see block indices.
+
+blocks:
+  0:
+    narration: >
+      Welcome to Step 21. Let's add a JSON API helper. Sometimes you need your
+      routes to return JSON instead of HTML.
+  1:
+    narration: >
+      Let's start with: What We're Building.
+  6:
+    narration: >
+      Let's look at the code. Right now, if you wanted to return JSON, you'd
+      have to manually encode and set headers.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  12:
+    narration: >
+      Let's look at the code. ex — add the json/3 function.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  17:
+    narration: >
+      Let's look at the code. ex — add a new parse_body/2 clause for JSON
+      content type.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  25:
+    narration: >
+      Let's look at the code. ex.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 4]
+  28:
+    narration: >
+      Let's look at the code. ex — add the API routes.
+  31:
+    narration: >
+      Let's look at the code. ex — add an API section to the index page so
+      visitors can discover and test the JSON endpoints.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  34:
+    narration: >
+      Here's how this looks in bash. This is just a convenience link on the
+      homepage — the real work is in ApiController and the router.
+    effect: "line_highlight"
+    highlight_lines: [2, 6, 7]

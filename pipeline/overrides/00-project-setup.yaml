@@ -1,0 +1,62 @@
+# Sidecar overrides for 00-project-setup
+# Generated — edit freely to customize narration and effects.
+# Use `python -m pipeline parse ../tutorial/00-project-setup.md` to see block indices.
+
+blocks:
+  0:
+    narration: >
+      Welcome to step zero. Let's set up the Elixir project from scratch using
+      Mix.
+  1:
+    narration: >
+      Let's start with: What We're Building.
+  20:
+    narration: >
+      Let's look at the code. It defines.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 4]
+  28:
+    narration: >
+      Let's look at the code. Running iex -S mix starts it with your project
+      loaded, so you can call your functions directly.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  32:
+    narration: >
+      Let's look at the code. Ours just has a module doc for now — we'll add
+      functions later.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  36:
+    narration: >
+      Let's look at the code. The BEAM calls start/2 when your app boots.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 4]
+  41:
+    narration: >
+      Let's look at the code. Open your terminal and run.
+  45:
+    narration: >
+      Let's look at the code. Mix will create the full project structure.
+  47:
+    narration: >
+      Let's look at the code. Mix will create the full project structure.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  49:
+    narration: >
+      Let's look at the code. Mix will create the full project structure.
+  53:
+    narration: >
+      Let's look at the code. You should see output like.
+  55:
+    narration: >
+      Let's look at the code. Try some Elixir.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  58:
+    narration: >
+      Here's how this looks in bash. Exit with Ctrl+C twice.
+  63:
+    narration: >
+      Let's look at the code. We'll need these in later steps.

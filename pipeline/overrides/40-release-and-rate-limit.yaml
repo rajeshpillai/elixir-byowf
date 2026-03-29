@@ -1,0 +1,94 @@
+# Sidecar overrides for 40-release-and-rate-limit
+# Generated — edit freely to customize narration and effects.
+# Use `python -m pipeline parse ../tutorial/40-release-and-rate-limit.md` to see block indices.
+
+blocks:
+  0:
+    narration: >
+      Welcome to Step 40. Time to prepare for production. We'll configure a
+      Mix release and add an ETS-based rate limiter.
+  2:
+    narration: >
+      Let's start with: What We Built.
+  15:
+    narration: >
+      Let's look at the code. exs — add env: config_env().
+  18:
+    narration: >
+      Let's look at the code. env() with config lookup.
+  23:
+    narration: >
+      Let's look at the code. exs.
+    effect: "line_highlight"
+    highlight_lines: [1, 7, 9]
+  31:
+    narration: >
+      Let's look at the code. ex — replace hardcoded secret with configurable
+      secret.
+    effect: "line_highlight"
+    highlight_lines: [1, 3, 4]
+  36:
+    narration: >
+      Let's look at the code. ex.
+    effect: "line_highlight"
+    highlight_lines: [2, 3, 5]
+  38:
+    narration: >
+      Let's look at the code. Run from a release.
+  42:
+    narration: >
+      Let's look at the code. exs — add release configuration.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  52:
+    narration: >
+      Let's look at the code. ex — extract the peer IP.
+  54:
+    narration: >
+      Let's look at the code. The rate limiter checks x-forwarded-for first
+      (for clients behind a reverse proxy), then falls back to the peer IP.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  62:
+    narration: >
+      Let's look at the code. ex.
+    effect: "line_highlight"
+    highlight_lines: [2, 3, 4]
+  65:
+    narration: >
+      Let's look at the code. select_delete/2 with a match spec.
+  69:
+    narration: >
+      Let's look at the code. exs — add rate limit defaults.
+    effect: "line_highlight"
+    highlight_lines: [2, 3, 4]
+  73:
+    narration: >
+      Let's look at the code. ex — add plug :rate_limit as the first
+      middleware and define the plug function.
+    effect: "line_highlight"
+    highlight_lines: [2, 3, 4]
+  77:
+    narration: >
+      Here's how this looks in elixir. The rate_limit plug is first in the
+      pipeline so requests are checked before any other work is done.
+  80:
+    narration: >
+      Here's how this looks in elixir. In a Mix release, your app's full
+      supervision tree isn't running when you call bin/ignite eval "...".
+  85:
+    narration: >
+      Here's how this looks in elixir. Unlike config.exs (which runs at
+      compile time), runtime.exs runs at boot time — every time your app
+      starts.
+  98:
+    narration: >
+      Let's look at the code. Match specs are Erlang's way of filtering ETS
+      entries without scanning every row.
+  103:
+    narration: >
+      Here's how this looks in bash. We use monotonic time for internal
+      tracking because it's not affected by clock adjustments (NTP, DST,
+      manual changes).
+    effect: "line_highlight"
+    highlight_lines: [2, 5, 8]

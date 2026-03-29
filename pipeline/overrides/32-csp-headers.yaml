@@ -1,0 +1,47 @@
+# Sidecar overrides for 32-csp-headers
+# Generated — edit freely to customize narration and effects.
+# Use `python -m pipeline parse ../tutorial/32-csp-headers.md` to see block indices.
+
+blocks:
+  0:
+    narration: >
+      Welcome to Step 32. Content Security Policy headers tell browsers which
+      resources are allowed to load, preventing XSS attacks.
+  1:
+    narration: >
+      Let's start with: What We're Building.
+  6:
+    narration: >
+      Let's look at the code. Without CSP, an XSS attack can do anything.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 4]
+  20:
+    narration: >
+      Let's look at the code. ex.
+    effect: "line_highlight"
+    highlight_lines: [2, 3, 5]
+  45:
+    narration: >
+      Let's look at the code. ex — add plug :set_csp_headers and its
+      implementation.
+    effect: "line_highlight"
+    highlight_lines: [2, 4, 5]
+  49:
+    narration: >
+      Let's look at the code. ex — add csp_nonce/1 and csp_script_tag/2
+      helpers.
+    effect: "line_highlight"
+    highlight_lines: [2, 3, 4]
+  52:
+    narration: >
+      Here's how this looks in elixir. Controllers already import
+      Ignite.Controller, so both helpers are available everywhere.
+    effect: "line_highlight"
+    highlight_lines: [2, 3, 4]
+  61:
+    narration: >
+      Here's how this looks in bash. The connect-src directive is critical —
+      without ws: and wss:, the browser would block WebSocket connections and
+      LiveView would fail silently.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 5]

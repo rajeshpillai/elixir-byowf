@@ -1,0 +1,34 @@
+# Sidecar overrides for 33-mix-ignite-routes
+# Generated — edit freely to customize narration and effects.
+# Use `python -m pipeline parse ../tutorial/33-mix-ignite-routes.md` to see block indices.
+
+blocks:
+  0:
+    narration: >
+      Welcome to Step 33. Let's build a Mix task that prints all registered
+      routes — handy for debugging and documentation.
+  1:
+    narration: >
+      Let's start with: What We're Building.
+  21:
+    narration: >
+      Let's look at the code. ex — modify the __before_compile__/1 macro to
+      also generate __routes__/0.
+    effect: "line_highlight"
+    highlight_lines: [2, 3, 4]
+  24:
+    narration: >
+      Let's look at the code. After compilation, you can call.
+    effect: "line_highlight"
+    highlight_lines: [1]
+  27:
+    narration: >
+      Let's look at the code. ex.
+    effect: "line_highlight"
+    highlight_lines: [2, 3, 5]
+  39:
+    narration: >
+      Here's how this looks in bash. Each column is padded to max_width + 2
+      (for spacing between columns).
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 5]

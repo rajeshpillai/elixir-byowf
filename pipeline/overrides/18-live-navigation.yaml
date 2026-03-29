@@ -1,0 +1,89 @@
+# Sidecar overrides for 18-live-navigation
+# Generated — edit freely to customize narration and effects.
+# Use `python -m pipeline parse ../tutorial/18-live-navigation.md` to see block indices.
+
+blocks:
+  0:
+    narration: >
+      Welcome to Step 18. Let's add live navigation so clicking links doesn't
+      cause a full page reload. The browser stays connected via WebSocket.
+  3:
+    narration: >
+      Let's start with: What You'll Learn.
+  9:
+    narration: >
+      Here's how this looks in html. In this step, we add client-side LiveView
+      navigation — the browser swaps WebSocket connections without reloading
+      the page.
+  17:
+    narration: >
+      Let's look at the code. A LiveView can also trigger navigation from the
+      server.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  19:
+    narration: >
+      Let's look at the code. The handler detects it and sends.
+  25:
+    narration: >
+      Let's look at the code. The route map tells the client which WebSocket
+      path corresponds to each HTTP path.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  29:
+    narration: >
+      Here's how this looks in elixir. This is injected as a data-live-routes
+      attribute on the #ignite-app div by the controller.
+  31:
+    narration: >
+      Let's look at the code. We use this to extract __redirect__ from assigns
+      after handle_event.
+  35:
+    narration: >
+      Let's look at the code. This refactors the inline WebSocket setup into a
+      connect(livePath) function, adds navigate(url, livePath), intercepts
+      ignite-navigate link clicks, and handles browser back/forward via
+      popstate.
+  38:
+    narration: >
+      Let's look at the code. ex — add the push_redirect/2 function and import
+      it in __using__/1.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  40:
+    narration: >
+      Let's look at the code. Update the __using__/1 macro to import
+      push_redirect.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  43:
+    narration: >
+      Let's look at the code. ex — after handle_event, check for __redirect__
+      in assigns and send a redirect message instead of a render update.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  46:
+    narration: >
+      Let's look at the code. eex — add data-live-routes to the container div.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  49:
+    narration: >
+      Let's look at the code. Update all LiveView controller actions — pass
+      the live_routes map so the JS knows which paths map to which WebSocket
+      endpoints.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  52:
+    narration: >
+      Let's look at the code. The ignite-navigate attribute tells the JS to
+      handle the click client-side, while the href is a fallback for when JS
+      is disabled.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  55:
+    narration: >
+      Let's look at the code. ex — add the same navigation links at the bottom
+      of the render function.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]

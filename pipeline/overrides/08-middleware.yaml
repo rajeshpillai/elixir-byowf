@@ -1,0 +1,43 @@
+# Sidecar overrides for 08-middleware
+# Generated — edit freely to customize narration and effects.
+# Use `python -m pipeline parse ../tutorial/08-middleware.md` to see block indices.
+
+blocks:
+  0:
+    narration: >
+      Welcome to Step 8. Let's build a middleware pipeline, similar to Plug in
+      Phoenix. Each middleware transforms the connection struct before and
+      after the handler.
+  1:
+    narration: >
+      Let's start with: What We're Building.
+  5:
+    narration: >
+      Let's look at the code. We're adding a plug macro so you can write.
+  14:
+    narration: >
+      Let's look at the code. Module attributes are metadata stored on a
+      module at compile time.
+    effect: "line_highlight"
+    highlight_lines: [1, 3, 4]
+  18:
+    narration: >
+      Let's look at the code. reduce transforms a list into a single value by
+      passing an accumulator.
+  20:
+    narration: >
+      Let's look at the code. For our plugs, the accumulator is the conn.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  28:
+    narration: >
+      Let's look at the code. A plug that rejects a request returns a halted
+      conn.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  41:
+    narration: >
+      Let's look at the code. ex — add the plug calls and their
+      implementations.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 5]

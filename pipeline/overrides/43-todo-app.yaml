@@ -1,0 +1,18 @@
+# Sidecar overrides for 43-todo-app
+# Generated — edit freely to customize narration and effects.
+# Use `python -m pipeline parse ../tutorial/43-todo-app.md` to see block indices.
+
+blocks:
+  0:
+    narration: >
+      Welcome to Step 43. This is the capstone project — a full Todo
+      application using LiveView, Streams, Ecto, and FEEx templates.
+  1:
+    narration: >
+      Let's start with: What We're Building.
+  19:
+    narration: >
+      Let's look at the code. TodoHTML uses the ~F sigil from Step 42 for
+      clean template syntax.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]

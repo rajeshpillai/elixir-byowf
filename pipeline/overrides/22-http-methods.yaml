@@ -1,0 +1,32 @@
+# Sidecar overrides for 22-http-methods
+# Generated — edit freely to customize narration and effects.
+# Use `python -m pipeline parse ../tutorial/22-http-methods.md` to see block indices.
+
+blocks:
+  0:
+    narration: >
+      Welcome to Step 22. We'll add support for PUT, PATCH, and DELETE HTTP
+      methods. This completes our RESTful routing system.
+  1:
+    narration: >
+      Let's start with: What We're Building.
+  12:
+    narration: >
+      Let's look at the code. ex — add put, patch, and delete macros.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  24:
+    narration: >
+      Let's look at the code. ex — add the new REST routes.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  27:
+    narration: >
+      Let's look at the code. ex — add update/1 and delete/1 actions.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  29:
+    narration: >
+      Let's look at the code. ex — add update/1 and delete/1 actions.
+    effect: "line_highlight"
+    highlight_lines: [2, 3, 4]

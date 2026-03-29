@@ -1,0 +1,69 @@
+# Sidecar overrides for 09-post-parser
+# Generated — edit freely to customize narration and effects.
+# Use `python -m pipeline parse ../tutorial/09-post-parser.md` to see block indices.
+
+blocks:
+  0:
+    narration: >
+      Welcome to Step 9. We need to handle POST requests with form data. We'll
+      build a body parser that decodes URL-encoded form submissions.
+  1:
+    narration: >
+      Let's start with: What We're Building.
+  5:
+    narration: >
+      Let's look at the code. params so our controller can use it.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  15:
+    narration: >
+      Let's look at the code. After reading headers, we switch the socket to
+      raw mode.
+  17:
+    narration: >
+      Let's look at the code. Then we can read exactly content_length bytes.
+  20:
+    narration: >
+      Let's look at the code. Parses URL-encoded form data.
+  25:
+    narration: >
+      Let's look at the code. We use <> (string concatenation) in pattern
+      matching.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  31:
+    narration: >
+      Let's look at the code. First, update your existing parse/1 to read the
+      body and store it in params.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  34:
+    narration: >
+      Let's look at the code. read_body/2 checks for a Content-Length header,
+      switches the socket from HTTP packet mode to raw binary mode, reads the
+      body bytes, and delegates to parse_body/2.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  36:
+    narration: >
+      Let's look at the code. For anything else, it returns the raw body.
+    effect: "line_highlight"
+    highlight_lines: [2, 3, 4]
+  39:
+    narration: >
+      Let's look at the code. ex — add this POST route.
+  42:
+    narration: >
+      Let's look at the code. ex — add this create/1 function.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  49:
+    narration: >
+      Here's how this looks in bash. Note: POST body params use string keys
+      ("username"), while URL params use atom keys (:id).
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  52:
+    narration: >
+      Here's how this looks in bash. You should see: User 'jose' created
+      successfully!

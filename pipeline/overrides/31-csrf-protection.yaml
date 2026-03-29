@@ -1,0 +1,74 @@
+# Sidecar overrides for 31-csrf-protection
+# Generated — edit freely to customize narration and effects.
+# Use `python -m pipeline parse ../tutorial/31-csrf-protection.md` to see block indices.
+
+blocks:
+  0:
+    narration: >
+      Welcome to Step 31. CSRF protection prevents cross-site request forgery
+      attacks. We'll add token generation and validation to all forms.
+  1:
+    narration: >
+      Let's start with: What We're Building.
+  6:
+    narration: >
+      Let's look at the code. Without CSRF protection, an attacker can create
+      a page like this.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  20:
+    narration: >
+      Here's how this looks in elixir. We use masked tokens — the same
+      approach as Phoenix.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 4]
+  23:
+    narration: >
+      Here's how this looks in elixir. with chains multiple pattern-matched
+      operations.
+  26:
+    narration: >
+      Here's how this looks in elixir. Creates a string that can contain
+      double quotes without escaping.
+  29:
+    narration: >
+      Here's how this looks in elixir. Encodes/decodes binary data as URL-safe
+      Base64 strings.
+  32:
+    narration: >
+      Here's how this looks in elixir. <<...>> is Elixir's binary pattern
+      matching syntax.
+  37:
+    narration: >
+      Let's look at the code. ex.
+    effect: "line_highlight"
+    highlight_lines: [2, 3, 5]
+  44:
+    narration: >
+      Let's look at the code. ex — after decoding the session, ensure a CSRF
+      token exists.
+    effect: "line_highlight"
+    highlight_lines: [3, 4, 5]
+  48:
+    narration: >
+      Let's look at the code. ex — add the csrf_token_tag/1 helper.
+    effect: "line_highlight"
+    highlight_lines: [2, 3, 4]
+  52:
+    narration: >
+      Let's look at the code. ex — add the plug :verify_csrf_token declaration
+      and its implementation.
+    effect: "line_highlight"
+    highlight_lines: [2, 4, 5]
+  57:
+    narration: >
+      Here's how this looks in elixir. Form submissions must include a valid
+      _csrf_token parameter.
+    effect: "line_highlight"
+    highlight_lines: [2, 3, 5]
+  66:
+    narration: >
+      Here's how this looks in bash. This triple layer (CORS + SameSite + no
+      cookie) makes JSON APIs inherently CSRF-resistant without tokens.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 9]

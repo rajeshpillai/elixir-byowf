@@ -1,0 +1,69 @@
+# Sidecar overrides for 12-liveview
+# Generated — edit freely to customize narration and effects.
+# Use `python -m pipeline parse ../tutorial/12-liveview.md` to see block indices.
+
+blocks:
+  0:
+    narration: >
+      Welcome to Step 12. This is a big one — we're building LiveView. A
+      WebSocket-powered system that lets us build interactive UIs without
+      writing JavaScript.
+  1:
+    narration: >
+      Let's start with: What We're Building.
+  13:
+    narration: >
+      Let's look at the code. A behaviour defines a contract — a set of
+      functions a module must implement.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  18:
+    narration: >
+      Let's look at the code. Cowboy provides a WebSocket behaviour with these
+      callbacks.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  21:
+    narration: >
+      Let's look at the code. It remembers state.
+  26:
+    narration: >
+      Let's look at the code. We use Jason to encode/decode JSON for WebSocket
+      messages.
+  29:
+    narration: >
+      Let's look at the code. The :: syntax describes the types.
+  34:
+    narration: >
+      Let's look at the code. ex.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  39:
+    narration: >
+      Let's look at the code. ex.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 4]
+  46:
+    narration: >
+      Let's look at the code. ex.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 4]
+  49:
+    narration: >
+      Let's look at the code. ex — add a /live WebSocket route to the Cowboy
+      dispatch rules.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  55:
+    narration: >
+      Let's look at the code. ex — add a route for the counter page.
+  57:
+    narration: >
+      Let's look at the code. ex — add a counter action that serves an HTML
+      page with inline JavaScript.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  64:
+    narration: >
+      Let's look at the code. The /counter route serves an HTML page with
+      inline JavaScript that.

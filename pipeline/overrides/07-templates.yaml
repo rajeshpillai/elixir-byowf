@@ -1,0 +1,64 @@
+# Sidecar overrides for 07-templates
+# Generated — edit freely to customize narration and effects.
+# Use `python -m pipeline parse ../tutorial/07-templates.md` to see block indices.
+
+blocks:
+  0:
+    narration: >
+      Welcome to Step 7. We'll add EEx templates — Elixir's built-in
+      templating system. This lets us render HTML with embedded Elixir code,
+      like ERB in Ruby.
+  1:
+    narration: >
+      Let's start with: What We're Building.
+  3:
+    narration: >
+      Let's look at the code. Instead of returning plain text, we want
+      controllers to render full HTML pages with dynamic content.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  9:
+    narration: >
+      Let's look at the code. EEx is part of Elixir's standard library — no
+      dependencies needed! It lets you embed Elixir expressions inside any
+      text file using special tags.
+  16:
+    narration: >
+      Let's look at the code. eex file, evaluates the Elixir expressions
+      inside it, and returns the resulting string.
+  20:
+    narration: >
+      Let's look at the code. A keyword list is a list of {key, value} tuples
+      where keys are atoms.
+    effect: "line_highlight"
+    highlight_lines: [1, 3]
+  22:
+    narration: >
+      Let's look at the code. into/2.
+  25:
+    narration: >
+      Let's look at the code. Elixir uses \\\\ to set default parameter
+      values.
+  31:
+    narration: >
+      Let's look at the code. Builds file paths safely across operating
+      systems.
+  35:
+    narration: >
+      Let's look at the code. ex — add this render/3 function.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  40:
+    narration: >
+      Let's look at the code. eex.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  44:
+    narration: >
+      Let's look at the code. ex — replace the show/1 function with.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  47:
+    narration: >
+      Take a look at this diagram. It illustrates clean and readable — the
+      controller doesn't know anything about html.

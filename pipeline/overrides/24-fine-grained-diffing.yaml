@@ -1,0 +1,125 @@
+# Sidecar overrides for 24-fine-grained-diffing
+# Generated — edit freely to customize narration and effects.
+# Use `python -m pipeline parse ../tutorial/24-fine-grained-diffing.md` to see block indices.
+
+blocks:
+  0:
+    narration: >
+      Welcome to Step 24. We'll build a custom EEx engine that separates
+      static HTML from dynamic parts at compile time, enabling fine-grained
+      diffs.
+  1:
+    narration: >
+      Let's start with: What We're Building.
+  6:
+    narration: >
+      Let's look at the code. " But our implementation was a shortcut.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  16:
+    narration: >
+      Let's look at the code. Before.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  18:
+    narration: >
+      Let's look at the code. After.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  20:
+    narration: >
+      Let's look at the code. At compile time, it produces a %Rendered{}
+      struct.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  23:
+    narration: >
+      Let's look at the code. zip/2 — Pairs up elements from two lists into
+      tuples.
+  26:
+    narration: >
+      Let's look at the code. with_index/1 — Attaches a zero-based index to
+      each element.
+  32:
+    narration: >
+      Let's look at the code. ex.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  35:
+    narration: >
+      Let's look at the code. ex.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 5]
+  42:
+    narration: >
+      Let's look at the code. ex — add the sigil_L macro to the module.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  48:
+    narration: >
+      Let's look at the code. ex — replace the diff function with
+      index-by-index comparison.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  51:
+    narration: >
+      Let's look at the code. Mount (full payload — statics + dynamics).
+  53:
+    narration: >
+      Let's look at the code. Update (sparse — only changed indices).
+  55:
+    narration: >
+      Let's look at the code. Full update (when all dynamics changed).
+  58:
+    narration: >
+      Let's look at the code. js — update the WebSocket message handler to
+      support sparse dynamic updates.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  62:
+    narration: >
+      Let's look at the code. ex — the normalize function detects whether
+      render/1 returned a %Rendered{} or a plain string.
+    effect: "line_highlight"
+    highlight_lines: [2, 3, 4]
+  65:
+    narration: >
+      Let's look at the code. ex — on mount, send statics + dynamics and store
+      prev_dynamics for future diffs.
+    effect: "line_highlight"
+    highlight_lines: [2, 3, 4]
+  67:
+    narration: >
+      Let's look at the code. On subsequent renders (events, server push),
+      diff against previous dynamics.
+    effect: "line_highlight"
+    highlight_lines: [2, 3, 4]
+  74:
+    narration: >
+      Let's look at the code. ex — switch render/1 to use the ~L sigil.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 4]
+  78:
+    narration: >
+      Let's look at the code. ex — switch render/1 to use the ~L sigil.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  82:
+    narration: >
+      Let's look at the code. Compute values before the sigil, then use them
+      as <%= %> expressions.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 4]
+  87:
+    narration: >
+      Let's look at the code. Mount.
+  89:
+    narration: >
+      Let's look at the code. Click increment.
+  92:
+    narration: >
+      Here's how this looks in json. Mount: 9 statics, 8 dynamics (one per
+      stat card)
+  94:
+    narration: >
+      Let's look at the code. Tick updates — only changed stats.

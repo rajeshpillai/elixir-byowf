@@ -1,0 +1,51 @@
+# Sidecar overrides for 29-presence
+# Generated — edit freely to customize narration and effects.
+# Use `python -m pipeline parse ../tutorial/29-presence.md` to see block indices.
+
+blocks:
+  0:
+    narration: >
+      Welcome to Step 29. Presence tracking shows who's online in real time.
+      We'll use process monitoring and GenServer to track connected users.
+  1:
+    narration: >
+      Let's start with: What We're Building.
+  11:
+    narration: >
+      Here's how this looks in elixir. For Ignite, we take a simpler approach:
+      a single GenServer that uses Process.monitor/1 to watch tracked
+      processes.
+  18:
+    narration: >
+      Let's look at the code. ex.
+    effect: "line_highlight"
+    highlight_lines: [2, 3, 4]
+  21:
+    narration: >
+      Let's look at the code. ex file.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  23:
+    narration: >
+      Let's look at the code. When the monitored process dies.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  26:
+    narration: >
+      Let's look at the code. Every join and leave broadcasts a
+      {:presence_diff, %{joins, leaves}} message via PubSub.
+    effect: "line_highlight"
+    highlight_lines: [2, 5, 6]
+  32:
+    narration: >
+      Let's look at the code. PubSub.
+    effect: "line_highlight"
+    highlight_lines: [2, 3, 4]
+  35:
+    narration: >
+      Let's look at the code. ex.
+    effect: "line_highlight"
+    highlight_lines: [2, 3, 5]
+  37:
+    narration: >
+      Let's look at the code. ex — add the route for the presence demo.

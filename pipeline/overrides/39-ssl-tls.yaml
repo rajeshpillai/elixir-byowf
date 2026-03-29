@@ -1,0 +1,105 @@
+# Sidecar overrides for 39-ssl-tls
+# Generated — edit freely to customize narration and effects.
+# Use `python -m pipeline parse ../tutorial/39-ssl-tls.md` to see block indices.
+
+blocks:
+  0:
+    narration: >
+      Welcome to Step 39. Let's add SSL and TLS support so our server can
+      handle HTTPS connections securely.
+  2:
+    narration: >
+      Let's start with: What We Built.
+  9:
+    narration: >
+      Let's look at the code. exs.
+    effect: "line_highlight"
+    highlight_lines: [2, 3, 4]
+  11:
+    narration: >
+      Let's look at the code. child_spec/2 returns.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  13:
+    narration: >
+      Let's look at the code. When :ssl is set, it returns.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  17:
+    narration: >
+      Let's look at the code. ex.
+    effect: "line_highlight"
+    highlight_lines: [2, 3, 4]
+  20:
+    narration: >
+      Let's look at the code. Before starting TLS, we check that the
+      certificate files actually exist.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  24:
+    narration: >
+      Let's look at the code. For production, you may want to redirect all
+      HTTP traffic to HTTPS.
+    effect: "line_highlight"
+    highlight_lines: [2, 3]
+  29:
+    narration: >
+      Let's look at the code. ex.
+    effect: "line_highlight"
+    highlight_lines: [2, 3, 4]
+  33:
+    narration: >
+      Here's how this looks in elixir. HSTS tells browsers: "For the next N
+      seconds, only connect to this site over HTTPS — even if the user types
+      http://."
+    effect: "line_highlight"
+    highlight_lines: [2, 3, 4]
+  35:
+    narration: >
+      Let's look at the code. ex.
+    effect: "line_highlight"
+    highlight_lines: [2, 3, 4]
+  40:
+    narration: >
+      Let's look at the code. ex — add the HSTS plug.
+    effect: "line_highlight"
+    highlight_lines: [1, 3]
+  44:
+    narration: >
+      Let's look at the code. ex.
+    effect: "line_highlight"
+    highlight_lines: [2, 3, 4]
+  46:
+    narration: >
+      Let's look at the code. For local HTTPS testing, run.
+  54:
+    narration: >
+      Let's look at the code. SSL and add the redirect listener.
+    effect: "line_highlight"
+    highlight_lines: [2, 3, 4]
+  56:
+    narration: >
+      Let's look at the code. ex.
+    effect: "line_highlight"
+    highlight_lines: [2, 3, 4]
+  58:
+    narration: >
+      Let's look at the code. The log message now shows the correct scheme.
+  61:
+    narration: >
+      Let's look at the code. The log message now shows the correct scheme.
+  65:
+    narration: >
+      Let's look at the code. to_charlist/1.
+  69:
+    narration: >
+      Let's look at the code. Instead, use if/else or call the function before
+      the case.
+    effect: "line_highlight"
+    highlight_lines: [2, 5]
+  79:
+    narration: >
+      Here's how this looks in bash. No code changes needed when switching
+      environments — just config.
+    effect: "line_highlight"
+    highlight_lines: [2, 5, 8]

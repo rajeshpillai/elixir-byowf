@@ -1,0 +1,100 @@
+# Sidecar overrides for 05-dynamic-routes
+# Generated — edit freely to customize narration and effects.
+# Use `python -m pipeline parse ../tutorial/05-dynamic-routes.md` to see block indices.
+
+blocks:
+  0:
+    narration: >
+      Welcome to Step 5. We'll add dynamic routes with URL parameters. When
+      someone visits slash users slash 42, we need to extract that 42 and pass
+      it to the handler.
+  1:
+    narration: >
+      Let's start with: What We're Building.
+  4:
+    narration: >
+      Let's look at the code. We're upgrading the router so you can write.
+  6:
+    narration: >
+      Let's look at the code. And access the captured value in the controller.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  11:
+    narration: >
+      Let's look at the code. The trim: true option removes empty strings
+      caused by leading/trailing delimiters.
+  15:
+    narration: >
+      Let's look at the code. Elixir can pattern match on lists.
+  19:
+    narration: >
+      Let's look at the code. The <> operator can pattern match on the start
+      of a string.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 4]
+  24:
+    narration: >
+      Let's look at the code. Inside macros, you can't just write a variable
+      name — you need to create a variable AST node.
+  28:
+    narration: >
+      Let's look at the code. Splits a list of two-element tuples into two
+      separate lists.
+  32:
+    narration: >
+      Let's look at the code. If both have the same key, the second map wins.
+  36:
+    narration: >
+      Let's look at the code. When you write.
+  38:
+    narration: >
+      Let's look at the code. The macro generates this function clause.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  44:
+    narration: >
+      Let's look at the code. Update __using__/1 — call/1 now splits the path
+      into segments before dispatching.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  46:
+    narration: >
+      Let's look at the code. Update the get macro to use a shared
+      build_route/4 function.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  48:
+    narration: >
+      Let's look at the code. Add build_route/4 — the shared logic that all
+      route macros use.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  50:
+    narration: >
+      Let's look at the code. Add build_match_pattern/1 — converts path
+      segments into a pattern list.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  55:
+    narration: >
+      Let's look at the code. Add build_params_map/1 — generates a map
+      expression in the AST.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  58:
+    narration: >
+      Let's look at the code. Update finalize_routes/0 — the catch-all now
+      takes two args.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  61:
+    narration: >
+      Let's look at the code. ex.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  64:
+    narration: >
+      Let's look at the code. ex — add the following route.
+  69:
+    narration: >
+      Let's look at the code. ex — add the following route.

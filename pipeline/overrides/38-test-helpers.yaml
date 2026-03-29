@@ -1,0 +1,96 @@
+# Sidecar overrides for 38-test-helpers
+# Generated — edit freely to customize narration and effects.
+# Use `python -m pipeline parse ../tutorial/38-test-helpers.md` to see block indices.
+
+blocks:
+  0:
+    narration: >
+      Welcome to Step 38. Test helpers make it easy to write integration tests
+      for our framework. We'll build a ConnTest module inspired by Phoenix.
+  1:
+    narration: >
+      Let's start with: What We're Building.
+  3:
+    narration: >
+      Let's look at the code. ConnTest module that lets you test controllers,
+      routes, and middleware without starting the HTTP server.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  8:
+    narration: >
+      Here's how this looks in elixir. Tests call Router.call(conn) directly,
+      running the full plug pipeline and route dispatch — no Cowboy, no TCP,
+      no network overhead.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 4]
+  11:
+    narration: >
+      Here's how this looks in elixir. ExUnit is Elixir's built-in test
+      framework.
+    effect: "line_highlight"
+    highlight_lines: [2, 3, 4]
+  14:
+    narration: >
+      Here's how this looks in elixir. Returns the current Mix environment as
+      an atom (:dev, :test, or :prod).
+  34:
+    narration: >
+      Let's look at the code. Two helpers work together.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  36:
+    narration: >
+      Let's look at the code. JSON API tests skip CSRF by setting the
+      content-type header.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  40:
+    narration: >
+      Let's look at the code. ex — read port from config instead of hardcoding
+      4000.
+  41:
+    narration: >
+      Let's look at the code. ex — read port from config instead of hardcoding
+      4000.
+  46:
+    narration: >
+      Let's look at the code. Before (broken).
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 4]
+  49:
+    narration: >
+      Let's look at the code. ex — move call/1 to @before_compile so plugs
+      execute correctly.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 4]
+  56:
+    narration: >
+      Let's look at the code. ex.
+    effect: "line_highlight"
+    highlight_lines: [2, 3, 4]
+  59:
+    narration: >
+      Let's look at the code. exs — add :port config and env-specific config
+      import.
+    effect: "line_highlight"
+    highlight_lines: [2, 4, 5]
+  61:
+    narration: >
+      Let's look at the code. exs.
+    effect: "line_highlight"
+    highlight_lines: [2, 3, 4]
+  63:
+    narration: >
+      Let's look at the code. exs — run migrations automatically before tests.
+    effect: "line_highlight"
+    highlight_lines: [2, 3]
+  66:
+    narration: >
+      Let's look at the code. exs — tests for the ConnTest helpers themselves.
+    effect: "line_highlight"
+    highlight_lines: [2, 3, 4]
+  68:
+    narration: >
+      Let's look at the code. exs — tests for the ConnTest helpers themselves.
+    effect: "line_highlight"
+    highlight_lines: [2, 11, 14]

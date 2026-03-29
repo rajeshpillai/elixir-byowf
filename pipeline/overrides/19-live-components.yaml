@@ -1,0 +1,116 @@
+# Sidecar overrides for 19-live-components
+# Generated — edit freely to customize narration and effects.
+# Use `python -m pipeline parse ../tutorial/19-live-components.md` to see block indices.
+
+blocks:
+  0:
+    narration: >
+      Welcome to Step 19. We'll build LiveComponents — reusable, stateful UI
+      components that can be embedded inside LiveView pages.
+  3:
+    narration: >
+      Let's start with: The Problem.
+  16:
+    narration: >
+      Here's how this looks in elixir. Components store their state as
+      {module, assigns} tuples inside the parent's __components__ key.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  18:
+    narration: >
+      Let's look at the code. We use this in live_component/3 to check if an
+      existing component was created by the same module.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  21:
+    narration: >
+      Let's look at the code. ex.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  26:
+    narration: >
+      Let's look at the code. ex — add the live_component/3 function and the
+      collect_components/1 helper.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  31:
+    narration: >
+      Let's look at the code. After render completes, the handler calls
+      collect_components/1 to read it back.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  35:
+    narration: >
+      Let's look at the code. ex — add a handle_possible_component_event/3
+      function to detect and route component events using the
+      "component_id:event_name" format.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  37:
+    narration: >
+      Let's look at the code. Here's how it integrates — the {:ok, %{"event"
+      => event, "params" => params}} clause tries component routing first,
+      then falls back to the parent LiveView's handle_event/3.
+    effect: "line_highlight"
+    highlight_lines: [3, 5, 6]
+  42:
+    narration: >
+      Let's look at the code. js — add a resolveEvent function that prefixes
+      event names with the component ID when the target is inside a component
+      wrapper.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  45:
+    narration: >
+      Let's look at the code. Click handler — wraps the event name before
+      sending.
+    effect: "line_highlight"
+    highlight_lines: [2, 3, 4]
+  47:
+    narration: >
+      Let's look at the code. Change handler — same pattern for input events.
+    effect: "line_highlight"
+    highlight_lines: [2, 3, 4]
+  49:
+    narration: >
+      Let's look at the code. Submit handler — same pattern for form
+      submissions.
+    effect: "line_highlight"
+    highlight_lines: [2, 3, 4]
+  53:
+    narration: >
+      Let's look at the code. ex.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 4]
+  56:
+    narration: >
+      Let's look at the code. ex.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 4]
+  59:
+    narration: >
+      Let's look at the code. ex.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 4]
+  63:
+    narration: >
+      Let's look at the code. ex — add a route for the components demo page.
+  65:
+    narration: >
+      Let's look at the code. ex — add the components action that renders the
+      LiveView shell page, and add "/components" to the @live_routes map.
+    effect: "line_highlight"
+    highlight_lines: [2, 5, 6]
+  67:
+    narration: >
+      Let's look at the code. Also add a link on the welcome page's index
+      action so users can discover the demo.
+  69:
+    narration: >
+      Let's look at the code. ComponentsDemoLive.
+  80:
+    narration: >
+      Here's how this looks in bash. Component events are automatically
+      namespaced by the JS layer.
+    effect: "line_highlight"
+    highlight_lines: [1, 2]

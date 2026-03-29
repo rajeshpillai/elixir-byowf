@@ -1,0 +1,78 @@
+# Sidecar overrides for 10-cowboy-adapter
+# Generated — edit freely to customize narration and effects.
+# Use `python -m pipeline parse ../tutorial/10-cowboy-adapter.md` to see block indices.
+
+blocks:
+  0:
+    narration: >
+      Welcome to Step 10. We'll swap our hand-built TCP server for Cowboy, a
+      production-grade HTTP server. This is the adapter pattern in action.
+  1:
+    narration: >
+      Let's start with: What We're Building.
+  10:
+    narration: >
+      Let's look at the code. exs — add plug_cowboy to the deps/0 function.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  12:
+    narration: >
+      Let's look at the code. Then install them.
+  22:
+    narration: >
+      Let's look at the code. Cowboy calls our module's init/2 for every
+      request.
+    effect: "line_highlight"
+    highlight_lines: [1, 3, 4]
+  26:
+    narration: >
+      Let's look at the code. We tell Cowboy to send ALL requests to our
+      adapter.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  30:
+    narration: >
+      Let's look at the code. Cowboy provides helper functions to work with
+      requests.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  33:
+    narration: >
+      Here's how this looks in elixir. @behaviour :cowboy_handler declares
+      that this module implements Cowboy's handler interface.
+    effect: "line_highlight"
+    highlight_lines: [1, 3, 4]
+  36:
+    narration: >
+      Let's look at the code. Guards add extra conditions to pattern matching
+      in function heads.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  40:
+    narration: >
+      Let's look at the code. For Cowboy, we need the explicit map format.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  48:
+    narration: >
+      Let's look at the code. The adapter does three things.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  52:
+    narration: >
+      Let's look at the code. ex with: the version below that starts Cowboy
+      instead of our gen_tcp server.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  57:
+    narration: >
+      Take a look at this diagram. It illustrates handles the translation.
+  62:
+    narration: >
+      Let's look at the code. Cowboy handles.
+  64:
+    narration: >
+      Let's look at the code. Cowboy handles.
+  67:
+    narration: >
+      Let's look at the code. Cowboy handles.

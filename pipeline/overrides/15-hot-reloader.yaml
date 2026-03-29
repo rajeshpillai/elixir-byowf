@@ -1,0 +1,47 @@
+# Sidecar overrides for 15-hot-reloader
+# Generated — edit freely to customize narration and effects.
+# Use `python -m pipeline parse ../tutorial/15-hot-reloader.md` to see block indices.
+
+blocks:
+  0:
+    narration: >
+      Welcome to Step 15. Let's add hot code reloading. When you save a file,
+      the browser updates automatically — no manual refresh needed.
+  1:
+    narration: >
+      Let's start with: What We're Building.
+  15:
+    narration: >
+      Let's look at the code. Returns metadata about a file, including its
+      modification time.
+  19:
+    narration: >
+      Let's look at the code. Schedules a message to be delivered to a process
+      after a delay.
+  23:
+    narration: >
+      Let's look at the code. Finds files matching a glob pattern.
+  27:
+    narration: >
+      Let's look at the code. Compiles an Elixir source file and loads the
+      resulting modules.
+  31:
+    narration: >
+      Let's look at the code. We only start the reloader in development mode.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  35:
+    narration: >
+      Let's look at the code. self() returns the PID (Process ID) of the
+      current process.
+  44:
+    narration: >
+      Let's look at the code. ex.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  49:
+    narration: >
+      Let's look at the code. ex — add a dev_children/0 helper and append it
+      to the children list.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]

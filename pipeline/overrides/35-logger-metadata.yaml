@@ -1,0 +1,56 @@
+# Sidecar overrides for 35-logger-metadata
+# Generated — edit freely to customize narration and effects.
+# Use `python -m pipeline parse ../tutorial/35-logger-metadata.md` to see block indices.
+
+blocks:
+  0:
+    narration: >
+      Welcome to Step 35. Logger metadata lets us attach request IDs and
+      timing information to every log line for better observability.
+  1:
+    narration: >
+      Let's start with: What We're Building.
+  9:
+    narration: >
+      Take a look at this diagram. It illustrates before this step, request
+      logging was:.
+  25:
+    narration: >
+      Let's look at the code. exs — add Logger console format with request_id
+      metadata.
+    effect: "line_highlight"
+    highlight_lines: [2, 3, 4]
+  29:
+    narration: >
+      Here's how this looks in elixir. $time — Shows the timestamp.
+  33:
+    narration: >
+      Here's how this looks in elixir. Base.url_encode64/2 — Encodes bytes as
+      a URL-safe base64 string (uses - and _ instead of + and /).
+  37:
+    narration: >
+      Here's how this looks in elixir. This is why Elixir's process model is
+      so powerful for web servers: per-request state comes for free.
+    effect: "line_highlight"
+    highlight_lines: [1, 3, 4]
+  41:
+    narration: >
+      Let's look at the code. Duration formatting — We show µs for
+      sub-millisecond, ms for sub-second, and s for longer requests.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  44:
+    narration: >
+      Let's look at the code. ex with.
+    effect: "line_highlight"
+    highlight_lines: [2, 5, 9]
+  50:
+    narration: >
+      Let's look at the code. ex — remove the plug :log_request line.
+    effect: "line_highlight"
+    highlight_lines: [3, 4, 8]
+  54:
+    narration: >
+      Let's look at the code. ex — remove the plug :log_request line.
+    effect: "line_highlight"
+    highlight_lines: [1, 2]

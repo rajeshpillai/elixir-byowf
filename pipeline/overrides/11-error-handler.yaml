@@ -1,0 +1,48 @@
+# Sidecar overrides for 11-error-handler
+# Generated — edit freely to customize narration and effects.
+# Use `python -m pipeline parse ../tutorial/11-error-handler.md` to see block indices.
+
+blocks:
+  0:
+    narration: >
+      Welcome to Step 11. Let's add proper error handling. When something goes
+      wrong, our framework should show a helpful 500 error page instead of
+      crashing.
+  1:
+    narration: >
+      Let's start with: What We're Building.
+  8:
+    narration: >
+      Let's look at the code. Catches exceptions (errors raised with raise).
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  11:
+    narration: >
+      Let's look at the code. Inside a rescue block, __STACKTRACE__ gives you
+      the call stack that led to the error.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  16:
+    narration: >
+      Let's look at the code. Elixir provides helper functions for working
+      with exceptions.
+  24:
+    narration: >
+      Let's look at the code. ex — replace the init/2 function and add
+      error_page/1 and html_escape/1.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  26:
+    narration: >
+      Let's look at the code. The error_page/1 function generates a styled
+      HTML page.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 4]
+  30:
+    narration: >
+      Let's look at the code. ex — add this crash/1 function.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  32:
+    narration: >
+      Let's look at the code. ex — add a route for the crash test.

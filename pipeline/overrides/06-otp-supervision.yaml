@@ -1,0 +1,65 @@
+# Sidecar overrides for 06-otp-supervision
+# Generated — edit freely to customize narration and effects.
+# Use `python -m pipeline parse ../tutorial/06-otp-supervision.md` to see block indices.
+
+blocks:
+  0:
+    narration: >
+      Welcome to Step 6. Time for OTP — the heart of Elixir. We'll wrap our
+      server in a GenServer and add supervision so it restarts automatically
+      on failure.
+  1:
+    narration: >
+      Let's start with: What We're Building.
+  15:
+    narration: >
+      Let's look at the code. You then override only the callbacks you need.
+    effect: "line_highlight"
+    highlight_lines: [1, 3, 4]
+  20:
+    narration: >
+      Here's how this looks in elixir. handle_continue runs right after init
+      returns.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  23:
+    narration: >
+      Let's look at the code. If either process crashes, the other crashes
+      too.
+  27:
+    narration: >
+      Let's look at the code. start is a better spawn — it integrates with
+      OTP.
+  32:
+    narration: >
+      Let's look at the code. The supervisor uses :one_for_one — if a child
+      crashes, only that child gets restarted.
+  40:
+    narration: >
+      Let's look at the code. ex with.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  49:
+    narration: >
+      Let's look at the code. Application, []} to the application/0 function.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  53:
+    narration: >
+      Let's look at the code. ex with.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 4]
+  60:
+    narration: >
+      Here's how this looks in bash. If a Task crashes (bad request), only
+      that task dies.
+  65:
+    narration: >
+      Here's how this looks in elixir. No need to call Ignite.Server.start() —
+      the supervisor did it for you!
+    effect: "line_highlight"
+    highlight_lines: [2, 6, 9]
+  74:
+    narration: >
+      Let's look at the code. You'll write HTML files with embedded Elixir
+      code (<%= @name %>) and render them from controllers with.

@@ -1,0 +1,51 @@
+# Sidecar overrides for 13-frontend-glue
+# Generated — edit freely to customize narration and effects.
+# Use `python -m pipeline parse ../tutorial/13-frontend-glue.md` to see block indices.
+
+blocks:
+  0:
+    narration: >
+      Welcome to Step 13. We need client-side JavaScript to connect the
+      browser to our LiveView WebSocket. Let's build the frontend glue code.
+  1:
+    narration: >
+      Let's start with: What We're Building.
+  9:
+    narration: >
+      Let's look at the code. Instead of attaching a click listener to every
+      button, we attach one listener to the entire document.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  16:
+    narration: >
+      Let's look at the code. We use ignite-click as a custom attribute
+      convention.
+  20:
+    narration: >
+      Let's look at the code. Cowboy has a built-in static file handler.
+  24:
+    narration: >
+      Let's look at the code. The JS is wrapped in an IIFE to avoid polluting
+      the global scope.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 4]
+  28:
+    narration: >
+      Let's look at the code. js.
+    effect: "line_highlight"
+    highlight_lines: [13, 14]
+  33:
+    narration: >
+      Let's look at the code. eex.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  38:
+    narration: >
+      Let's look at the code. ] to the Cowboy dispatch rules.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  42:
+    narration: >
+      Let's look at the code. ex — replace the inline-JS counter action with.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]

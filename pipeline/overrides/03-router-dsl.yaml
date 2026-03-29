@@ -1,0 +1,89 @@
+# Sidecar overrides for 03-router-dsl
+# Generated — edit freely to customize narration and effects.
+# Use `python -m pipeline parse ../tutorial/03-router-dsl.md` to see block indices.
+
+blocks:
+  0:
+    narration: >
+      Welcome to Step 3. Now we'll build a router using Elixir macros. This is
+      where metaprogramming shines — we'll create a DSL that feels like
+      Phoenix's router.
+  1:
+    narration: >
+      Let's start with: What We're Building.
+  3:
+    narration: >
+      Let's look at the code. Instead of a big case statement, we want to
+      write routes like this.
+  11:
+    narration: >
+      Let's look at the code. Here's the idea: when you write this in your
+      router.
+  13:
+    narration: >
+      Let's look at the code. Elixir's compiler sees get is a macro and
+      transforms it into.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  17:
+    narration: >
+      Here's how this looks in elixir. defmacro defines a macro.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  20:
+    narration: >
+      Let's look at the code. quote converts Elixir code into its AST
+      (Abstract Syntax Tree) — the internal representation the compiler uses.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  22:
+    narration: >
+      Let's look at the code. unquote injects a value from the macro's scope
+      into the quoted code.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  28:
+    narration: >
+      Let's look at the code. import is different: it brings a module's
+      functions (or macros) into scope so you can call them without the module
+      prefix.
+    effect: "line_highlight"
+    highlight_lines: [2, 3, 6]
+  33:
+    narration: >
+      Let's look at the code. This is a macro that injects code into the
+      calling module.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  39:
+    narration: >
+      Let's look at the code. Instead, Elixir provides apply/3, a built-in
+      function that calls any function when you have the module and function
+      name as variables.
+    effect: "line_highlight"
+    highlight_lines: [1, 3]
+  48:
+    narration: >
+      Let's look at the code. Elixir functions can have multiple clauses, and
+      the VM tries them in order.
+    effect: "line_highlight"
+    highlight_lines: [2, 5, 8]
+  51:
+    narration: >
+      Let's look at the code. This is what a user of the framework writes.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 4]
+  55:
+    narration: >
+      Let's look at the code. Controllers receive a conn and return a modified
+      conn.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  59:
+    narration: >
+      Let's look at the code. The server now follows: Parse → Route → Respond.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  67:
+    narration: >
+      Let's look at the code. At runtime.

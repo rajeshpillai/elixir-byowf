@@ -1,0 +1,91 @@
+# Sidecar overrides for 44-liveview-resilience
+# Generated — edit freely to customize narration and effects.
+# Use `python -m pipeline parse ../tutorial/44-liveview-resilience.md` to see block indices.
+
+blocks:
+  0:
+    narration: >
+      Welcome to Step 44. Let's harden our LiveView for production with
+      automatic reconnection, scoped events, and a status UI.
+  1:
+    narration: >
+      Let's start with: What We're Building.
+  14:
+    narration: >
+      Let's look at the code. In Step 13 we attached listeners to document.
+  18:
+    narration: >
+      Let's look at the code. The current click handler manually walks up the
+      DOM tree.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  20:
+    narration: >
+      Let's look at the code. closest(selector) does the same thing in one
+      call.
+  26:
+    narration: >
+      Let's look at the code. js — add the status element lookup and helper
+      right after the APP_CONTAINER_ID declaration (line 31).
+    effect: "line_highlight"
+    highlight_lines: [2, 3, 5]
+  28:
+    narration: >
+      Let's look at the code. eex — add a status element before the app
+      container.
+  30:
+    narration: >
+      Let's look at the code. Add basic status styles in the <style> block.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  33:
+    narration: >
+      Let's look at the code. js — add reconnection state near the top
+      variables.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  35:
+    narration: >
+      Let's look at the code. Add the scheduleReconnect function.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  38:
+    narration: >
+      Let's look at the code. onopen (line 557).
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  40:
+    narration: >
+      Let's look at the code. onclose (line 569).
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  42:
+    narration: >
+      Let's look at the code. Update navigate() — set the navigating flag so
+      intentional disconnects don't trigger reconnection.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  45:
+    narration: >
+      Let's look at the code. addEventListener blocks (lines 633–706) with
+      container-scoped versions using closest().
+    effect: "line_highlight"
+    highlight_lines: [2, 3, 4]
+  51:
+    narration: >
+      Let's look at the code. ex — this is the only handler that uses the old
+      format.
+    effect: "line_highlight"
+    highlight_lines: [2, 3, 4]
+  54:
+    narration: >
+      Let's look at the code. Add after the submit listener.
+    effect: "line_highlight"
+    highlight_lines: [2, 3, 4]
+  56:
+    narration: >
+      Let's look at the code. Usage in templates.
+  61:
+    narration: >
+      Let's look at the code. Update initUploadInput (line 172) and the
+      drag-and-drop handler (line 299) — change var ref = String(i) to.

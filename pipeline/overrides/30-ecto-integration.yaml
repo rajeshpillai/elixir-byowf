@@ -1,0 +1,61 @@
+# Sidecar overrides for 30-ecto-integration
+# Generated — edit freely to customize narration and effects.
+# Use `python -m pipeline parse ../tutorial/30-ecto-integration.md` to see block indices.
+
+blocks:
+  0:
+    narration: >
+      Welcome to Step 30. Let's integrate Ecto for database persistence. We'll
+      add SQLite, define schemas, and write changesets.
+  1:
+    narration: >
+      Let's start with: What We're Building.
+  15:
+    narration: >
+      Here's how this looks in elixir. For a tutorial and small-to-medium
+      apps, SQLite is perfect.
+    effect: "line_highlight"
+    highlight_lines: [2, 4, 5]
+  20:
+    narration: >
+      Let's look at the code. exs — add ecto_sql and ecto_sqlite3 to the deps
+      function.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  24:
+    narration: >
+      Let's look at the code. exs.
+    effect: "line_highlight"
+    highlight_lines: [2, 4, 5]
+  28:
+    narration: >
+      Let's look at the code. ex.
+    effect: "line_highlight"
+    highlight_lines: [2, 3, 4]
+  32:
+    narration: >
+      Let's look at the code. ex.
+    effect: "line_highlight"
+    highlight_lines: [2, 3, 4]
+  38:
+    narration: >
+      Let's look at the code. exs.
+    effect: "line_highlight"
+    highlight_lines: [2, 3, 5]
+  42:
+    narration: >
+      Let's look at the code. Repo as the first child in the supervision tree.
+    effect: "line_highlight"
+    highlight_lines: [2, 3, 4]
+  47:
+    narration: >
+      Let's look at the code. Here is the full module.
+    effect: "line_highlight"
+    highlight_lines: [2, 3, 4]
+  52:
+    narration: >
+      Here's how this looks in bash. traverse_errors/2 walks the changeset and
+      interpolates message templates like "should be at least %{count}
+      character(s)" into "should be at least 2 character(s)".
+    effect: "line_highlight"
+    highlight_lines: [2, 3, 4]

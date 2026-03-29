@@ -1,0 +1,152 @@
+# Sidecar overrides for 26-file-uploads
+# Generated — edit freely to customize narration and effects.
+# Use `python -m pipeline parse ../tutorial/26-file-uploads.md` to see block indices.
+
+blocks:
+  0:
+    narration: >
+      Welcome to Step 26. Let's handle file uploads. We'll parse multipart
+      form data and support WebSocket-based uploads for LiveView.
+  1:
+    narration: >
+      Let's start with: What We're Building.
+  16:
+    narration: >
+      Let's look at the code. In the existing body-reading code, detect
+      multipart/form-data and branch to a new parser.
+    effect: "line_highlight"
+    highlight_lines: [1, 3, 4]
+  18:
+    narration: >
+      Let's look at the code. Then add the multipart functions.
+    effect: "line_highlight"
+    highlight_lines: [4, 5, 6]
+  23:
+    narration: >
+      Let's look at the code. ex.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 4]
+  26:
+    narration: >
+      Let's look at the code. When a file part is found, we.
+    effect: "line_highlight"
+    highlight_lines: [2, 3, 4]
+  30:
+    narration: >
+      Here's how this looks in bash. When the Cowboy handler process exits
+      (after sending the response), the monitor fires and the temp file is
+      deleted.
+    effect: "line_highlight"
+    highlight_lines: [2]
+  37:
+    narration: >
+      Let's look at the code. UploadHelpers.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  38:
+    narration: >
+      Let's look at the code. UploadHelpers.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 4]
+  40:
+    narration: >
+      Let's look at the code. In mount/2, configure what uploads are allowed.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  45:
+    narration: >
+      Let's look at the code. ex.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  47:
+    narration: >
+      Let's look at the code. At runtime, an entry looks like.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  50:
+    narration: >
+      Here's how this looks in json. Step 1: File selection → validation (text
+      frame, client → server)
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  52:
+    narration: >
+      Here's how this looks in json. Step 2: Validation response (text frame,
+      server → client)
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  60:
+    narration: >
+      Here's how this looks in json. Step 4: Progress update (text frame,
+      server → client)
+  63:
+    narration: >
+      Here's how this looks in json. Step 5: Upload complete (text frame,
+      client → server)
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  66:
+    narration: >
+      Let's look at the code. The live_file_input/2 helper generates a
+      configured file input.
+    effect: "line_highlight"
+    highlight_lines: [1, 3, 4]
+  68:
+    narration: >
+      Let's look at the code. This generates.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  72:
+    narration: >
+      Let's look at the code. After all files are uploaded (done?: true),
+      consume them in a handle_event.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 5]
+  79:
+    narration: >
+      Let's look at the code. The key JS function for sending binary chunks
+      constructs the binary frame with the ref prefix.
+    effect: "line_highlight"
+    highlight_lines: [2, 3, 4]
+  84:
+    narration: >
+      Let's look at the code. ex.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 4]
+  87:
+    narration: >
+      Let's look at the code. ex.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 4]
+  90:
+    narration: >
+      Let's look at the code. ex.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  94:
+    narration: >
+      Let's look at the code. ex — add upload protocol events to the text
+      frame handler and a new binary frame handler.
+    effect: "line_highlight"
+    highlight_lines: [3, 4, 5]
+  95:
+    narration: >
+      Let's look at the code. ex — add upload protocol events to the text
+      frame handler and a new binary frame handler.
+    effect: "line_highlight"
+    highlight_lines: [3, 4, 5]
+  97:
+    narration: >
+      Let's look at the code. The send_render_update_with_upload_config/3
+      helper is like send_render_update/2 but also includes the upload config
+      in the JSON payload so the JS client knows the chunk size and which
+      entries are valid.
+    effect: "line_highlight"
+    highlight_lines: [1, 3, 4]
+  101:
+    narration: >
+      Here's how this looks in bash. See lib/ignite/live_view/handler.ex for
+      the complete implementation including component routing and redirect
+      handling.
+    effect: "line_highlight"
+    highlight_lines: [2, 5]

@@ -1,0 +1,115 @@
+# Sidecar overrides for 25-streams
+# Generated — edit freely to customize narration and effects.
+# Use `python -m pipeline parse ../tutorial/25-streams.md` to see block indices.
+
+blocks:
+  0:
+    narration: >
+      Welcome to Step 25. Streams let LiveView efficiently render large lists
+      without keeping all items in memory on the server.
+  1:
+    narration: >
+      Let's start with: What We're Building.
+  6:
+    narration: >
+      Let's look at the code. Consider a chat log with 100 messages.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  15:
+    narration: >
+      Let's look at the code. ex — add the stream, stream_insert, and
+      stream_delete functions.
+    effect: "line_highlight"
+    highlight_lines: [2, 3, 4]
+  18:
+    narration: >
+      Let's look at the code. ex.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  23:
+    narration: >
+      Let's look at the code. ex — inside the __using__ macro, import the
+      stream functions so LiveViews can call them directly.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  28:
+    narration: >
+      Let's look at the code. In websocket_init (mount).
+    effect: "line_highlight"
+    highlight_lines: [1, 4, 6]
+  30:
+    narration: >
+      Let's look at the code. In send_render_update (after handling events or
+      info messages).
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  38:
+    narration: >
+      Let's look at the code. Mount (empty stream, no items yet).
+  40:
+    narration: >
+      Let's look at the code. Insert (one new event prepended).
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  42:
+    narration: >
+      Let's look at the code. Delete.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  44:
+    narration: >
+      Let's look at the code. Reset (clear all items).
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  47:
+    narration: >
+      Let's look at the code. Stream containers are empty elements with an
+      ignite-stream attribute.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  51:
+    narration: >
+      Let's look at the code. js — add the applyStreamOps function and call it
+      after morphdom updates.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 4]
+  54:
+    narration: >
+      Let's look at the code. The template renders the stream container as
+      empty.
+  58:
+    narration: >
+      Let's look at the code. The fix: tell morphdom to skip stream containers
+      entirely in applyUpdate.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 4]
+  65:
+    narration: >
+      Let's look at the code. ex.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 4]
+  68:
+    narration: >
+      Let's look at the code. ex — add the /streams route.
+  70:
+    narration: >
+      Let's look at the code. ex — register the WebSocket endpoint for the
+      LiveView.
+  76:
+    narration: >
+      Let's look at the code. Every 2 seconds, a new event appears.
+  78:
+    narration: >
+      Let's look at the code. Click "Prepend Event" (inserts at top with at:
+      0).
+  80:
+    narration: >
+      Let's look at the code. Click "Append Event" (inserts at bottom, no at
+      field).
+  82:
+    narration: >
+      Let's look at the code. Click "Update Latest" (upsert — same ID as
+      latest event, updates in-place).
+  85:
+    narration: >
+      Let's look at the code. Click "Clear Log".

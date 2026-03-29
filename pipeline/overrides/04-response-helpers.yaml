@@ -1,0 +1,73 @@
+# Sidecar overrides for 04-response-helpers
+# Generated — edit freely to customize narration and effects.
+# Use `python -m pipeline parse ../tutorial/04-response-helpers.md` to see block indices.
+
+blocks:
+  0:
+    narration: >
+      Welcome to Step 4. Let's add response helpers like text and render.
+      These turn our Conn struct into a proper HTTP response with headers and
+      status codes.
+  1:
+    narration: >
+      Let's start with: What We're Building.
+  3:
+    narration: >
+      Let's look at the code. In Step 3, our controllers manually updated the
+      conn struct.
+  5:
+    narration: >
+      Let's look at the code. We need helper functions like Phoenix has.
+  13:
+    narration: >
+      Let's look at the code. The | (pipe) separates the existing struct from
+      the fields you want to override.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 6]
+  20:
+    narration: >
+      Let's look at the code. We use these to convert the headers map into
+      HTTP header strings.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  23:
+    narration: >
+      Let's look at the code. status_text/1 uses pattern matching to map
+      status codes.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  27:
+    narration: >
+      Let's look at the code. Elixir uses \\ to define default argument
+      values.
+    effect: "line_highlight"
+    highlight_lines: [1, 3]
+  29:
+    narration: >
+      Let's look at the code. This generates two function clauses behind the
+      scenes.
+  34:
+    narration: >
+      Let's look at the code. Two response helpers and one serializer.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 3]
+  40:
+    narration: >
+      Let's look at the code. ex with.
+    effect: "line_highlight"
+    highlight_lines: [1, 2, 4]
+  43:
+    narration: >
+      Let's look at the code. The server no longer builds HTTP strings itself.
+  47:
+    narration: >
+      Take a look at this diagram. It illustrates the conn flows through the
+      system, accumulating data:.
+  50:
+    narration: >
+      Let's look at the code. The conn flows through the system, accumulating
+      data.
+  61:
+    narration: >
+      Let's look at the code. In Step 5, we'll upgrade the router to handle
+      path parameters.
