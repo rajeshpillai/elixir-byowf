@@ -37,7 +37,7 @@ class KokoroTTSProvider(TTSProvider):
         output_path = Path(output_path)
         output_path.parent.mkdir(parents=True, exist_ok=True)
 
-        voice = self.config.voice if self.config.voice != "default" else "af_heart"
+        voice = self.config.voice if self.config.voice != "default" else "am_adam"
 
         # Kokoro generates audio in chunks — collect all samples
         all_samples = []

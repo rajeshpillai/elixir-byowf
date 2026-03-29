@@ -125,7 +125,7 @@ def generate(path: str, provider: str, voice: str, quality: str, output_dir: str
         # Step 3: Compose final video
         click.echo("\n[3/3] Composing final video...")
         timeline = Timeline.from_segments(tut, audio_results, visual_segments)
-        final_path = tut_out / "video.mp4"
+        final_path = tut_out / f"{tut.tutorial_id}.mp4"
         compose(timeline, final_path, resolution=config.resolution, fps=config.fps)
 
         click.echo(f"\nDone! Video saved to: {final_path}")
@@ -162,7 +162,7 @@ def status(tutorials_dir: str, output_dir: str):
     generated = 0
     for tut_path in tutorials:
         tut = parse_tutorial(tut_path)
-        video = Path(output_dir) / tut.tutorial_id / "video.mp4"
+        video = Path(output_dir) / tut.tutorial_id / f"{tut.tutorial_id}.mp4"
         mark = "done" if video.exists() else "    "
         click.echo(f"  [{mark}] {tut.tutorial_id}: {tut.title}")
         if video.exists():
