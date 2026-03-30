@@ -14,7 +14,7 @@ TTS_VOICE="${TTS_VOICE:-am_adam}"
 MANIM_QUALITY="${MANIM_QUALITY:-medium_quality}"
 
 # Output root (videos land in OUTPUT_DIR/<tutorial-id>/)
-OUTPUT_DIR="${OUTPUT_DIR:-output}"
+OUTPUT_DIR="${OUTPUT_DIR:-pipeline/output}"
 
 # ─────────────────────────────────────────────────────────────
 # Paths (auto-detected relative to repo root)
