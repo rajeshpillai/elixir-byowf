@@ -168,10 +168,15 @@ defmodule Ignite.Reloader do
   use GenServer
   require Logger
 
+  # Module attributes prefixed with @ serve as compile-time constants.
+  # This sets the polling interval to 1000ms (1 second).
   @check_interval 1_000
 
   def start_link(opts \\ []) do
+    # Keyword lists are Elixir's convention for optional arguments.
+    # Keyword.get reads :path from opts, defaulting to "lib" if absent.
     path = Keyword.get(opts, :path, "lib")
+    # __MODULE__ expands to this module's name (Ignite.Reloader) at compile time.
     GenServer.start_link(__MODULE__, path, name: __MODULE__)
   end
 
@@ -200,6 +205,8 @@ defmodule Ignite.Reloader do
   end
 
   # Scan lib/ for all .ex files and record their modification times.
+  # Enum.into(%{}, fn ...) builds a map from a list — here it creates
+  # %{"lib/ignite/server.ex" => {{2024, 3, 15}, {10, 30, 45}}, ...}
   defp get_mtimes(path) do
     Path.join(path, "**/*.ex")
     |> Path.wildcard()
@@ -220,6 +227,9 @@ defmodule Ignite.Reloader do
         Logger.info("[Reloader] Recompiling: #{file}")
 
         try do
+          # When we recompile a file, the module already exists in the VM.
+          # Without this option, Elixir prints a warning about redefining
+          # an existing module. We temporarily suppress that warning.
           Code.put_compiler_option(:ignore_module_conflict, true)
           Code.compile_file(file)
           Code.put_compiler_option(:ignore_module_conflict, false)
@@ -314,6 +324,9 @@ end
 
 6. If you have the `/counter` LiveView open in another tab, it still
    works with its current count — the reloader didn't affect it.
+
+> In Step 37, we'll extend the reloader to also watch `assets/` for
+> static file changes and rebuild the asset manifest automatically.
 
 ## File Checklist
 
