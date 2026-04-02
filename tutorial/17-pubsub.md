@@ -141,7 +141,7 @@ end
 
 - `start_link/1` — Starts a `:pg` scope named `Ignite.PubSub`. This scope is isolated from any other `:pg` usage in the system.
 - `subscribe/1` — Adds the calling process (`self()`) to the topic's group. No need to pass a PID — each LiveView handler process subscribes itself.
-- `broadcast/2` — Sends the message to **all subscribers except the sender** (`pid != self()`). This prevents echo loops where a process receives its own broadcast.
+- `broadcast/2` — Sends the message to **all subscribers except the sender** (`pid != self()`). Without this filter, clicking "+" in Tab A would broadcast to all subscribers *including* Tab A itself — Tab A would then receive the message in `handle_info`, causing a double-update.
 - `child_spec/1` — Makes `Ignite.PubSub` compatible with `Supervisor.start_link/2`.
 
 ### 2. Add to Supervision Tree
@@ -156,6 +156,9 @@ children = [
 ```
 
 PubSub must be running before any LiveView tries to subscribe — ordering in the children list guarantees this.
+
+> If you see `** (ArgumentError) unknown group scope` errors, make sure
+> `Ignite.PubSub` appears in the children list *before* the Cowboy listener.
 
 ### 3. Formalize `handle_info` in the Behaviour
 
@@ -269,15 +272,9 @@ You could build PubSub with a `GenServer` that maintains a `%{topic => [pids]}` 
 - **Distribution-ready** — `:pg` works across clustered Erlang nodes out of the box
 - **Zero overhead** — it's a built-in C-level implementation, not Elixir code
 
-## Try It
-
-1. Start the server: `iex -S mix`
-2. Open http://localhost:4000/shared-counter in **two browser tabs**
-3. Click "+" in Tab A — watch both tabs update simultaneously
-4. Click "-" in Tab B — both tabs sync again
-5. Close one tab — the other continues working normally
-
 ### 5. `websocket_info` in the Handler
+
+Cowboy calls `websocket_info/2` when a non-WebSocket message (like a PubSub broadcast or timer) arrives at the handler process. We use it as a bridge to the LiveView's `handle_info/2` — so from a LiveView author's perspective, you just implement `handle_info/2` and don't need to know about Cowboy's callback.
 
 **Update `lib/ignite/live_view/handler.ex`** — add `websocket_info/2` to dispatch `handle_info` for Erlang messages (PubSub broadcasts, timers, etc.):
 
@@ -285,6 +282,8 @@ You could build PubSub with a `GenServer` that maintains a `%{topic => [pids]}` 
 # Server-push: handle messages sent to this process (e.g. PubSub, timers)
 @impl true
 def websocket_info(msg, state) do
+  # Check at runtime whether the LiveView module defines handle_info/2.
+  # Since it's an optional callback, not all LiveViews will have it.
   if function_exported?(state.view, :handle_info, 2) do
     case apply(state.view, :handle_info, [msg, state.assigns]) do
       {:noreply, new_assigns} ->
@@ -304,6 +303,8 @@ end
 This uses `function_exported?/3` to check if the LiveView defines `handle_info/2` — if it doesn't, we silently ignore the message. This way, existing LiveViews (like `CounterLive`) work fine without implementing `handle_info`.
 
 ### 6. The Dashboard LiveView
+
+This LiveView doesn't use PubSub — it demonstrates **server-push**, where the server sends updates without user interaction. This is the same `handle_info` mechanism that PubSub broadcasts arrive through, but here the message comes from `Process.send_after` instead of another process.
 
 **Create `lib/my_app/live/dashboard_live.ex`:**
 
@@ -369,6 +370,8 @@ The dashboard demonstrates **server-push** — the server sends updates to the b
 
 ### 7. Application and Router Updates
 
+Every LiveView needs **two routes**: an HTTP `get` route that serves the HTML shell page, and a WebSocket route at `/live/...` that Cowboy upgrades to a persistent connection.
+
 **Update `lib/ignite/application.ex`** — add WebSocket routes for the new LiveViews:
 
 ```elixir
@@ -394,6 +397,15 @@ def shared_counter(conn) do
   render(conn, "live", title: "Shared Counter — Ignite", live_path: "/live/shared-counter")
 end
 ```
+
+## Try It
+
+1. Start the server: `iex -S mix`
+2. Open http://localhost:4000/shared-counter in **two browser tabs**
+3. Click "+" in Tab A — watch both tabs update simultaneously
+4. Click "-" in Tab B — both tabs sync again
+5. Close one tab — the other continues working normally
+6. Open http://localhost:4000/dashboard — watch stats auto-refresh every second
 
 ## File Checklist
 
