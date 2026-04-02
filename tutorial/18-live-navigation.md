@@ -120,9 +120,31 @@ This sets a `__redirect__` key on assigns. The handler detects it and sends:
 
 The client receives this message and navigates the same way.
 
-### Browser Back/Forward
+### The Browser History API
 
-We use `history.replaceState` on initial load and `history.pushState` on navigation to store the `livePath` in the history state. The `popstate` listener reconnects to the correct LiveView when the user hits Back or Forward.
+`history.pushState(state, title, url)` changes the browser's URL bar and adds an entry to the back/forward history — **without reloading the page**. `history.replaceState` does the same but *replaces* the current entry instead of adding a new one.
+
+We use `replaceState` on initial load (so the first page has state attached) and `pushState` on navigation (so each page gets its own history entry):
+
+```javascript
+// Initial load — attach state to the current URL
+history.replaceState({ url: "/counter", livePath: "/live" }, "", "/counter");
+
+// Navigation — add new entry
+history.pushState({ url: "/dashboard", livePath: "/live/dashboard" }, "", "/dashboard");
+```
+
+### Browser Back/Forward (`popstate`)
+
+The browser fires a `popstate` event when the user clicks Back or Forward. The `event.state` object contains whatever we stored with `pushState` — in our case, the `livePath`. We use it to reconnect to the correct LiveView:
+
+```javascript
+window.addEventListener("popstate", function (e) {
+  if (e.state && e.state.livePath) {
+    connect(e.state.livePath);  // Reconnect to the previous LiveView
+  }
+});
+```
 
 ## The Route Map
 
@@ -137,7 +159,7 @@ The route map tells the client which WebSocket path corresponds to each HTTP pat
 }
 ```
 
-This is injected as a `data-live-routes` attribute on the `#ignite-app` div by the controller.
+This is injected as a `data-live-routes` attribute on the `#ignite-app` div by the controller. The JS parses it on startup to know where each page's WebSocket lives.
 
 ## Elixir Concepts
 
@@ -268,15 +290,21 @@ Removes a key from a map and returns **both** the removed value and the map with
 
   // --- WebSocket connection management ---
   function connect(livePath) {
-    // Close existing connection
+    // Close existing connection.
+    // We null out onclose before calling close() so the intentional
+    // disconnect (during navigation) doesn't trigger the
+    // "LiveView disconnected" console log.
     if (socket) {
-      socket.onclose = null; // prevent disconnect log
+      socket.onclose = null;
       socket.close();
     }
 
     // Reset statics for new view
     statics = null;
 
+    // Show a brief loading state while the new WebSocket connects.
+    // In a production framework, you'd add a loading indicator or keep
+    // the old view visible until the new one is ready.
     const container = document.getElementById(APP_CONTAINER_ID);
     if (container) {
       container.innerHTML = "Connecting...";
@@ -504,6 +532,9 @@ end
 **Update all LiveView controller actions** — pass the `live_routes` map so the JS knows which paths map to which WebSocket endpoints:
 
 ```elixir
+# Module attribute — computed once at compile time.
+# Jason.encode! converts the map to a JSON string that gets
+# embedded in every LiveView HTML response.
 @live_routes Jason.encode!(%{
   "/counter" => "/live",
   "/dashboard" => "/live/dashboard",
@@ -596,6 +627,17 @@ The Home link (`<a href="/">`) has no `ignite-navigate` attribute — it's a reg
 5. Dashboard auto-refreshes every second
 6. Click browser Back button → returns to counter instantly
 7. Counter still works
+
+## What's Next
+
+Our LiveViews are now full single-page apps with instant navigation. But
+each LiveView is a monolith — the entire page is one module. What if you
+want a reusable widget (like a toggle button or a tab bar) that manages
+its own state?
+
+In **Step 19**, we'll build **LiveComponents** — reusable stateful
+widgets that live inside a parent LiveView, with their own `mount`,
+`handle_event`, and `render` callbacks.
 
 ---
 
