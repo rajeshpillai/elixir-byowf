@@ -83,6 +83,8 @@ Every route macro (`get`, `post`, etc.) already generates a `dispatch/2` functio
 Module.register_attribute(__MODULE__, :route_info, accumulate: true)
 ```
 
+By default, a module attribute holds one value (the last assignment wins). With `accumulate: true`, each `@route_info` assignment appends to a list instead of overwriting — so by the end, `@route_info` contains every route's metadata.
+
 Then add `@route_info` accumulation to `build_route/4`:
 
 ```elixir
@@ -110,6 +112,8 @@ The `@route_info` module attribute uses `accumulate: true`, so each route defini
 ```elixir
 @before_compile Ignite.Router
 ```
+
+`@before_compile` tells Elixir: "after all module code is evaluated but before final compilation, call the `__before_compile__/1` macro in the given module." This is the perfect hook for reading accumulated attributes and generating code from them.
 
 Elixir calls `__before_compile__/1` *after* all module body code has been evaluated (all routes defined) but *before* the module is finalized. This is the perfect moment to read `@route_info` and generate helper functions.
 
@@ -219,6 +223,8 @@ defmodule Ignite.Router.Helpers do
   end
 
   defp build_function_clause({helper_name, action, path, dynamic_segments}) do
+    # Macro.var(:id, nil) creates the AST representation of a variable
+    # named `id` — it's how you programmatically build variable references.
     vars = Enum.map(dynamic_segments, &Macro.var(&1, nil))
     path_expr = build_path_expr(path, dynamic_segments)
 
@@ -489,6 +495,13 @@ curl http://localhost:4000/users              # GET index → JSON
 curl http://localhost:4000/users/42           # GET show → template
 curl -X DELETE http://localhost:4000/users/42 # DELETE → JSON
 ```
+
+## What's Next
+
+Path helpers prevent broken links, and resource routes reduce boilerplate.
+But web apps also need **flash messages** — one-time notifications that
+survive a redirect ("User created!"). In **Step 28**, we'll build signed
+cookie sessions and the `put_flash`/`get_flash` lifecycle.
 
 ---
 

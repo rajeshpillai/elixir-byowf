@@ -127,6 +127,8 @@ defmodule Ignite.Session do
 
   def encode(session) when is_map(session) do
     session
+    # :erlang.term_to_binary serializes any Elixir value (maps, lists,
+    # strings) into a compact binary format for storage.
     |> :erlang.term_to_binary()
     |> Plug.Crypto.MessageVerifier.sign(secret())
   end
@@ -137,6 +139,8 @@ defmodule Ignite.Session do
   def decode(cookie_value) when is_binary(cookie_value) do
     case Plug.Crypto.MessageVerifier.verify(cookie_value, secret()) do
       {:ok, binary} ->
+        # binary_to_term deserializes back. The :safe option prevents
+        # creating new atoms (guards against atom table exhaustion).
         {:ok, :erlang.binary_to_term(binary, [:safe])}
       :error ->
         :error
@@ -162,6 +166,7 @@ end
 ```
 
 Key details:
+- **Signing** appends a cryptographic hash (HMAC) to the data. On decode, the hash is recomputed — if the data was tampered with, the hashes won't match and `verify/2` returns `:error`. The data is readable but tamper-proof.
 - **`:safe` flag** on `binary_to_term` prevents atom table DoS attacks — only existing atoms are allowed
 - **`HttpOnly`** cookie flag prevents JavaScript from reading the session
 - **`SameSite=Lax`** provides basic CSRF protection
@@ -324,6 +329,8 @@ def index(conn) do
     case get_flash(conn) do
       flash when flash == %{} -> ""
       flash ->
+        # Enum.map_join/3 maps each element and joins the results with
+        # a separator — it's Enum.map |> Enum.join in one pass.
         Enum.map_join(flash, "\n", fn {type, msg} ->
           {bg, border, color} = case type do
             "info"  -> {"#d4edda", "#c3e6cb", "#155724"}
@@ -413,6 +420,13 @@ Or just use a browser: `curl -X POST -d "username=Jose" http://localhost:4000/us
 | `lib/ignite/live_view/handler.ex` | **Modified** — pass session to LiveView mount |
 | `lib/my_app/controllers/user_controller.ex` | **Modified** — flash + redirect on create |
 | `lib/my_app/controllers/welcome_controller.ex` | **Modified** — flash display on index |
+
+## What's Next
+
+Sessions and flash messages give our app state across requests. In
+**Step 29**, we'll build **Presence** — a system for tracking which
+users are currently online using `Process.monitor` and GenServer,
+so LiveViews can show "who's here" indicators in real time.
 
 ---
 

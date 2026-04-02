@@ -153,6 +153,8 @@ defp parse_disposition(headers) do
   end
 end
 
+  # Enum.find_value/2 maps each element and returns the first non-nil
+  # result — useful for finding and extracting a value in one pass.
 defp extract_header_param(header, param_name) do
   header
   |> String.split(";")
@@ -350,6 +352,8 @@ def consume_uploaded_entries(assigns, name, callback) do
     Map.get(uploads, name) ||
       raise ArgumentError, "upload #{inspect(name)} not configured"
 
+  # & &1.done? is shorthand for fn entry -> entry.done? end —
+  # & creates an anonymous function and &1 refers to its first argument.
   {completed, remaining} = Enum.split_with(upload.entries, & &1.done?)
 
   {results, kept} =
@@ -794,6 +798,8 @@ The `upload_demo` action in `WelcomeController` serves the LiveView-connected pa
 
 {:ok, %{"event" => "__upload_validate__", "params" => %{"name" => name, "entries" => entries}}} ->
   upload_name = String.to_atom(name)
+  # Note: in production, validate that `name` matches a known upload
+  # name before converting to atom — atoms are never garbage collected.
   new_assigns = Ignite.LiveView.UploadHelpers.validate_entries(state.assigns, upload_name, entries)
 
   # Let the view handle validation if it defines handle_event("validate", ...)
@@ -918,6 +924,13 @@ Phoenix LiveView's upload system is more sophisticated:
 - **File validation** can inspect actual file content (magic bytes), not just MIME type
 
 Our implementation covers the core: chunked binary transfer, progress tracking, validation, drag-and-drop, and temp file management — enough for medium-scale apps.
+
+## What's Next
+
+With file uploads in place, our framework handles content going both
+ways. In **Step 27**, we'll add **path helpers** and **resource routes** —
+compile-time generated functions like `user_path(:show, 42)` that
+prevent broken links, plus a `resources` macro for one-line CRUD routing.
 
 ---
 
