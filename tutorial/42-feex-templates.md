@@ -554,6 +554,13 @@ Our `~F` covers the three most impactful features (shorthand, blocks, escaping) 
 | `lib/ignite/live_view/feex_engine.ex` | **New** — FEEx engine with blocks, escaping |
 | `lib/ignite/live_view.ex` | **Modified** — added `sigil_F`, `raw/1`, updated imports |
 
+## What's Next
+
+With `~F` templates, we have clean syntax, blocks, and auto-escaping.
+Time to put it all together. In **Step 43**, we'll build a **Todo App**
+— a capstone project that demonstrates LiveView, Streams, Ecto, and FEEx
+working together in a full-featured application.
+
 ---
 
 [← Previous: Step 41 - Stream Upsert & Limit](41-stream-upsert-limit.md) | [Next: Step 43 - Todo App →](43-todo-app.md)

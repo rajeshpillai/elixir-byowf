@@ -295,10 +295,12 @@ Phoenix's `mix phx.routes` also displays the generated path helper name (e.g., `
 | `lib/ignite/router.ex` | Added `__routes__/0` generation in `@before_compile` hook |
 | `lib/mix/tasks/ignite.routes.ex` | **New** — Mix task for printing route table |
 
-## File Checklist
+## What's Next
 
-- [ ] `lib/ignite/router.ex` — **Modified** (add `__routes__/0` generation in `__before_compile__`)
-- [ ] `lib/mix/tasks/ignite.routes.ex` — **New**
+We can now inspect our routes from the CLI. But when a controller crashes,
+developers still get a minimal error page with no context. In **Step 34**,
+we'll build a **rich debug error page** with exception details, stacktraces,
+request info, and session data — like Phoenix's colorful dev error page.
 
 ---
 

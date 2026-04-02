@@ -635,6 +635,14 @@ iex -S mix
 - **Modified** `lib/my_app/router.ex` — Added `plug :set_hsts_header`
 - **Modified** `mix.exs` — Added `:ssl`, `:public_key` to `extra_applications`
 
+## What's Next
+
+HTTPS is configured, but we're not yet production-deployable. `Mix.env()`
+calls crash in releases, there's no runtime configuration for secrets,
+and nothing prevents abuse. In **Step 40**, we'll fix `mix release`
+support, add runtime env var configuration, release migration tasks,
+and an ETS-based rate limiter.
+
 ---
 
 [← Previous: Step 38 - Test Helpers (ConnTest)](38-test-helpers.md) | [Next: Step 40 - Deployment with `mix release` + Rate Limiting →](40-release-and-rate-limit.md)

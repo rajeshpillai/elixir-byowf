@@ -416,6 +416,13 @@ Phoenix's approach is more production-optimized (filename fingerprinting works w
 - **Modified** `lib/ignite/reloader.ex` — Watch `assets/` directory, rebuild manifest on changes
 - **Modified** `templates/live.html.eex` — Use `Ignite.Static.static_path/1` in script tags
 
+## What's Next
+
+Assets are versioned, routes are listed, errors are debugged. But we have
+no automated tests! In **Step 38**, we'll build **test helpers** — a
+`ConnTest` module for testing controllers without starting the HTTP server,
+plus a critical bug fix to plug execution ordering.
+
 ---
 
 [← Previous: Step 36 - Health Check Endpoint](36-health-check.md) | [Next: Step 38 - Test Helpers (ConnTest) →](38-test-helpers.md)

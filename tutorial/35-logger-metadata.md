@@ -356,6 +356,13 @@ Phoenix uses the `:telemetry` library for a more extensible event system (you ca
 - **Modified** `lib/ignite/adapters/cowboy.ex` — Request ID generation, Logger.metadata, monotonic timing, x-request-id header, log_duration/1 helper
 - **Modified** `lib/my_app/router.ex` — Removed `log_request` plug (adapter handles it now)
 
+## What's Next
+
+Request logging and timing help us monitor individual requests. But
+production deployments need a broader view — is the app alive? Is it
+leaking memory? In **Step 36**, we'll build a **health check endpoint**
+that returns JSON with system metrics from the BEAM runtime.
+
 ---
 
 [← Previous: Step 34 - Debug Error Page](34-debug-error-page.md) | [Next: Step 36 - Health Check Endpoint →](36-health-check.md)

@@ -366,6 +366,13 @@ cases (arbitrary positioning, reordering).
 | `lib/ignite/live_view/stream.ex` | **Modified** | Added `limit`, `order` fields, upsert detection, `apply_limit/5` |
 | `lib/my_app/live/stream_demo_live.ex` | **Modified** | Added `limit: 20`, "Update Latest" button for upsert demo |
 
+## What's Next
+
+Streams are now feature-complete. But our `~L` sigil templates are
+verbose (`assigns.count`) and don't escape HTML. In **Step 42**, we'll
+build the `~F` sigil (Flame EEx) with `@` shorthand, block expressions
+(`if`/`for`), and automatic XSS-safe escaping.
+
 ---
 
 [← Previous: Step 40 - Deployment with `mix release` + Rate Limiting](40-release-and-rate-limit.md) | [Next: Step 42 - FEEx Templates →](42-feex-templates.md)

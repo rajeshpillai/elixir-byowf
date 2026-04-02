@@ -109,6 +109,29 @@ def todo_item(assigns) do
 end
 ```
 
+## Testing
+
+```bash
+# Setup
+mix deps.get
+mix ecto.create
+mix ecto.migrate
+iex -S mix
+
+# Visit http://localhost:4000/todo
+# - Create a new todo item
+# - Toggle completion status
+# - Filter by status or category
+# - Delete a todo
+```
+
+## Key Concepts
+
+- **Capstone integration** — This app ties together LiveView (Step 12), Streams (Step 25), Ecto (Step 30), and FEEx (Step 42) into a cohesive application.
+- **Streams for list rendering** — The todo list uses `stream/4` with a render function, so adding/removing items sends O(1) data over the wire.
+- **FEEx for templates** — The `~F` sigil provides `@` shorthand, block expressions, and auto-escaping throughout the UI.
+- **Ecto associations** — `has_many`/`belongs_to` relationships model the todo → subtask and category → todo relationships.
+
 ## File Checklist
 
 | File | Status | Purpose |
@@ -121,6 +144,14 @@ end
 | `priv/repo/migrations/...` | **New** | Database migration for all tables |
 | `lib/my_app/router.ex` | **Modified** | Added `/todo` route |
 | `lib/ignite/application.ex` | **Modified** | Added todo app supervision |
+
+## What's Next
+
+The Todo App showcases the framework end-to-end. But our LiveView client
+has some rough edges — no reconnection after server restarts, events
+firing outside the container, and no connection status indicator. In
+**Step 44**, we'll add **LiveView Resilience** — exponential backoff
+reconnection, scoped event delegation, a status UI, and keyboard events.
 
 ---
 

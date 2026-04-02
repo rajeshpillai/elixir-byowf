@@ -320,12 +320,12 @@ Phoenix doesn't include CSP by default — developers add it themselves. Our imp
 | `lib/my_app/router.ex` | Added `plug :set_csp_headers` with implementation |
 | `lib/my_app/controllers/welcome_controller.ex` | Added `nonce="..."` to inline `<script>` tag |
 
-## File Checklist
+## What's Next
 
-- [ ] `lib/ignite/csp.ex` — **New**
-- [ ] `lib/ignite/controller.ex` — **Modified** (add `csp_nonce/1` and `csp_script_tag/2`)
-- [ ] `lib/my_app/router.ex` — **Modified** (add `plug :set_csp_headers`)
-- [ ] `lib/my_app/controllers/welcome_controller.ex` — **Modified** (add nonce to inline scripts)
+CSP protects against script injection. But how do we know our routes are
+correct? In **Step 33**, we'll build `mix ignite.routes` — a Mix task
+that prints every registered route in a formatted table, using
+compile-time introspection of the router's accumulated metadata.
 
 ---
 

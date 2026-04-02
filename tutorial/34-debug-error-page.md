@@ -446,10 +446,13 @@ Phoenix's `Plug.Debugger` goes further by showing actual source code lines aroun
 | `lib/ignite/debug_page.ex` | **New** — rich dev error page with stacktrace, request, session tabs |
 | `lib/ignite/adapters/cowboy.ex` | Moved `conn` before `try`, replaced `error_page/1` with `Ignite.DebugPage.render/3` |
 
-## File Checklist
+## What's Next
 
-- [ ] `lib/ignite/debug_page.ex` — **New**
-- [ ] `lib/ignite/adapters/cowboy.ex` — **Modified** (move `conn` before `try`, use `Ignite.DebugPage.render/3`)
+The debug page helps us find errors, but in production with hundreds of
+concurrent requests, we can't tell which log lines belong to the same
+request. In **Step 35**, we'll add **Logger metadata** — a unique request
+ID and response timing on every request, using `Logger.metadata/1` and
+`System.monotonic_time/0`.
 
 ---
 

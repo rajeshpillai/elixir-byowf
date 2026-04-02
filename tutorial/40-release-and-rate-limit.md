@@ -678,6 +678,13 @@ PORT=4000 \
 - **Modified** `lib/my_app/router.ex` — Added `plug :rate_limit` as first middleware
 - **Modified** `mix.exs` — Added release configuration
 
+## What's Next
+
+The framework is now production-deployable with rate limiting. In
+**Step 41**, we'll enhance LiveView Streams with **upsert** (update
+existing items in-place) and **`:limit`** (auto-prune excess items),
+enabling infinite-scroll and log-tailing patterns.
+
 ---
 
 [← Previous: Step 39 - SSL/TLS Support](39-ssl-tls.md) | [Next: Step 41 - Stream Upsert & Limit →](41-stream-upsert-limit.md)

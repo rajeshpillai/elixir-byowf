@@ -573,6 +573,13 @@ Phoenix uses `Ecto.Adapters.SQL.Sandbox` for test isolation (each test runs in a
 - **Modified** `test/test_helper.exs` — Run migrations automatically before tests
 - **Modified** `test/ignite_test.exs` — Replaced empty module with ConnTest helper tests
 
+## What's Next
+
+With a test suite in place, we can develop with confidence. But our app
+only speaks HTTP — production traffic must be encrypted. In **Step 39**,
+we'll add **SSL/TLS support** with config-driven HTTPS, HTTP-to-HTTPS
+redirects, HSTS headers, and a self-signed certificate generator.
+
 ---
 
 [← Previous: Step 37 - Static Asset Pipeline](37-static-asset-pipeline.md) | [Next: Step 39 - SSL/TLS Support →](39-ssl-tls.md)
