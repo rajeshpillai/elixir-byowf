@@ -317,18 +317,18 @@ def counter(conn) do
   <body style="font-family: sans-serif; text-align: center; margin-top: 50px;">
     <div id="ignite-app">Connecting...</div>
     <script>
-      var socket = new WebSocket("ws://" + location.host + "/live");
-      var container = document.getElementById("ignite-app");
+      const socket = new WebSocket("ws://" + location.host + "/live");
+      const container = document.getElementById("ignite-app");
 
       socket.onmessage = function(event) {
-        var data = JSON.parse(event.data);
+        const data = JSON.parse(event.data);
         if (data.html) container.innerHTML = data.html;
       };
 
       document.addEventListener("click", function(e) {
-        var target = e.target;
+        let target = e.target;
         while (target && target !== document) {
-          var eventName = target.getAttribute("ignite-click");
+          const eventName = target.getAttribute("ignite-click");
           if (eventName) {
             socket.send(JSON.stringify({event: eventName, params: {}}));
             return;

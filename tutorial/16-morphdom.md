@@ -168,20 +168,20 @@ before `ignite.js` so it's available as a global `morphdom` function.
   "use strict";
 
   // --- Configuration ---
-  var LIVE_PATH = "/live";
-  var APP_CONTAINER_ID = "ignite-app";
+  const LIVE_PATH = "/live";
+  const APP_CONTAINER_ID = "ignite-app";
 
   // Statics are saved from the first message and reused for every update
-  var statics = null;
+  let statics = null;
 
   // --- WebSocket Connection ---
-  var protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-  var socket = new WebSocket(protocol + "//" + window.location.host + LIVE_PATH);
+  const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+  let socket = new WebSocket(protocol + "//" + window.location.host + LIVE_PATH);
 
   // --- Reconstruct HTML from statics + dynamics ---
   function buildHtml(statics, dynamics) {
-    var html = "";
-    for (var i = 0; i < statics.length; i++) {
+    let html = "";
+    for (let i = 0; i < statics.length; i++) {
       html += statics[i];
       if (i < dynamics.length) {
         html += dynamics[i];
@@ -195,7 +195,7 @@ before `ignite.js` so it's available as a global `morphdom` function.
   function applyUpdate(container, newHtml) {
     if (typeof morphdom === "function") {
       // Create a temporary wrapper to morph into
-      var wrapper = document.createElement("div");
+      const wrapper = document.createElement("div");
       wrapper.id = APP_CONTAINER_ID;
       wrapper.innerHTML = newHtml;
 
@@ -217,8 +217,8 @@ before `ignite.js` so it's available as a global `morphdom` function.
 
   // --- Receive updates from server ---
   socket.onmessage = function (event) {
-    var data = JSON.parse(event.data);
-    var container = document.getElementById(APP_CONTAINER_ID);
+    const data = JSON.parse(event.data);
+    const container = document.getElementById(APP_CONTAINER_ID);
     if (!container) return;
 
     // First message includes statics — save them
@@ -228,22 +228,22 @@ before `ignite.js` so it's available as a global `morphdom` function.
 
     // Reconstruct HTML and patch the DOM
     if (statics && data.d) {
-      var newHtml = buildHtml(statics, data.d);
+      const newHtml = buildHtml(statics, data.d);
       applyUpdate(container, newHtml);
     }
   };
 
   // --- Send events to server ---
   document.addEventListener("click", function (e) {
-    var target = e.target;
+    let target = e.target;
 
     while (target && target !== document) {
-      var eventName = target.getAttribute("ignite-click");
+      const eventName = target.getAttribute("ignite-click");
       if (eventName) {
         e.preventDefault();
 
-        var params = {};
-        var value = target.getAttribute("ignite-value");
+        const params = {};
+        const value = target.getAttribute("ignite-value");
         if (value) {
           params.value = value;
         }

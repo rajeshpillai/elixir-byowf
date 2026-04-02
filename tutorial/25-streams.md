@@ -473,9 +473,9 @@ The container starts empty. Stream operations populate and manage its children. 
 function applyStreamOps(data) {
   if (!data.streams) return;
 
-  for (var streamName in data.streams) {
-    var ops = data.streams[streamName];
-    var container = document.querySelector(
+  for (let streamName in data.streams) {
+    const ops = data.streams[streamName];
+    const container = document.querySelector(
       '[ignite-stream="' + streamName + '"]'
     );
 
@@ -488,22 +488,22 @@ function applyStreamOps(data) {
 
     // Deletes: remove elements by DOM ID
     if (ops.deletes) {
-      for (var i = 0; i < ops.deletes.length; i++) {
-        var el = document.getElementById(ops.deletes[i]);
+      for (let i = 0; i < ops.deletes.length; i++) {
+        const el = document.getElementById(ops.deletes[i]);
         if (el) el.parentNode.removeChild(el);
       }
     }
 
     // Inserts: add new elements (or upsert existing ones)
     if (ops.inserts) {
-      for (var j = 0; j < ops.inserts.length; j++) {
-        var entry = ops.inserts[j];
-        var temp = document.createElement("div");
+      for (let j = 0; j < ops.inserts.length; j++) {
+        const entry = ops.inserts[j];
+        const temp = document.createElement("div");
         temp.innerHTML = entry.html.trim();
-        var newEl = temp.firstChild;
+        const newEl = temp.firstChild;
 
         // Upsert: if element with this ID already exists, update it in-place
-        var existing = document.getElementById(entry.id);
+        const existing = document.getElementById(entry.id);
         if (existing) {
           morphdom(existing, newEl);
         } else if (entry.at === 0) {

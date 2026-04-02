@@ -252,9 +252,9 @@ After updating component state, the handler re-renders the **entire parent LiveV
 
 ```javascript
 function resolveEvent(eventName, target) {
-  var el = target;
+  let el = target;
   while (el && el !== document) {
-    var componentId = el.getAttribute("ignite-component");
+    const componentId = el.getAttribute("ignite-component");
     if (componentId) {
       return componentId + ":" + eventName;
     }
@@ -270,11 +270,11 @@ This function is called from the existing click, change, and submit handlers. He
 
 ```javascript
 // In the click event listener:
-var eventName = target.getAttribute("ignite-click");
+const eventName = target.getAttribute("ignite-click");
 if (eventName) {
   e.preventDefault();
-  var params = {};
-  var value = target.getAttribute("ignite-value");
+  const params = {};
+  const value = target.getAttribute("ignite-value");
   if (value) {
     params.value = value;
   }
@@ -288,9 +288,9 @@ if (eventName) {
 
 ```javascript
 // In the input event listener:
-var eventName = el.getAttribute("ignite-change");
+const eventName = el.getAttribute("ignite-change");
 if (eventName) {
-  var params = {
+  const params = {
     field: target.getAttribute("name") || "",
     value: target.value,
   };
@@ -304,11 +304,11 @@ if (eventName) {
 
 ```javascript
 // In the submit event listener:
-var eventName = form.getAttribute("ignite-submit");
+const eventName = form.getAttribute("ignite-submit");
 if (eventName) {
   e.preventDefault();
-  var params = {};
-  var formData = new FormData(form);
+  const params = {};
+  const formData = new FormData(form);
   formData.forEach(function (value, key) {
     if (!(value instanceof File)) {
       params[key] = value;

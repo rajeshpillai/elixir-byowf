@@ -186,24 +186,24 @@ Removes a key from a map and returns **both** the removed value and the map with
   "use strict";
 
   // --- Configuration ---
-  var APP_CONTAINER_ID = "ignite-app";
+  const APP_CONTAINER_ID = "ignite-app";
 
   // Statics are saved from the first message and reused for every update
-  var statics = null;
+  let statics = null;
 
   // Current WebSocket connection
-  var socket = null;
+  let socket = null;
 
   // Route mapping: HTTP path → WebSocket live_path (injected by server)
-  var liveRoutes = {};
+  let liveRoutes = {};
 
   // --- Initialize ---
-  var appContainer = document.getElementById(APP_CONTAINER_ID);
+  const appContainer = document.getElementById(APP_CONTAINER_ID);
   if (!appContainer) return;
 
   // Read route mapping from data attribute
   try {
-    var routesJson = appContainer.dataset.liveRoutes;
+    const routesJson = appContainer.dataset.liveRoutes;
     if (routesJson) {
       liveRoutes = JSON.parse(routesJson);
     }
@@ -220,8 +220,8 @@ Removes a key from a map and returns **both** the removed value and the map with
 
   // --- Reconstruct HTML from statics + dynamics ---
   function buildHtml(statics, dynamics) {
-    var html = "";
-    for (var i = 0; i < statics.length; i++) {
+    let html = "";
+    for (let i = 0; i < statics.length; i++) {
       html += statics[i];
       if (i < dynamics.length) {
         html += dynamics[i];
@@ -235,7 +235,7 @@ Removes a key from a map and returns **both** the removed value and the map with
   function applyUpdate(container, newHtml) {
     if (typeof morphdom === "function") {
       // Create a temporary wrapper to morph into
-      var wrapper = document.createElement("div");
+      const wrapper = document.createElement("div");
       wrapper.id = APP_CONTAINER_ID;
       // Preserve data attributes
       if (container.dataset.livePath) {
@@ -277,18 +277,18 @@ Removes a key from a map and returns **both** the removed value and the map with
     // Reset statics for new view
     statics = null;
 
-    var container = document.getElementById(APP_CONTAINER_ID);
+    const container = document.getElementById(APP_CONTAINER_ID);
     if (container) {
       container.innerHTML = "Connecting...";
       container.dataset.livePath = livePath;
     }
 
-    var protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
     socket = new WebSocket(protocol + "//" + window.location.host + livePath);
 
     socket.onmessage = function (event) {
-      var data = JSON.parse(event.data);
-      var el = document.getElementById(APP_CONTAINER_ID);
+      const data = JSON.parse(event.data);
+      const el = document.getElementById(APP_CONTAINER_ID);
       if (!el) return;
 
       // Handle server-initiated navigation
@@ -304,7 +304,7 @@ Removes a key from a map and returns **both** the removed value and the map with
 
       // Apply dynamics update
       if (statics && data.d) {
-        var newHtml = buildHtml(statics, data.d);
+        const newHtml = buildHtml(statics, data.d);
         applyUpdate(el, newHtml);
       }
     };
@@ -360,7 +360,7 @@ Removes a key from a map and returns **both** the removed value and the map with
   });
 
   // --- Set initial history state ---
-  var initialLivePath =
+  const initialLivePath =
     (appContainer && appContainer.dataset.livePath) || "/live";
   history.replaceState(
     { url: window.location.pathname, livePath: initialLivePath },
@@ -370,11 +370,11 @@ Removes a key from a map and returns **both** the removed value and the map with
 
   // --- Send click events to server ---
   document.addEventListener("click", function (e) {
-    var target = e.target;
+    let target = e.target;
 
     while (target && target !== document) {
       // Check for navigation links first
-      var navPath = target.getAttribute("ignite-navigate");
+      const navPath = target.getAttribute("ignite-navigate");
       if (navPath) {
         e.preventDefault();
         navigate(navPath);
@@ -382,12 +382,12 @@ Removes a key from a map and returns **both** the removed value and the map with
       }
 
       // Check for click events
-      var eventName = target.getAttribute("ignite-click");
+      const eventName = target.getAttribute("ignite-click");
       if (eventName) {
         e.preventDefault();
 
-        var params = {};
-        var value = target.getAttribute("ignite-value");
+        const params = {};
+        const value = target.getAttribute("ignite-value");
         if (value) {
           params.value = value;
         }
@@ -401,14 +401,14 @@ Removes a key from a map and returns **both** the removed value and the map with
 
   // --- Send input change events to server ---
   document.addEventListener("input", function (e) {
-    var target = e.target;
+    const target = e.target;
 
     // Walk up to find ignite-change (could be on the input or a parent)
-    var el = target;
+    let el = target;
     while (el && el !== document) {
-      var eventName = el.getAttribute("ignite-change");
+      const eventName = el.getAttribute("ignite-change");
       if (eventName) {
-        var params = {
+        const params = {
           field: target.getAttribute("name") || "",
           value: target.value,
         };
@@ -421,16 +421,16 @@ Removes a key from a map and returns **both** the removed value and the map with
 
   // --- Send form submit events to server ---
   document.addEventListener("submit", function (e) {
-    var form = e.target;
+    const form = e.target;
     if (!form || !form.getAttribute) return;
 
-    var eventName = form.getAttribute("ignite-submit");
+    const eventName = form.getAttribute("ignite-submit");
     if (eventName) {
       e.preventDefault();
 
       // Collect all form fields
-      var params = {};
-      var formData = new FormData(form);
+      const params = {};
+      const formData = new FormData(form);
       formData.forEach(function (value, key) {
         params[key] = value;
       });

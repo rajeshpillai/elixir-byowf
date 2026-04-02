@@ -91,12 +91,12 @@ window.IgniteHooks = window.IgniteHooks || {};
 window.IgniteHooks.Chart = {
   mounted: function() {
     // this.el is the DOM element
-    var data = JSON.parse(this.el.dataset.values);
+    const data = JSON.parse(this.el.dataset.values);
     this._chart = new Chart(this.el, { data: data });
   },
   updated: function() {
     // Server re-rendered — update the chart
-    var data = JSON.parse(this.el.dataset.values);
+    const data = JSON.parse(this.el.dataset.values);
     this._chart.update(data);
   },
   destroyed: function() {
@@ -112,7 +112,7 @@ When a hooked element is found in the DOM, Ignite creates an instance:
 
 ```javascript
 function createHookInstance(hookDef, el) {
-  var instance = Object.create(hookDef);
+  const instance = Object.create(hookDef);
   instance.el = el;
   instance.pushEvent = function(event, params) {
     sendEvent(event, params || {});
@@ -131,24 +131,24 @@ These four functions manage the full lifecycle. Add them to `ignite.js` right af
 
 ```javascript
 function mountHooks(container) {
-  var hookDefs = getHookDefinitions();
-  var elements = container.querySelectorAll("[ignite-hook]");
+  const hookDefs = getHookDefinitions();
+  const elements = container.querySelectorAll("[ignite-hook]");
 
-  for (var i = 0; i < elements.length; i++) {
-    var el = elements[i];
-    var hookName = el.getAttribute("ignite-hook");
-    var elId = el.id;
+  for (let i = 0; i < elements.length; i++) {
+    const el = elements[i];
+    const hookName = el.getAttribute("ignite-hook");
+    const elId = el.id;
 
     if (!elId || !hookName) continue;
     if (mountedHooks[elId]) continue; // already mounted
 
-    var def = hookDefs[hookName];
+    const def = hookDefs[hookName];
     if (!def) {
       console.warn("[Ignite] Hook '" + hookName + "' not found in IgniteHooks");
       continue;
     }
 
-    var instance = createHookInstance(def, el);
+    const instance = createHookInstance(def, el);
     mountedHooks[elId] = { name: hookName, instance: instance };
 
     if (typeof instance.mounted === "function") {
@@ -162,14 +162,14 @@ function mountHooks(container) {
 
 ```javascript
 function updateHooks(container) {
-  var elements = container.querySelectorAll("[ignite-hook]");
+  const elements = container.querySelectorAll("[ignite-hook]");
 
-  for (var i = 0; i < elements.length; i++) {
-    var el = elements[i];
-    var elId = el.id;
+  for (let i = 0; i < elements.length; i++) {
+    const el = elements[i];
+    const elId = el.id;
     if (!elId) continue;
 
-    var entry = mountedHooks[elId];
+    const entry = mountedHooks[elId];
     if (entry) {
       // Update the element reference (morphdom may have replaced it)
       entry.instance.el = el;
@@ -185,21 +185,21 @@ function updateHooks(container) {
 
 ```javascript
 function cleanupHooks(container) {
-  var currentIds = {};
-  var elements = container.querySelectorAll("[ignite-hook]");
-  for (var i = 0; i < elements.length; i++) {
+  const currentIds = {};
+  const elements = container.querySelectorAll("[ignite-hook]");
+  for (let i = 0; i < elements.length; i++) {
     if (elements[i].id) currentIds[elements[i].id] = true;
   }
 
-  var toRemove = [];
-  for (var id in mountedHooks) {
+  const toRemove = [];
+  for (const id in mountedHooks) {
     if (!currentIds[id]) {
       toRemove.push(id);
     }
   }
 
-  for (var j = 0; j < toRemove.length; j++) {
-    var entry = mountedHooks[toRemove[j]];
+  for (let j = 0; j < toRemove.length; j++) {
+    const entry = mountedHooks[toRemove[j]];
     if (entry && typeof entry.instance.destroyed === "function") {
       entry.instance.destroyed();
     }
@@ -212,8 +212,8 @@ function cleanupHooks(container) {
 
 ```javascript
 function destroyAllHooks() {
-  for (var id in mountedHooks) {
-    var entry = mountedHooks[id];
+  for (const id in mountedHooks) {
+    const entry = mountedHooks[id];
     if (entry && typeof entry.instance.destroyed === "function") {
       entry.instance.destroyed();
     }
@@ -260,7 +260,7 @@ Add the three calls at the end of `applyUpdate`, after morphdom has patched the 
 ```javascript
 function applyUpdate(container, newHtml) {
   if (typeof morphdom === "function") {
-    var wrapper = document.createElement("div");
+    const wrapper = document.createElement("div");
     wrapper.id = APP_CONTAINER_ID;
     if (container.dataset.livePath) {
       wrapper.dataset.livePath = container.dataset.livePath;
@@ -331,7 +331,7 @@ function connect(livePath) {
   statics = null;
   dynamics = null;
 
-  var container = document.getElementById(APP_CONTAINER_ID);
+  const container = document.getElementById(APP_CONTAINER_ID);
   if (container) {
     container.innerHTML = "Connecting...";
     container.dataset.livePath = livePath;
@@ -370,11 +370,11 @@ Uses the browser's Clipboard API and reports success/failure to the server:
 ```javascript
 window.IgniteHooks.CopyToClipboard = {
   mounted: function() {
-    var self = this;
-    var btn = this.el.querySelector("#copy-btn");
+    const self = this;
+    const btn = this.el.querySelector("#copy-btn");
 
     this._handler = function() {
-      var text = self.el.getAttribute("data-text");
+      const text = self.el.getAttribute("data-text");
       navigator.clipboard.writeText(text)
         .then(function() {
           self.pushEvent("clipboard_result", { success: "true" });
@@ -399,8 +399,8 @@ Shows the client's local time (which the server doesn't know) and lets the user 
 ```javascript
 window.IgniteHooks.LocalTime = {
   mounted: function() {
-    var self = this;
-    var display = this.el.querySelector("#local-time-display");
+    const self = this;
+    const display = this.el.querySelector("#local-time-display");
 
     // Update every second — this runs purely on the client
     this._interval = setInterval(function() {
@@ -408,7 +408,7 @@ window.IgniteHooks.LocalTime = {
     }, 1000);
 
     // Button sends client time to server
-    var btn = this.el.querySelector("#send-time-btn");
+    const btn = this.el.querySelector("#send-time-btn");
     btn.addEventListener("click", function() {
       self.pushEvent("local_time", { time: new Date().toLocaleTimeString() });
     });

@@ -94,14 +94,21 @@ With diffing: `{"d":["42"]}` = 12 bytes per update
 
 For large pages, the savings are dramatic — potentially 90%+ reduction.
 
+> **Note:** Our first implementation below is simplified — it wraps the
+> entire HTML as a single dynamic value. This means the bandwidth savings
+> described above won't kick in yet. What we're building now is the
+> **architecture** (statics/dynamics split, separate mount/update messages)
+> so that in Step 24 we can drop in a real EEx engine that tracks each
+> `<%= expr %>` individually and delivers the full optimization.
+
 ### Array Zipping
 
 The JS reconstruction logic zips two arrays:
 
 ```javascript
 function buildHtml(statics, dynamics) {
-  var html = "";
-  for (var i = 0; i < statics.length; i++) {
+  let html = "";
+  for (let i = 0; i < statics.length; i++) {
     html += statics[i];
     if (i < dynamics.length) {
       html += dynamics[i];
@@ -111,8 +118,9 @@ function buildHtml(statics, dynamics) {
 }
 ```
 
-Statics always has one more element than dynamics (the parts between
-and around the dynamic values).
+Statics always has one more element than dynamics. Think of dynamics
+as separators — if you have N dynamic values, they divide the template
+into N+1 static chunks (before, between, and after the dynamic values).
 
 ## The Code
 
@@ -132,6 +140,8 @@ defmodule Ignite.LiveView.Engine do
 
   @doc "Renders a view and returns {statics, dynamics} for mount."
   def render(view_module, assigns) do
+    # apply/3 calls a function dynamically — we need it because
+    # the view module is a variable, not known at compile time.
     html = apply(view_module, :render, [assigns])
     # Wrap entire HTML as a single dynamic value
     {["", ""], [html]}
@@ -173,6 +183,8 @@ defmodule Ignite.LiveView.Handler do
   def websocket_init(state) do
     view_module = state.view
 
+    # mount/2 receives params (from the URL) and session data.
+    # We pass empty maps for now — sessions come in a later step.
     case apply(view_module, :mount, [%{}, %{}]) do
       {:ok, assigns} ->
         {statics, dynamics} = Engine.render(view_module, assigns)
@@ -212,14 +224,14 @@ end
 (function () {
   "use strict";
 
-  var APP_CONTAINER_ID = "ignite-app";
-  var statics = null;   // Saved from first message, reused for every update
-  var socket = null;
+  const APP_CONTAINER_ID = "ignite-app";
+  let statics = null;   // Saved from first message, reused for every update
+  let socket = null;
 
   // --- Reconstruct HTML from statics + dynamics ---
   function buildHtml(statics, dynamics) {
-    var html = "";
-    for (var i = 0; i < statics.length; i++) {
+    let html = "";
+    for (let i = 0; i < statics.length; i++) {
       html += statics[i];
       if (i < dynamics.length) {
         html += dynamics[i];
@@ -229,11 +241,11 @@ end
   }
 
   function connect() {
-    var container = document.getElementById(APP_CONTAINER_ID);
+    const container = document.getElementById(APP_CONTAINER_ID);
     if (!container) return;
 
-    var livePath = container.dataset.livePath || "/live";
-    var protocol = location.protocol === "https:" ? "wss:" : "ws:";
+    const livePath = container.dataset.livePath || "/live";
+    const protocol = location.protocol === "https:" ? "wss:" : "ws:";
 
     socket = new WebSocket(protocol + "//" + location.host + livePath);
 
@@ -242,7 +254,7 @@ end
     };
 
     socket.onmessage = function (event) {
-      var data = JSON.parse(event.data);
+      const data = JSON.parse(event.data);
 
       // Mount message: save statics
       if (data.s) {
@@ -251,7 +263,7 @@ end
 
       // Update: use saved statics + new dynamics
       if (data.d && statics) {
-        var html = buildHtml(statics, data.d);
+        const html = buildHtml(statics, data.d);
         container.innerHTML = html;
       }
     };
@@ -263,13 +275,13 @@ end
 
   // --- Event delegation ---
   document.addEventListener("click", function (e) {
-    var target = e.target;
+    let target = e.target;
     while (target && target !== document) {
-      var eventName = target.getAttribute("ignite-click");
+      const eventName = target.getAttribute("ignite-click");
       if (eventName) {
         e.preventDefault();
-        var params = {};
-        var value = target.getAttribute("ignite-value");
+        const params = {};
+        const value = target.getAttribute("ignite-value");
         if (value) params.value = value;
         if (socket && socket.readyState === WebSocket.OPEN) {
           socket.send(JSON.stringify({ event: eventName, params: params }));
@@ -321,6 +333,11 @@ Click +1:
 
 5. The counter still works exactly the same — the optimization is
    transparent to the user.
+
+> With our simplified engine, the entire HTML is still sent as one dynamic
+> value. The real per-expression savings arrive in Step 24 when we build
+> a custom EEx engine. For now, the important thing is that the
+> **statics/dynamics architecture** is in place.
 
 ## File Checklist
 

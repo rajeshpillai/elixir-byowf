@@ -268,7 +268,7 @@ Looking at the `applyStreamOps` function in `ignite.js`:
 
 ```javascript
 // If element with this ID already exists, update it
-var existing = document.getElementById(entry.id);
+const existing = document.getElementById(entry.id);
 if (existing) {
   morphdom(existing, newEl, { ... });  // Update in-place
 } else if (entry.at === 0) {

@@ -250,11 +250,11 @@ end
 if (Array.isArray(data.d)) {
   dynamics = data.d;           // Full replacement
 } else {
-  for (var key in data.d) {    // Sparse patch
+  for (const key in data.d) {  // Sparse patch
     dynamics[parseInt(key, 10)] = data.d[key];
   }
 }
-var newHtml = buildHtml(statics, dynamics);
+const newHtml = buildHtml(statics, dynamics);
 applyUpdate(el, newHtml);      // morphdom patches the DOM
 ```
 

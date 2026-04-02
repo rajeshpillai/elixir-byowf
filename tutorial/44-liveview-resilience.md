@@ -100,9 +100,9 @@ container. The fix: attach to `appContainer` instead and use
 The current click handler manually walks up the DOM tree:
 
 ```javascript
-var target = e.target;
+let target = e.target;
 while (target && target !== document) {
-  var eventName = target.getAttribute("ignite-click");
+  const eventName = target.getAttribute("ignite-click");
   if (eventName) { ... }
   target = target.parentElement;
 }
@@ -111,7 +111,7 @@ while (target && target !== document) {
 `Element.closest(selector)` does the same thing in one call:
 
 ```javascript
-var target = e.target.closest("[ignite-click]");
+const target = e.target.closest("[ignite-click]");
 if (target) { ... }
 ```
 
@@ -128,8 +128,8 @@ right after the `APP_CONTAINER_ID` declaration (line 31):
 
 ```javascript
 // --- Configuration ---
-var APP_CONTAINER_ID = "ignite-app";
-var statusEl = document.getElementById("ignite-status");
+const APP_CONTAINER_ID = "ignite-app";
+const statusEl = document.getElementById("ignite-status");
 
 function setStatus(text, className) {
   if (statusEl) {
@@ -161,10 +161,10 @@ Add basic status styles in the `<style>` block:
 variables:
 
 ```javascript
-var reconnectDelay = 200;
-var MAX_DELAY = 5000;
-var reconnectTimer = null;
-var navigating = false;
+let reconnectDelay = 200;
+const MAX_DELAY = 5000;
+let reconnectTimer = null;
+let navigating = false;
 ```
 
 Add the `scheduleReconnect` function:
@@ -172,8 +172,8 @@ Add the `scheduleReconnect` function:
 ```javascript
 function scheduleReconnect() {
   if (reconnectTimer) return;
-  var container = document.getElementById(APP_CONTAINER_ID);
-  var currentPath = (container && container.dataset.livePath) || initialLivePath;
+  const container = document.getElementById(APP_CONTAINER_ID);
+  const currentPath = (container && container.dataset.livePath) || initialLivePath;
   reconnectTimer = setTimeout(function () {
     reconnectTimer = null;
     connect(currentPath);
@@ -234,18 +234,18 @@ with container-scoped versions using `closest()`:
 ```javascript
 // --- Click events (scoped to container) ---
 appContainer.addEventListener("click", function (e) {
-  var navTarget = e.target.closest("[ignite-navigate]");
+  const navTarget = e.target.closest("[ignite-navigate]");
   if (navTarget) {
     e.preventDefault();
     navigate(navTarget.getAttribute("ignite-navigate"));
     return;
   }
 
-  var target = e.target.closest("[ignite-click]");
+  const target = e.target.closest("[ignite-click]");
   if (target) {
     e.preventDefault();
-    var params = {};
-    var value = target.getAttribute("ignite-value");
+    const params = {};
+    const value = target.getAttribute("ignite-value");
     if (value) params.value = value;
     sendEvent(resolveEvent(target.getAttribute("ignite-click"), target), params);
   }
@@ -253,10 +253,10 @@ appContainer.addEventListener("click", function (e) {
 
 // --- Input change events (scoped to container) ---
 appContainer.addEventListener("input", function (e) {
-  var target = e.target.closest("[ignite-change]");
+  const target = e.target.closest("[ignite-change]");
   if (target) {
-    var name = e.target.getAttribute("name") || "value";
-    var params = {};
+    const name = e.target.getAttribute("name") || "value";
+    const params = {};
     params[name] = e.target.value;
     sendEvent(resolveEvent(target.getAttribute("ignite-change"), e.target), params);
   }
@@ -264,11 +264,11 @@ appContainer.addEventListener("input", function (e) {
 
 // --- Form submit events (scoped to container) ---
 appContainer.addEventListener("submit", function (e) {
-  var form = e.target.closest("[ignite-submit]");
+  const form = e.target.closest("[ignite-submit]");
   if (form) {
     e.preventDefault();
-    var params = {};
-    var formData = new FormData(form);
+    const params = {};
+    const formData = new FormData(form);
     formData.forEach(function (value, key) {
       if (!(value instanceof File)) params[key] = value;
     });
@@ -319,11 +319,11 @@ Add after the submit listener:
 ```javascript
 // --- Keydown events (scoped to container) ---
 appContainer.addEventListener("keydown", function (e) {
-  var target = e.target.closest("[ignite-keydown]");
+  const target = e.target.closest("[ignite-keydown]");
   if (target) {
-    var event = resolveEvent(target.getAttribute("ignite-keydown"), e.target);
-    var name = e.target.getAttribute("name") || "value";
-    var params = { key: e.key };
+    const event = resolveEvent(target.getAttribute("ignite-keydown"), e.target);
+    const name = e.target.getAttribute("name") || "value";
+    const params = { key: e.key };
     params[name] = e.target.value;
     sendEvent(event, params);
   }
@@ -349,7 +349,7 @@ name and a timestamp.
 (line 299) — change `var ref = String(i)` to:
 
 ```javascript
-var ref = uploadName + "-" + i + "-" + Date.now();
+const ref = uploadName + "-" + i + "-" + Date.now();
 ```
 
 ## How It Works

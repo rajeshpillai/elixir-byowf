@@ -28,24 +28,24 @@
   "use strict";
 
   // --- Configuration ---
-  var APP_CONTAINER_ID = "ignite-app";
+  const APP_CONTAINER_ID = "ignite-app";
 
   // Statics are saved from the first message and reused for every update
-  var statics = null;
+  let statics = null;
 
   // Dynamics are saved so sparse updates can patch individual indices
-  var dynamics = null;
+  let dynamics = null;
 
   // Current WebSocket connection
-  var socket = null;
+  let socket = null;
 
   // Route mapping: HTTP path → WebSocket live_path (injected by server)
-  var liveRoutes = {};
+  let liveRoutes = {};
 
   // --- JS Hooks Registry ---
   // Users register hooks via: window.IgniteHooks = { HookName: { mounted(){}, ... } }
   // Each hook instance gets: this.el, this.pushEvent(event, params)
-  var mountedHooks = {}; // elementId → { name, instance }
+  let mountedHooks = {}; // elementId → { name, instance }
 
   function getHookDefinitions() {
     return window.IgniteHooks || {};
@@ -53,7 +53,7 @@
 
   // Create a hook instance with the right context
   function createHookInstance(hookDef, el) {
-    var instance = Object.create(hookDef);
+    const instance = Object.create(hookDef);
     instance.el = el;
     instance.pushEvent = function (event, params) {
       sendEvent(event, params || {});
@@ -63,24 +63,24 @@
 
   // Scan the DOM for [ignite-hook] elements and call mounted() on new ones
   function mountHooks(container) {
-    var hookDefs = getHookDefinitions();
-    var elements = container.querySelectorAll("[ignite-hook]");
+    const hookDefs = getHookDefinitions();
+    const elements = container.querySelectorAll("[ignite-hook]");
 
-    for (var i = 0; i < elements.length; i++) {
-      var el = elements[i];
-      var hookName = el.getAttribute("ignite-hook");
-      var elId = el.id;
+    for (let i = 0; i < elements.length; i++) {
+      const el = elements[i];
+      const hookName = el.getAttribute("ignite-hook");
+      const elId = el.id;
 
       if (!elId || !hookName) continue;
       if (mountedHooks[elId]) continue; // already mounted
 
-      var def = hookDefs[hookName];
+      const def = hookDefs[hookName];
       if (!def) {
         console.warn("[Ignite] Hook '" + hookName + "' not found in IgniteHooks");
         continue;
       }
 
-      var instance = createHookInstance(def, el);
+      const instance = createHookInstance(def, el);
       mountedHooks[elId] = { name: hookName, instance: instance };
 
       if (typeof instance.mounted === "function") {
@@ -91,14 +91,14 @@
 
   // Call updated() on hooks whose elements were re-rendered
   function updateHooks(container) {
-    var elements = container.querySelectorAll("[ignite-hook]");
+    const elements = container.querySelectorAll("[ignite-hook]");
 
-    for (var i = 0; i < elements.length; i++) {
-      var el = elements[i];
-      var elId = el.id;
+    for (let i = 0; i < elements.length; i++) {
+      const el = elements[i];
+      const elId = el.id;
       if (!elId) continue;
 
-      var entry = mountedHooks[elId];
+      const entry = mountedHooks[elId];
       if (entry) {
         // Update the element reference (morphdom may have replaced it)
         entry.instance.el = el;
@@ -111,21 +111,21 @@
 
   // Call destroyed() on hooks whose elements were removed
   function cleanupHooks(container) {
-    var currentIds = {};
-    var elements = container.querySelectorAll("[ignite-hook]");
-    for (var i = 0; i < elements.length; i++) {
+    const currentIds = {};
+    const elements = container.querySelectorAll("[ignite-hook]");
+    for (let i = 0; i < elements.length; i++) {
       if (elements[i].id) currentIds[elements[i].id] = true;
     }
 
-    var toRemove = [];
-    for (var id in mountedHooks) {
+    const toRemove = [];
+    for (const id in mountedHooks) {
       if (!currentIds[id]) {
         toRemove.push(id);
       }
     }
 
-    for (var j = 0; j < toRemove.length; j++) {
-      var entry = mountedHooks[toRemove[j]];
+    for (let j = 0; j < toRemove.length; j++) {
+      const entry = mountedHooks[toRemove[j]];
       if (entry && typeof entry.instance.destroyed === "function") {
         entry.instance.destroyed();
       }
@@ -135,8 +135,8 @@
 
   // Destroy all hooks (e.g. on navigation)
   function destroyAllHooks() {
-    for (var id in mountedHooks) {
-      var entry = mountedHooks[id];
+    for (const id in mountedHooks) {
+      const entry = mountedHooks[id];
       if (entry && typeof entry.instance.destroyed === "function") {
         entry.instance.destroyed();
       }
@@ -146,54 +146,57 @@
 
   // --- Upload System ---
   // Tracks pending file uploads: ref → { file, uploadName }
-  var pendingUploads = {};
+  const pendingUploads = {};
+
+  // Register files for upload — shared by file input and drag-and-drop handlers
+  function registerFilesForUpload(files, uploadName) {
+    // Clear previous pending uploads for this upload name
+    for (const ref in pendingUploads) {
+      if (pendingUploads[ref].uploadName === uploadName) {
+        delete pendingUploads[ref];
+      }
+    }
+
+    const entries = [];
+    for (let i = 0; i < files.length; i++) {
+      const ref = String(i);
+      pendingUploads[ref] = { file: files[i], uploadName: uploadName };
+      entries.push({
+        ref: ref,
+        name: files[i].name,
+        type: files[i].type,
+        size: files[i].size,
+      });
+    }
+
+    sendEvent("__upload_validate__", {
+      name: uploadName,
+      entries: entries,
+    });
+  }
 
   // Initialize a file input with [ignite-upload] to handle file selection
   function initUploadInput(input) {
     if (input._igniteUploadInit) return;
     input._igniteUploadInit = true;
 
-    var uploadName = input.getAttribute("ignite-upload");
+    const uploadName = input.getAttribute("ignite-upload");
     if (!uploadName) return;
 
     input.addEventListener("change", function () {
-      var files = Array.from(input.files);
+      const files = Array.from(input.files);
       if (files.length === 0) return;
-
-      // Clear previous pending uploads for this upload name
-      for (var ref in pendingUploads) {
-        if (pendingUploads[ref].uploadName === uploadName) {
-          delete pendingUploads[ref];
-        }
-      }
-
-      var entries = [];
-      for (var i = 0; i < files.length; i++) {
-        var ref = String(i);
-        pendingUploads[ref] = { file: files[i], uploadName: uploadName };
-        entries.push({
-          ref: ref,
-          name: files[i].name,
-          type: files[i].type,
-          size: files[i].size,
-        });
-      }
-
-      // Send validation event to server
-      sendEvent("__upload_validate__", {
-        name: uploadName,
-        entries: entries,
-      });
+      registerFilesForUpload(files, uploadName);
     });
   }
 
   // Chunk a file and send binary frames over WebSocket
   function startChunkedUpload(ref, chunkSize) {
-    var pending = pendingUploads[ref];
+    const pending = pendingUploads[ref];
     if (!pending) return;
 
-    var file = pending.file;
-    var offset = 0;
+    const file = pending.file;
+    let offset = 0;
 
     function sendNextChunk() {
       if (offset >= file.size) {
@@ -206,17 +209,17 @@
         return;
       }
 
-      var end = Math.min(offset + chunkSize, file.size);
-      var slice = file.slice(offset, end);
-      var reader = new FileReader();
+      const end = Math.min(offset + chunkSize, file.size);
+      const slice = file.slice(offset, end);
+      const reader = new FileReader();
 
       reader.onload = function () {
-        var chunkData = new Uint8Array(reader.result);
-        var refBytes = new TextEncoder().encode(ref);
-        var refLen = refBytes.length;
+        const chunkData = new Uint8Array(reader.result);
+        const refBytes = new TextEncoder().encode(ref);
+        const refLen = refBytes.length;
 
         // Build binary frame: [2 bytes refLen][refLen bytes ref][chunk data]
-        var frame = new Uint8Array(2 + refLen + chunkData.length);
+        const frame = new Uint8Array(2 + refLen + chunkData.length);
         frame[0] = (refLen >> 8) & 0xff;
         frame[1] = refLen & 0xff;
         frame.set(refBytes, 2);
@@ -239,15 +242,15 @@
 
   // Scan for upload inputs after DOM updates and initialize them
   function initUploadInputs(container) {
-    var inputs = container.querySelectorAll("[ignite-upload]");
-    for (var i = 0; i < inputs.length; i++) {
+    const inputs = container.querySelectorAll("[ignite-upload]");
+    for (let i = 0; i < inputs.length; i++) {
       initUploadInput(inputs[i]);
     }
   }
 
   // --- Drag and Drop Upload ---
   document.addEventListener("dragover", function (e) {
-    var target = e.target;
+    let target = e.target;
     while (target && target !== document) {
       if (target.getAttribute && target.getAttribute("ignite-drop-target")) {
         e.preventDefault();
@@ -261,7 +264,7 @@
   });
 
   document.addEventListener("dragleave", function (e) {
-    var target = e.target;
+    let target = e.target;
     while (target && target !== document) {
       if (target.getAttribute && target.getAttribute("ignite-drop-target")) {
         target.style.outline = "";
@@ -273,9 +276,9 @@
   });
 
   document.addEventListener("drop", function (e) {
-    var target = e.target;
+    let target = e.target;
     while (target && target !== document) {
-      var uploadName = target.getAttribute
+      const uploadName = target.getAttribute
         ? target.getAttribute("ignite-drop-target")
         : null;
       if (uploadName) {
@@ -284,32 +287,10 @@
         target.style.outline = "";
         target.style.outlineOffset = "";
 
-        var files = Array.from(e.dataTransfer.files);
+        const files = Array.from(e.dataTransfer.files);
         if (files.length === 0) return;
 
-        // Clear previous pending uploads for this upload name
-        for (var ref in pendingUploads) {
-          if (pendingUploads[ref].uploadName === uploadName) {
-            delete pendingUploads[ref];
-          }
-        }
-
-        var entries = [];
-        for (var i = 0; i < files.length; i++) {
-          var ref = String(i);
-          pendingUploads[ref] = { file: files[i], uploadName: uploadName };
-          entries.push({
-            ref: ref,
-            name: files[i].name,
-            type: files[i].type,
-            size: files[i].size,
-          });
-        }
-
-        sendEvent("__upload_validate__", {
-          name: uploadName,
-          entries: entries,
-        });
+        registerFilesForUpload(files, uploadName);
         return;
       }
       target = target.parentElement;
@@ -317,12 +298,12 @@
   });
 
   // --- Initialize ---
-  var appContainer = document.getElementById(APP_CONTAINER_ID);
+  const appContainer = document.getElementById(APP_CONTAINER_ID);
   if (!appContainer) return;
 
   // Read route mapping from data attribute
   try {
-    var routesJson = appContainer.dataset.liveRoutes;
+    const routesJson = appContainer.dataset.liveRoutes;
     if (routesJson) {
       liveRoutes = JSON.parse(routesJson);
     }
@@ -339,8 +320,8 @@
 
   // --- Reconstruct HTML from statics + dynamics ---
   function buildHtml(statics, dynamics) {
-    var html = "";
-    for (var i = 0; i < statics.length; i++) {
+    let html = "";
+    for (let i = 0; i < statics.length; i++) {
       html += statics[i];
       if (i < dynamics.length) {
         html += dynamics[i];
@@ -354,7 +335,7 @@
   function applyUpdate(container, newHtml) {
     if (typeof morphdom === "function") {
       // Create a temporary wrapper to morph into
-      var wrapper = document.createElement("div");
+      const wrapper = document.createElement("div");
       wrapper.id = APP_CONTAINER_ID;
       // Preserve data attributes
       if (container.dataset.livePath) {
@@ -402,9 +383,9 @@
   function applyStreamOps(data) {
     if (!data.streams) return;
 
-    for (var streamName in data.streams) {
-      var ops = data.streams[streamName];
-      var container = document.querySelector(
+    for (const streamName in data.streams) {
+      const ops = data.streams[streamName];
+      const container = document.querySelector(
         '[ignite-stream="' + streamName + '"]'
       );
 
@@ -422,8 +403,8 @@
 
       // Deletes: remove elements by DOM ID
       if (ops.deletes) {
-        for (var i = 0; i < ops.deletes.length; i++) {
-          var el = document.getElementById(ops.deletes[i]);
+        for (let i = 0; i < ops.deletes.length; i++) {
+          const el = document.getElementById(ops.deletes[i]);
           if (el) {
             el.parentNode.removeChild(el);
           }
@@ -432,13 +413,13 @@
 
       // Inserts: add new elements
       if (ops.inserts) {
-        for (var j = 0; j < ops.inserts.length; j++) {
-          var entry = ops.inserts[j];
+        for (let j = 0; j < ops.inserts.length; j++) {
+          const entry = ops.inserts[j];
 
           // Parse the HTML string into a DOM element
-          var temp = document.createElement("div");
+          const temp = document.createElement("div");
           temp.innerHTML = entry.html.trim();
-          var newEl = temp.firstChild;
+          const newEl = temp.firstChild;
 
           // Ensure the element has the correct ID
           if (newEl && !newEl.id) {
@@ -446,7 +427,7 @@
           }
 
           // If element with this ID already exists, update it (morphdom or replace)
-          var existing = document.getElementById(entry.id);
+          const existing = document.getElementById(entry.id);
           if (existing) {
             if (typeof morphdom === "function") {
               morphdom(existing, newEl, {
@@ -485,18 +466,18 @@
     statics = null;
     dynamics = null;
 
-    var container = document.getElementById(APP_CONTAINER_ID);
+    const container = document.getElementById(APP_CONTAINER_ID);
     if (container) {
       container.innerHTML = "Connecting...";
       container.dataset.livePath = livePath;
     }
 
-    var protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
     socket = new WebSocket(protocol + "//" + window.location.host + livePath);
 
     socket.onmessage = function (event) {
-      var data = JSON.parse(event.data);
-      var el = document.getElementById(APP_CONTAINER_ID);
+      const data = JSON.parse(event.data);
+      const el = document.getElementById(APP_CONTAINER_ID);
       if (!el) return;
 
       // Handle server-initiated navigation
@@ -517,19 +498,20 @@
           dynamics = data.d;
         } else if (dynamics) {
           // Sparse object — patch only changed indices
-          for (var key in data.d) {
+          // Keys are strings because JSON object keys are always strings
+          for (const key in data.d) {
             dynamics[parseInt(key, 10)] = data.d[key];
           }
         } else {
           // First update is sparse but no previous dynamics (shouldn't happen)
           dynamics = [];
-          for (var k in data.d) {
+          for (const k in data.d) {
             dynamics[parseInt(k, 10)] = data.d[k];
           }
         }
 
         // Reconstruct HTML and patch the DOM
-        var newHtml = buildHtml(statics, dynamics);
+        const newHtml = buildHtml(statics, dynamics);
         applyUpdate(el, newHtml);
       }
 
@@ -541,8 +523,8 @@
 
       // Handle upload config response (after validation)
       if (data.upload) {
-        var uploadConfig = data.upload;
-        var validEntries = uploadConfig.entries.filter(function (e) {
+        const uploadConfig = data.upload;
+        const validEntries = uploadConfig.entries.filter(function (e) {
           return e.valid;
         });
 
@@ -607,7 +589,7 @@
   });
 
   // --- Set initial history state ---
-  var initialLivePath =
+  const initialLivePath =
     (appContainer && appContainer.dataset.livePath) || "/live";
   history.replaceState(
     { url: window.location.pathname, livePath: initialLivePath },
@@ -618,9 +600,9 @@
   // --- Component event namespacing ---
   // If an element is inside [ignite-component="id"], prefix its event with "id:"
   function resolveEvent(eventName, target) {
-    var el = target;
+    let el = target;
     while (el && el !== document) {
-      var componentId = el.getAttribute("ignite-component");
+      const componentId = el.getAttribute("ignite-component");
       if (componentId) {
         return componentId + ":" + eventName;
       }
@@ -631,11 +613,11 @@
 
   // --- Send click events to server ---
   document.addEventListener("click", function (e) {
-    var target = e.target;
+    let target = e.target;
 
     while (target && target !== document) {
       // Check for navigation links first
-      var navPath = target.getAttribute("ignite-navigate");
+      const navPath = target.getAttribute("ignite-navigate");
       if (navPath) {
         e.preventDefault();
         navigate(navPath);
@@ -643,12 +625,12 @@
       }
 
       // Check for click events
-      var eventName = target.getAttribute("ignite-click");
+      const eventName = target.getAttribute("ignite-click");
       if (eventName) {
         e.preventDefault();
 
-        var params = {};
-        var value = target.getAttribute("ignite-value");
+        const params = {};
+        const value = target.getAttribute("ignite-value");
         if (value) {
           params.value = value;
         }
@@ -663,14 +645,14 @@
 
   // --- Send input change events to server ---
   document.addEventListener("input", function (e) {
-    var target = e.target;
+    const target = e.target;
 
     // Walk up to find ignite-change (could be on the input or a parent)
-    var el = target;
+    let el = target;
     while (el && el !== document) {
-      var eventName = el.getAttribute("ignite-change");
+      const eventName = el.getAttribute("ignite-change");
       if (eventName) {
-        var params = {
+        const params = {
           field: target.getAttribute("name") || "",
           value: target.value,
         };
@@ -684,16 +666,16 @@
 
   // --- Send form submit events to server ---
   document.addEventListener("submit", function (e) {
-    var form = e.target;
+    const form = e.target;
     if (!form || !form.getAttribute) return;
 
-    var eventName = form.getAttribute("ignite-submit");
+    const eventName = form.getAttribute("ignite-submit");
     if (eventName) {
       e.preventDefault();
 
       // Collect all form fields (skip file inputs — they're uploaded via WebSocket)
-      var params = {};
-      var formData = new FormData(form);
+      const params = {};
+      const formData = new FormData(form);
       formData.forEach(function (value, key) {
         if (!(value instanceof File)) {
           params[key] = value;

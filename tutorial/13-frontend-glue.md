@@ -55,9 +55,9 @@ listener to the entire document:
 
 ```javascript
 document.addEventListener("click", function(e) {
-  var target = e.target;
+  let target = e.target;
   while (target && target !== document) {
-    var eventName = target.getAttribute("ignite-click");
+    const eventName = target.getAttribute("ignite-click");
     if (eventName) {
       socket.send(JSON.stringify({event: eventName, params: {}}));
       return;
@@ -148,16 +148,16 @@ The JS is wrapped in an IIFE to avoid polluting the global scope:
 (function () {
   "use strict";
 
-  var APP_CONTAINER_ID = "ignite-app";
-  var socket = null;
+  const APP_CONTAINER_ID = "ignite-app";
+  let socket = null;
 
   function connect() {
-    var container = document.getElementById(APP_CONTAINER_ID);
+    const container = document.getElementById(APP_CONTAINER_ID);
     if (!container) return;
 
-    var livePath = container.dataset.livePath || "/live";
-    var protocol = location.protocol === "https:" ? "wss:" : "ws:";
-    var host = location.host;
+    const livePath = container.dataset.livePath || "/live";
+    const protocol = location.protocol === "https:" ? "wss:" : "ws:";
+    const host = location.host;
 
     socket = new WebSocket(protocol + "//" + host + livePath);
 
@@ -166,7 +166,7 @@ The JS is wrapped in an IIFE to avoid polluting the global scope:
     };
 
     socket.onmessage = function (event) {
-      var data = JSON.parse(event.data);
+      const data = JSON.parse(event.data);
       if (data.html) {
         container.innerHTML = data.html;
       }
@@ -181,13 +181,13 @@ The JS is wrapped in an IIFE to avoid polluting the global scope:
   // One listener on the document catches all ignite-click events,
   // even on elements added dynamically by LiveView.
   document.addEventListener("click", function (e) {
-    var target = e.target;
+    let target = e.target;
     while (target && target !== document) {
-      var eventName = target.getAttribute("ignite-click");
+      const eventName = target.getAttribute("ignite-click");
       if (eventName) {
         e.preventDefault();
-        var params = {};
-        var value = target.getAttribute("ignite-value");
+        const params = {};
+        const value = target.getAttribute("ignite-value");
         if (value) params.value = value;
         if (socket && socket.readyState === WebSocket.OPEN) {
           socket.send(JSON.stringify({ event: eventName, params: params }));
