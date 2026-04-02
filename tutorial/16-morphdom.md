@@ -97,9 +97,11 @@ Morphdom lets you intercept updates with hooks:
 ```javascript
 morphdom(container, newHtml, {
   onBeforeElUpdated: function(fromEl, toEl) {
-    // Preserve value of focused inputs
-    if (fromEl === document.activeElement && fromEl.tagName === "INPUT") {
-      toEl.value = fromEl.value;
+    // Preserve value of focused inputs (both text inputs and textareas)
+    if (fromEl === document.activeElement) {
+      if (fromEl.tagName === "INPUT" || fromEl.tagName === "TEXTAREA") {
+        toEl.value = fromEl.value;
+      }
     }
     return true;  // true = proceed with update
   }
@@ -141,8 +143,9 @@ npm install morphdom
 cp node_modules/morphdom/dist/morphdom-umd.min.js assets/morphdom.min.js
 ```
 
-The morphdom library (~12KB minified) is loaded via a `<script>` tag
-before `ignite.js` so it's available as a global `morphdom` function.
+The morphdom library (~12KB minified, ~3KB gzipped) is loaded via a
+`<script>` tag before `ignite.js` so it's available as a global
+`morphdom` function.
 
 ### Updated `assets/ignite.js`
 
@@ -175,6 +178,8 @@ before `ignite.js` so it's available as a global `morphdom` function.
   let statics = null;
 
   // --- WebSocket Connection ---
+  // In later steps, we'll wrap this in a connect() function so we can
+  // reconnect after navigation. For now, a single connection suffices.
   const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
   let socket = new WebSocket(protocol + "//" + window.location.host + LIVE_PATH);
 
@@ -191,7 +196,12 @@ before `ignite.js` so it's available as a global `morphdom` function.
   }
 
   // --- Apply update to DOM ---
-  // Uses morphdom if available, falls back to innerHTML
+  // Uses morphdom if available, falls back to innerHTML.
+  // Morphdom compares two DOM trees, so we build a temporary wrapper <div>
+  // with the same id and morph the container into it. Morphdom matches the
+  // two root elements (both are <div id="ignite-app">) and diffs their
+  // children — the container element itself is preserved, only its
+  // contents are patched.
   function applyUpdate(container, newHtml) {
     if (typeof morphdom === "function") {
       // Create a temporary wrapper to morph into
@@ -200,11 +210,12 @@ before `ignite.js` so it's available as a global `morphdom` function.
       wrapper.innerHTML = newHtml;
 
       morphdom(container, wrapper, {
-        // Preserve focused input elements
+        // Preserve focused input elements (both text inputs and textareas)
         onBeforeElUpdated: function (fromEl, toEl) {
-          // Don't update the element if the user is actively typing in it
-          if (fromEl === document.activeElement && fromEl.tagName === "INPUT") {
-            toEl.value = fromEl.value;
+          if (fromEl === document.activeElement) {
+            if (fromEl.tagName === "INPUT" || fromEl.tagName === "TEXTAREA") {
+              toEl.value = fromEl.value;
+            }
           }
           return true;
         },
@@ -248,12 +259,14 @@ before `ignite.js` so it's available as a global `morphdom` function.
           params.value = value;
         }
 
-        socket.send(
-          JSON.stringify({
-            event: eventName,
-            params: params,
-          })
-        );
+        if (socket.readyState === WebSocket.OPEN) {
+          socket.send(
+            JSON.stringify({
+              event: eventName,
+              params: params,
+            })
+          );
+        }
         return;
       }
       target = target.parentElement;
@@ -276,6 +289,10 @@ before `ignite.js` so it's available as a global `morphdom` function.
 ```
 
 The key change: instead of `container.innerHTML = html` (which destroys and recreates all elements), we call `applyUpdate` which uses morphdom to diff and patch only the changed elements.
+
+> In later steps (Step 18: Live Navigation), we'll extend the wrapper
+> to also preserve `data-*` attributes like `data-live-path` and
+> `data-live-routes` on the container element.
 
 ### Updated `templates/live.html.eex`
 
