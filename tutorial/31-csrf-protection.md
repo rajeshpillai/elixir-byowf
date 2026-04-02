@@ -172,6 +172,9 @@ defmodule Ignite.CSRF do
   @token_size 32
 
   def generate_token do
+    # :crypto.strong_rand_bytes/1 generates cryptographically secure
+    # random bytes — suitable for security tokens, unlike :rand which
+    # is predictable.
     @token_size
     |> :crypto.strong_rand_bytes()
     |> Base.url_encode64(padding: false)
@@ -196,6 +199,8 @@ defmodule Ignite.CSRF do
       if byte_size(decoded_submitted) == size * 2 do
         <<mask::binary-size(size), masked::binary-size(size)>> = decoded_submitted
         unmasked = xor_bytes(mask, masked)
+        # Constant-time comparison — prevents timing attacks that could
+        # leak the token byte-by-byte by measuring response times.
         Plug.Crypto.secure_compare(decoded_session, unmasked)
       else
         false
@@ -443,6 +448,13 @@ The approach is identical — we just implement the validation as a router plug 
 - [ ] `lib/my_app/router.ex` — **Modified** (add `plug :verify_csrf_token` and implementation)
 - [ ] `lib/my_app/controllers/welcome_controller.ex` — **Modified** (add CSRF token to forms)
 - [ ] `lib/my_app/controllers/upload_controller.ex` — **Modified** (add CSRF token to upload form)
+
+## What's Next
+
+CSRF tokens protect form submissions. But modern web security requires
+more layers. In **Step 32**, we'll add **Content Security Policy (CSP)
+headers** — browser-enforced rules that prevent inline script injection
+and other XSS attacks, using per-request nonces.
 
 ---
 

@@ -157,6 +157,8 @@ When the monitored process dies:
   def handle_info({:DOWN, ref, :process, _pid, _reason}, state) do
     case Map.get(state.refs, ref) do
       {topic, key} ->
+        # get_in traverses nested maps: state.presences[topic][key][:meta]
+        # Returns nil safely if any key in the path is missing.
         meta = get_in(state.presences, [topic, key, :meta]) || %{}
         state = remove_presence(state, topic, key, ref)
 
@@ -275,6 +277,7 @@ defmodule MyApp.PresenceDemoLive do
 
   @impl true
   def render(assigns) do
+    # map_size/1 returns the number of key-value pairs — here, online user count
     user_count = map_size(assigns.online)
 
     users_html =
@@ -375,13 +378,13 @@ Tab 2 closes
 | `lib/my_app/router.ex` | Added `GET /presence` route |
 | `lib/my_app/controllers/welcome_controller.ex` | Added `presence/1` action + link on index |
 
-## File Checklist
 
-- [ ] `lib/ignite/presence.ex` — **New**
-- [ ] `lib/ignite/application.ex` — **Modified** (add `Ignite.Presence` to children)
-- [ ] `lib/my_app/live/presence_demo_live.ex` — **New**
-- [ ] `lib/my_app/router.ex` — **Modified** (add `GET /presence` route)
-- [ ] `lib/my_app/controllers/welcome_controller.ex` — **Modified** (add `presence/1` action + link)
+## What's Next
+
+Presence tells us who's online, but all our data disappears on server
+restart. In **Step 30**, we'll add **Ecto integration** — connecting
+to a SQLite database with schemas, changesets, and migrations so our
+User CRUD operations persist to disk.
 
 ---
 

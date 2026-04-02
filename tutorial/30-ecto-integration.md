@@ -177,7 +177,7 @@ Changeset Validation Pipeline
          %Changeset{valid?: true/false}
 ```
 
-**Schema**: Maps `%MyApp.User{}` to the `users` table. `timestamps()` adds `inserted_at` and `updated_at` fields.
+**Schema**: Maps `%MyApp.User{}` to the `users` table. `timestamps()` is an Ecto macro that adds `:naive_datetime` fields `inserted_at` and `updated_at`, automatically set by Ecto on insert and update — you never need to set them manually.
 
 **Changeset**: The validation pipeline. `cast/3` picks allowed fields from input. `validate_required/2` ensures username is present. `validate_length/3` enforces bounds. `unique_constraint/2` converts a database uniqueness violation into a friendly error message (requires the matching unique index in the migration).
 
@@ -250,6 +250,9 @@ The Repo must start before Cowboy so database connections are available when the
 defmodule MyApp.UserController do
   import Ignite.Controller
   alias MyApp.{Repo, User}
+  # Multi-alias shorthand — equivalent to writing:
+  #   alias MyApp.Repo
+  #   alias MyApp.User
 
   def index(conn) do
     users = Repo.all(User)
@@ -265,6 +268,8 @@ defmodule MyApp.UserController do
   def show(conn) do
     user_id = conn.params[:id]
 
+    # Repo.get/2 returns the struct or nil (not {:ok, _}/{:error, _}).
+    # This is different from functions like Repo.insert which return tuples.
     case Repo.get(User, user_id) do
       nil ->
         json(conn, %{error: "User not found"}, 404)
@@ -455,6 +460,13 @@ Ecto is the same library — the integration pattern is identical to Phoenix.
 - [ ] `lib/my_app/controllers/user_controller.ex` — **Modified** (rewrite actions to use Ecto)
 - [ ] `lib/my_app/controllers/welcome_controller.ex` — **Modified** (add email input to create form)
 - [ ] `templates/profile.html.eex` — **Modified** (add email field)
+
+## What's Next
+
+With database persistence in place, our app stores real data. But it's
+vulnerable to a common web attack. In **Step 31**, we'll add **CSRF
+protection** — XOR-masked tokens that prove form submissions came from
+our own site, not from a malicious third party.
 
 ---
 
