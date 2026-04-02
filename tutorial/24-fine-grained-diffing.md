@@ -120,7 +120,8 @@ defmodule Ignite.LiveView.EExEngine do
   # Start with empty accumulators
   def init(_opts), do: {[], [], ""}
 
-  # Required callbacks — EEx.Engine requires these even if unused
+  # Required callbacks — EEx uses these for nested blocks (if/for inside
+  # templates). Our ~L sigil doesn't support those, so we pass state through.
   def handle_begin(state), do: state
   def handle_end(state), do: state
 
@@ -133,6 +134,8 @@ defmodule Ignite.LiveView.EExEngine do
   # <%= expr %> → flush pending text as a static, record the expression
   def handle_expr(state, "=", expr) do
     {statics, dynamics, pending} = state
+    # Wrap the expression in to_string/1 so numbers, atoms, etc.
+    # are automatically converted to strings for HTML output.
     wrapped = quote do: to_string(unquote(expr))
     {[pending | statics], [wrapped | dynamics], ""}
   end
@@ -155,6 +158,12 @@ defmodule Ignite.LiveView.EExEngine do
   end
 end
 ```
+
+> **Note:** The `handle_text` callback signature changed across Elixir
+> versions — older versions use `handle_text(state, text)` (2 args) while
+> newer versions use `handle_text(state, meta, text)` (3 args with source
+> location metadata). If you get a compile error, check your Elixir version's
+> `EEx.Engine` docs.
 
 **How the callbacks fire** for `<h1>Count: <%= assigns.count %></h1>`:
 
@@ -534,6 +543,16 @@ Phoenix's HEEx engine (`Phoenix.LiveView.Engine`) takes this much further:
 - **Change tracking** on assigns — if you don't touch `@count`, it skips even evaluating that expression
 
 Our `~L` engine covers the core concept: compile-time statics/dynamics separation with sparse wire updates.
+
+## What's Next
+
+Our diffing engine now sends minimal data for scalar values. But what
+about **lists**? If a chat log has 100 messages and one new message
+arrives, the entire list is still one dynamic that changes completely.
+
+In **Step 25**, we'll build **LiveView Streams** — an operation-based
+system that sends only individual insert/delete operations, achieving
+O(1) wire overhead regardless of list size.
 
 ---
 

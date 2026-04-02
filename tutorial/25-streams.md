@@ -76,6 +76,8 @@ assigns = stream(assigns, :events, new_items, reset: true)
 
 ### The `%Stream{}` Struct
 
+The struct below has several fields. Don't worry about understanding all of them upfront — we'll explain each one as we use it. The core fields are `name`, `render_fn`, and `ops` (the operation queue). The rest (`items`, `order`, `limit`) support advanced features like upsert detection and auto-pruning.
+
 **Create `lib/ignite/live_view/stream.ex`:**
 
 ```elixir
@@ -121,6 +123,8 @@ defmodule Ignite.LiveView.Stream do
     ops = if reset?, do: base_ops ++ [{:reset}], else: base_ops
 
     # Add insert ops for all provided items (with upsert detection)
+    # Build up three collections in a single pass using Enum.reduce
+    # with a tuple accumulator: {operations, item tracking, insertion order}.
     {ops, items_map, order} =
       Enum.reduce(items, {ops, base_items, base_order}, fn item, {acc_ops, acc_items, acc_order} ->
         dom_id = dom_prefix <> "-" <> id_fn.(item)
@@ -197,6 +201,7 @@ defmodule Ignite.LiveView.Stream do
     updated = %{stream |
       ops: stream.ops ++ [{:delete, dom_id}],
       items: Map.delete(stream.items, dom_id),
+      # List.delete/2 removes the first occurrence of dom_id from the order list
       order: List.delete(stream.order, dom_id)
     }
 
@@ -745,6 +750,8 @@ defmodule MyApp.StreamDemoLive do
 
   defp format_time do
     {{_, _, _}, {h, m, s}} = :calendar.local_time()
+    # Erlang's :io_lib.format is like C's sprintf.
+    # ~2..0B means "pad to 2 digits with leading zeros".
     :io_lib.format("~2..0B:~2..0B:~2..0B", [h, m, s]) |> to_string()
   end
 
@@ -850,6 +857,13 @@ Phoenix LiveView's stream system is more sophisticated:
 - **DOM patching** — Uses `phx-update="stream"` attribute with specialized DOM patching that handles reordering
 
 Our implementation covers the core concept: operation-based list management with O(1) wire overhead per change.
+
+## What's Next
+
+Streams handle server-generated content efficiently. But what about
+content from the user's machine? In **Step 26**, we'll build **File
+Uploads** — a binary WebSocket protocol for chunked file transfers
+with validation, progress tracking, and drag-and-drop support.
 
 ---
 

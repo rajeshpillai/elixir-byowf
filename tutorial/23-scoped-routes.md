@@ -84,6 +84,10 @@ defmacro scope(prefix, do: block) do
 end
 ```
 
+> Private functions (`defp`) in a module that defines macros can be called
+> at compile time from within the macro body. `prepend_prefix` runs during
+> compilation to transform the AST, not at runtime.
+
 ```elixir
 # A block with multiple expressions: transform each one
 defp prepend_prefix({:__block__, meta, exprs}, prefix) do
@@ -203,6 +207,8 @@ defmodule MyApp.Router do
 end
 ```
 
+`finalize_routes()` was introduced in an earlier step — it generates the catch-all 404 clause. It must appear last so all routes are defined before the fallback.
+
 ## Testing
 
 ```bash
@@ -244,6 +250,13 @@ Phoenix's `scope` is more powerful — it also supports:
 - `as: :admin` to prefix path helper names
 
 Phoenix uses a combination of module attributes and careful macro expansion ordering to achieve this. Our AST transformation approach is simpler and covers the most common use case (path prefixing with nesting).
+
+## What's Next
+
+With scoped routes keeping our router organized, we can turn back to
+performance. In **Step 24**, we'll build a **fine-grained diffing engine**
+with a custom EEx engine (`~L` sigil) that tracks each `<%= %>` expression
+individually — reducing wire payload by 97% on the Dashboard.
 
 ---
 
