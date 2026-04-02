@@ -106,7 +106,12 @@ Key differences from `Ignite.LiveView`:
 
 ```elixir
 def live_component(parent_assigns, module, opts) do
+  # Keyword.fetch! raises an error if :id is missing — intentional,
+  # because every component must have an id.
   id = Keyword.fetch!(opts, :id)
+  # Remove :id from opts, then convert the remaining keyword list
+  # to a map. Map.new/1 turns [{:label, "Alerts"}, {:count, 3}]
+  # into %{label: "Alerts", count: 3}.
   props = opts |> Keyword.delete(:id) |> Map.new()
 
   # Look up existing component state
@@ -118,7 +123,10 @@ def live_component(parent_assigns, module, opts) do
         # Existing — merge new props from parent
         Map.merge(existing_assigns, props)
       _ ->
-        # New — call mount if defined
+        # New — call mount if defined.
+        # ensure_loaded is needed because BEAM lazy-loads modules;
+        # function_exported?/3 returns false for unloaded modules.
+        Code.ensure_loaded(module)
         if function_exported?(module, :mount, 1) do
           {:ok, initial} = module.mount(props)
           initial
@@ -131,7 +139,9 @@ def live_component(parent_assigns, module, opts) do
   rendered = Process.get(:__ignite_components__, %{})
   Process.put(:__ignite_components__, Map.put(rendered, id, {module, comp_assigns}))
 
-  # Render with wrapper div
+  # Render with wrapper div.
+  # ~s() is a string sigil — like double quotes but lets you use "
+  # inside without escaping. Handy for HTML strings with attributes.
   html = module.render(comp_assigns)
   ~s(<div ignite-component="#{id}">#{html}</div>)
 end
@@ -188,6 +198,8 @@ This pattern is similar to what Phoenix LiveView does internally — it uses pro
 
 ```elixir
 defp handle_possible_component_event(event, params, state) do
+  # parts: 2 ensures we split on only the first colon, so the
+  # component ID is everything before it and event name after it.
   case String.split(event, ":", parts: 2) do
     [component_id, component_event] ->
       components = Map.get(state.assigns, :__components__, %{})
@@ -431,6 +443,9 @@ end
 
 Each component gets a unique `id`. The same component module can be used multiple times with different IDs and props.
 
+> **Important:** Each component must have a unique `id`. If two components
+> share the same id, the second will overwrite the first's state.
+
 ## Step 8: Route and Controller
 
 **Update `lib/my_app/router.ex`** — add a route for the components demo page:
@@ -554,7 +569,7 @@ iex -S mix
 
 ## What's Next?
 
-In Step 20, we'll add **JS Hooks** — client-side lifecycle callbacks that let you integrate third-party JavaScript libraries (charts, maps, clipboard) with LiveView's server-rendered model.
+In Step 20, we'll add **JS Hooks** — client-side lifecycle callbacks that let you integrate third-party JavaScript libraries (charts, maps, clipboard) with LiveView's server-rendered model. While LiveComponents handle server-side state, hooks handle client-side concerns that can't be done from the server.
 
 ---
 

@@ -121,7 +121,7 @@ function createHookInstance(hookDef, el) {
 }
 ```
 
-`Object.create(hookDef)` creates a new object that inherits from the hook definition. This way each instance has its own `el` and `pushEvent` but shares the callback implementations.
+`Object.create(hookDef)` uses JavaScript's prototypal inheritance — `instance` gets its own properties (`el`, `pushEvent`) but delegates `mounted`/`updated`/`destroyed` lookups to the shared `hookDef` object. This way each instance has its own state but shares the callback implementations.
 
 ### Hook Lifecycle Functions
 
@@ -363,6 +363,11 @@ This lets you send client-only data (clipboard results, geolocation, screen size
 
 **Create `assets/hooks.js`** with the following hook definitions:
 
+```javascript
+// Initialize the hooks registry (must run before ignite.js loads)
+window.IgniteHooks = window.IgniteHooks || {};
+```
+
 ### CopyToClipboard
 
 Uses the browser's Clipboard API and reports success/failure to the server:
@@ -387,7 +392,8 @@ window.IgniteHooks.CopyToClipboard = {
     btn.addEventListener("click", this._handler);
   },
   destroyed: function() {
-    // Cleanup handled by DOM removal
+    const btn = this.el.querySelector("#copy-btn");
+    if (btn) btn.removeEventListener("click", this._handler);
   }
 };
 ```
@@ -457,6 +463,8 @@ defmodule MyApp.HooksDemoLive do
     event = "Client time: #{params["time"]}"
     {:noreply, %{assigns | hook_events: [event | Enum.take(assigns.hook_events, 4)]}}
   end
+
+  > **Note:** This LiveView uses the `~L` sigil (introduced in Step 24) which separates statics and dynamics at compile time. If you haven't reached Step 24 yet, you can use a plain string with `#{}` interpolation instead — the behaviour is the same, just without fine-grained diffing.
 
   @impl true
   def render(assigns) do
@@ -591,13 +599,7 @@ iex -S mix
 
 ## What's Next?
 
-Congratulations! You've built a complete web framework with:
-- TCP sockets → Cowboy adapter
-- Macro-based routing → EEx templates → Middleware
-- LiveView → WebSocket → Diffing → Morphdom
-- PubSub → LiveView Navigation → LiveComponents → JS Hooks
-
-The framework is now feature-comparable to a simplified Phoenix LiveView. See the README roadmap for ideas on what to add next (CSRF, Ecto, clustering, etc.).
+With hooks, your LiveViews can now interact with any client-side JavaScript. In **Step 21**, we'll add a **JSON response helper** — a `json/3` function for controllers that lets Ignite serve as a JSON API backend, plus automatic parsing of incoming JSON request bodies.
 
 ---
 

@@ -48,6 +48,7 @@ end
 ```
 
 **Key concepts:**
+- `status \\ 200` is a default parameter — the caller can omit the third argument and it defaults to 200 (HTTP OK)
 - `Jason.encode!/1` converts any Elixir term (maps, lists, strings, numbers) into a JSON string
 - The `!` suffix means it raises on failure (bad input) — fail fast
 - We set `content-type: application/json` so browsers and API clients know the format
@@ -139,13 +140,13 @@ This is just a convenience link on the homepage — the real work is in `ApiCont
 ```bash
 # JSON response
 curl http://localhost:4000/api/status
-# → {"elixir_version":"1.17.0","framework":"Ignite","status":"ok","uptime_seconds":42}
+# → {"elixir_version":"1.17.0","framework":"Ignite","status":"ok"}
 
 # JSON body parsing
 curl -X POST -H "Content-Type: application/json" \
      -d '{"name":"Jose","lang":"Elixir"}' \
      http://localhost:4000/api/echo
-# → {"echo":{"lang":"Elixir","name":"Jose"},"received_at":"2024-01-15T10:30:00Z"}
+# → {"echo":{"lang":"Elixir","name":"Jose"}}
 ```
 
 ## How It Fits Together
@@ -179,6 +180,13 @@ Response:        200 OK  Content-Type: application/json
 | `lib/my_app/controllers/api_controller.ex` | **New** |
 | `lib/my_app/controllers/welcome_controller.ex` | **Modified** — added link to API status page |
 | `lib/my_app/router.ex` | **Modified** — added `/api/status` and `/api/echo` routes |
+
+## What's Next
+
+Now that we can serve JSON responses and parse JSON request bodies, we
+need the full set of HTTP verbs to build proper REST APIs. In **Step 22**,
+we'll add `put`, `patch`, and `delete` route macros — and see how the
+`build_route/4` abstraction from Step 3 makes this trivially easy.
 
 ---
 
