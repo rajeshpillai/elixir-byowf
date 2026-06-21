@@ -67,6 +67,21 @@ Module.register_attribute(__MODULE__, :plugs, accumulate: true)
 With `accumulate: true`, each `@plugs` call **prepends** to a list
 (that's why we reverse later).
 
+> **Gotchas with compile-time registration.** Module attributes are read at
+> compile time, in source order, which trips people up:
+>
+> - **Everything happens at compile time.** `@plugs` is frozen into `call/1`
+>   when the module compiles. You can't add a plug at runtime — there's no list
+>   to mutate once the module is loaded.
+> - **`@before_compile` is mandatory.** It's the hook that reads the finished
+>   `@plugs` list and generates `call/1`. Register the attribute but forget
+>   `@before_compile` and no `call/1` is generated — requests just fail to
+>   dispatch, with no error pointing at the cause.
+> - **Order matters.** Because each `@plugs` prepends, plugs run in the order
+>   you wrote them only *after* the reverse. A `plug` line added below
+>   `finalize_routes()` (or anything that triggers `@before_compile`) is read
+>   too late and silently won't run.
+
 ### Enum.reduce/3
 
 `reduce` transforms a list into a single value by passing an accumulator:

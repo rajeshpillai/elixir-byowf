@@ -98,9 +98,15 @@ defmodule Ignite.Session do
 
   @doc """
   Builds a `set-cookie` header value for the session.
+
+  When SSL is configured (`Ignite.SSL.ssl_configured?/0`), the `Secure`
+  attribute is added so the cookie is only ever sent over HTTPS. It is
+  omitted in plain-HTTP dev/test, where a `Secure` cookie would never be
+  sent back and sessions would silently break.
   """
   def build_cookie_header(session) do
     value = encode(session)
-    "#{@cookie_name}=#{value}; Path=/; HttpOnly; SameSite=Lax"
+    secure = if Ignite.SSL.ssl_configured?(), do: "; Secure", else: ""
+    "#{@cookie_name}=#{value}; Path=/; HttpOnly; SameSite=Lax#{secure}"
   end
 end

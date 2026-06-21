@@ -52,16 +52,18 @@ defmodule MyApp.PresenceDemoLive do
         is_me = name == assigns.username
         badge = if is_me, do: " <span style=\"color:#27ae60;font-weight:bold;\">(you)</span>", else: ""
 
+        # name and joined_at originate from clients — escape before building HTML.
+        # badge is trusted markup we constructed, so it is interpolated as-is.
         """
         <li style="padding:8px 12px;border-bottom:1px solid #eee;display:flex;justify-content:space-between;align-items:center;">
-          <span>#{name}#{badge}</span>
-          <span style="color:#888;font-size:12px;">joined #{meta.joined_at}</span>
+          <span>#{Ignite.HTML.escape(name)}#{badge}</span>
+          <span style="color:#888;font-size:12px;">joined #{Ignite.HTML.escape(meta.joined_at)}</span>
         </li>
         """
       end)
       |> Enum.join("\n")
 
-    ~L"""
+    ~F"""
     <div id="presence-demo" style="max-width:550px;margin:0 auto;">
       <h1>Who's Online</h1>
       <p style="color:#888;font-size:14px;">
@@ -75,7 +77,7 @@ defmodule MyApp.PresenceDemoLive do
       </div>
 
       <ul style="list-style:none;padding:0;margin:0;background:#fff;border:1px solid #ddd;border-radius:8px;">
-        <%= users_html %>
+        <%= raw(users_html) %>
       </ul>
 
       <div style="margin-top:24px;padding:16px;background:#f9f9f9;border-radius:8px;text-align:left;">

@@ -175,6 +175,21 @@ defp parse_body(body, _content_type) do
 end
 ```
 
+> **Design note — string keys vs atom keys.** Form params use **string** keys
+> (`conn.params["username"]`) because the field names come from the client and
+> we must never turn untrusted input into atoms (atoms are never
+> garbage-collected — the same DoS risk you'll see with uploads in Step 26).
+> Route params (`:id` in Step 5) use **atom** keys because those names are
+> compile-time constants you wrote in the router.
+
+> **Beyond this step.** The version that ships in `lib/ignite/parser.ex` also:
+> (1) splits the query string off the path and merges it into `conn.params`, so
+> `GET /search?q=hi` gives `conn.params["q"] == "hi"` (body params win on a key
+> collision); (2) uses `Integer.parse/1` for `Content-Length` so a malformed
+> header can't crash the request; and (3) returns `{:ok, conn}` /
+> `{:error, :bad_request}` so a malformed request line becomes a `400` instead
+> of a crash. We keep the version above minimal to focus on body parsing.
+
 ### Updated Router
 
 **Update `lib/my_app/router.ex`** — add this POST route:

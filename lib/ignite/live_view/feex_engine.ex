@@ -119,24 +119,12 @@ defmodule Ignite.LiveView.FEExEngine do
   @doc """
   Escapes HTML entities for safe rendering.
 
-  Handles three cases:
+  Delegates to `Ignite.HTML.escape/1`, the framework-wide escaper. Handles:
   - `{:safe, val}` — trusted HTML from `raw/1`, passed through unchanged
   - `nil` — returns empty string
   - anything else — converted to string, then `& < > " '` are escaped
   """
-  def escape({:safe, val}), do: to_string(val)
-  def escape(nil), do: ""
-
-  def escape(val) when is_binary(val) do
-    val
-    |> String.replace("&", "&amp;")
-    |> String.replace("<", "&lt;")
-    |> String.replace(">", "&gt;")
-    |> String.replace("\"", "&quot;")
-    |> String.replace("'", "&#39;")
-  end
-
-  def escape(val), do: escape(to_string(val))
+  defdelegate escape(value), to: Ignite.HTML
 
   # ─── Private: AST analysis ─────────────────────────────────────────
 

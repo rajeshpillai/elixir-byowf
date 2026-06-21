@@ -26,7 +26,7 @@ defmodule MyApp.DashboardLive do
   end
 
   def render(assigns) do
-    ~L"""
+    ~F"""
     <div id="dashboard" style="max-width: 600px; margin: 0 auto; text-align: left;">
       <h1>BEAM Dashboard</h1>
       <p style="color: #888; font-size: 14px;">Auto-refreshes every second</p>

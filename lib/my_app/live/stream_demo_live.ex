@@ -124,7 +124,7 @@ defmodule MyApp.StreamDemoLive do
 
   @impl true
   def render(assigns) do
-    ~L"""
+    ~F"""
     <div id="stream-demo" style="max-width: 700px; margin: 0 auto;">
       <h1>LiveView Streams Demo</h1>
       <p style="color: #888; font-size: 14px;">

@@ -22,9 +22,9 @@ defmodule Ignite.LiveView do
         end
 
         def render(assigns) do
-          \"""
+          ~F\"""
           <div>
-            <h1>Count: \#{assigns.count}</h1>
+            <h1>Count: <%= @count %></h1>
             <button ignite-click="increment">+1</button>
           </div>
           \"""
@@ -99,10 +99,13 @@ defmodule Ignite.LiveView do
     rendered_components = Process.get(:__ignite_components__, %{})
     Process.put(:__ignite_components__, Map.put(rendered_components, id, {module, comp_assigns}))
 
-    # Render the component with a wrapper div carrying component ID
+    # Render the component with a wrapper div carrying component ID.
+    # The id is developer-supplied, but escape it as defense-in-depth so a
+    # stray quote can never break out of the attribute. The rendered component
+    # html is trusted markup and is interpolated as-is.
     html = module.render(comp_assigns)
 
-    ~s(<div ignite-component="#{id}">#{html}</div>)
+    ~s(<div ignite-component="#{Ignite.HTML.escape(id)}">#{html}</div>)
   end
 
   @doc """

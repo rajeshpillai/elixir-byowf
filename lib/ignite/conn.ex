@@ -15,7 +15,10 @@ defmodule Ignite.Conn do
     method: nil,
     path: nil,
     headers: %{},
+    # params holds the merged request parameters (query string + body).
+    # query_params keeps just the decoded URL query string on its own.
     params: %{},
+    query_params: %{},
 
     # Session & cookies (filled by Cowboy adapter from request cookies)
     cookies: %{},

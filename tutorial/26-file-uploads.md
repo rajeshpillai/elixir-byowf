@@ -793,32 +793,67 @@ The `upload_demo` action in `WelcomeController` serves the LiveView-connected pa
 
 **Update `lib/ignite/live_view/handler.ex`** — add upload protocol events to the text frame handler and a new binary frame handler:
 
+> **⚠️ Security: never `String.to_atom/1` a client value.** The `name` comes
+> straight from the browser. `String.to_atom/1` on attacker-controlled input is
+> an atom-exhaustion DoS — atoms are never garbage-collected, so a client that
+> sends thousands of distinct names can crash the node. Resolve the name against
+> the uploads you actually registered with `allow_upload/3` instead. That both
+> closes the DoS and avoids crashing when an unconfigured name arrives.
+
 ```elixir
 # In websocket_handle({:text, json}, state), add before the generic event handler:
 
 {:ok, %{"event" => "__upload_validate__", "params" => %{"name" => name, "entries" => entries}}} ->
-  upload_name = String.to_atom(name)
-  # Note: in production, validate that `name` matches a known upload
-  # name before converting to atom — atoms are never garbage collected.
-  new_assigns = Ignite.LiveView.UploadHelpers.validate_entries(state.assigns, upload_name, entries)
+  case registered_upload_name(state.assigns, name) do
+    {:ok, upload_name} ->
+      new_assigns =
+        Ignite.LiveView.UploadHelpers.validate_entries(state.assigns, upload_name, entries)
 
-  # Let the view handle validation if it defines handle_event("validate", ...)
-  new_assigns =
-    if function_exported?(state.view, :handle_event, 3) do
-      case apply(state.view, :handle_event, ["validate", %{"name" => name}, new_assigns]) do
-        {:noreply, a} -> a
-        _ -> new_assigns
-      end
-    else
-      new_assigns
-    end
+      # Let the view handle validation if it defines handle_event("validate", ...)
+      new_assigns =
+        if function_exported?(state.view, :handle_event, 3) do
+          case apply(state.view, :handle_event, ["validate", %{"name" => name}, new_assigns]) do
+            {:noreply, a} -> a
+            _ -> new_assigns
+          end
+        else
+          new_assigns
+        end
 
-  send_render_update_with_upload_config(state, new_assigns, upload_name)
+      send_render_update_with_upload_config(state, new_assigns, upload_name)
+
+    :error ->
+      Logger.warning("[LiveView] Ignoring upload validate for unknown upload #{inspect(name)}")
+      {:ok, state}
+  end
 
 {:ok, %{"event" => "__upload_complete__", "params" => %{"name" => name, "ref" => ref}}} ->
-  upload_name = String.to_atom(name)
-  new_assigns = Ignite.LiveView.UploadHelpers.mark_complete(state.assigns, upload_name, ref)
-  send_render_update(state, new_assigns)
+  case registered_upload_name(state.assigns, name) do
+    {:ok, upload_name} ->
+      new_assigns = Ignite.LiveView.UploadHelpers.mark_complete(state.assigns, upload_name, ref)
+      send_render_update(state, new_assigns)
+
+    :error ->
+      Logger.warning("[LiveView] Ignoring upload complete for unknown upload #{inspect(name)}")
+      {:ok, state}
+  end
+```
+
+`registered_upload_name/2` matches the client string against the atom keys that
+`allow_upload/3` stored in `assigns.__uploads__` — an allow-list, so no new atom
+is ever created from client input:
+
+```elixir
+defp registered_upload_name(assigns, name) when is_binary(name) do
+  assigns
+  |> Map.get(:__uploads__, %{})
+  |> Map.keys()
+  |> Enum.find(fn key -> to_string(key) == name end)
+  |> case do
+    nil -> :error
+    atom -> {:ok, atom}
+  end
+end
 ```
 
 ```elixir

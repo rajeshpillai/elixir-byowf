@@ -70,26 +70,39 @@ defmodule Ignite.LiveView.Handler do
       # --- Upload protocol events ---
 
       {:ok, %{"event" => "__upload_validate__", "params" => %{"name" => name, "entries" => entries}}} ->
-        upload_name = String.to_atom(name)
-        new_assigns = Ignite.LiveView.UploadHelpers.validate_entries(state.assigns, upload_name, entries)
+        case registered_upload_name(state.assigns, name) do
+          {:ok, upload_name} ->
+            new_assigns =
+              Ignite.LiveView.UploadHelpers.validate_entries(state.assigns, upload_name, entries)
 
-        # Let the view handle validation if it defines handle_event("validate", ...)
-        new_assigns =
-          if function_exported?(state.view, :handle_event, 3) do
-            case apply(state.view, :handle_event, ["validate", %{"name" => name}, new_assigns]) do
-              {:noreply, a} -> a
-              _ -> new_assigns
-            end
-          else
-            new_assigns
-          end
+            # Let the view handle validation if it defines handle_event("validate", ...)
+            new_assigns =
+              if function_exported?(state.view, :handle_event, 3) do
+                case apply(state.view, :handle_event, ["validate", %{"name" => name}, new_assigns]) do
+                  {:noreply, a} -> a
+                  _ -> new_assigns
+                end
+              else
+                new_assigns
+              end
 
-        send_render_update_with_upload_config(state, new_assigns, upload_name)
+            send_render_update_with_upload_config(state, new_assigns, upload_name)
+
+          :error ->
+            Logger.warning("[LiveView] Ignoring upload validate for unknown upload #{inspect(name)}")
+            {:ok, state}
+        end
 
       {:ok, %{"event" => "__upload_complete__", "params" => %{"name" => name, "ref" => ref}}} ->
-        upload_name = String.to_atom(name)
-        new_assigns = Ignite.LiveView.UploadHelpers.mark_complete(state.assigns, upload_name, ref)
-        send_render_update(state, new_assigns)
+        case registered_upload_name(state.assigns, name) do
+          {:ok, upload_name} ->
+            new_assigns = Ignite.LiveView.UploadHelpers.mark_complete(state.assigns, upload_name, ref)
+            send_render_update(state, new_assigns)
+
+          :error ->
+            Logger.warning("[LiveView] Ignoring upload complete for unknown upload #{inspect(name)}")
+            {:ok, state}
+        end
 
       # --- Generic events ---
 
@@ -103,7 +116,16 @@ defmodule Ignite.LiveView.Handler do
             new_assigns
           else
             case apply(state.view, :handle_event, [event, params, state.assigns]) do
-              {:noreply, assigns} -> assigns
+              {:noreply, assigns} ->
+                assigns
+
+              other ->
+                Logger.warning(
+                  "[LiveView] #{inspect(state.view)}.handle_event/3 for #{inspect(event)} " <>
+                    "returned #{inspect(other)}; expected {:noreply, assigns}. Keeping current assigns."
+                )
+
+                state.assigns
             end
           end
 
@@ -162,6 +184,25 @@ defmodule Ignite.LiveView.Handler do
   end
 
   # --- Private helpers ---
+
+  # Resolve a client-supplied upload name string to the atom key that
+  # allow_upload/3 registered in assigns.__uploads__.
+  #
+  # We must NEVER call String.to_atom/1 on this value: it is client-controlled,
+  # and atoms are never garbage-collected, so a malicious client could exhaust
+  # the atom table and crash the node. Instead we match the string against the
+  # already-registered upload names (an allow-list), which also avoids crashing
+  # downstream helpers when the name was never configured.
+  defp registered_upload_name(assigns, name) when is_binary(name) do
+    assigns
+    |> Map.get(:__uploads__, %{})
+    |> Map.keys()
+    |> Enum.find(fn key -> to_string(key) == name end)
+    |> case do
+      nil -> :error
+      atom -> {:ok, atom}
+    end
+  end
 
   # Renders the view, diffs against previous dynamics, and sends sparse update
   defp send_render_update(state, assigns) do

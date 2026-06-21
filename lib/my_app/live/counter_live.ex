@@ -22,7 +22,7 @@ defmodule MyApp.CounterLive do
 
   @impl true
   def render(assigns) do
-    ~L"""
+    ~F"""
     <div id="counter">
       <h1>Live Counter</h1>
       <p style="font-size: 3em; margin: 20px 0;"><%= assigns.count %></p>

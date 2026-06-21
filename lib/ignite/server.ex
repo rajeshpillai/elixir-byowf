@@ -65,13 +65,27 @@ defmodule Ignite.Server do
 
   # Parse → Route → Respond
   defp serve(client_socket) do
-    conn = Ignite.Parser.parse(client_socket)
-    Logger.info("#{conn.method} #{conn.path}")
+    response =
+      case Ignite.Parser.parse(client_socket) do
+        {:ok, conn} ->
+          Logger.info("#{conn.method} #{conn.path}")
+          conn |> MyApp.Router.call() |> Ignite.Controller.send_resp()
 
-    conn = MyApp.Router.call(conn)
+        {:error, :bad_request} ->
+          Logger.warning("[Ignite] Rejected malformed request")
+          Ignite.Controller.send_resp(bad_request_conn())
+      end
 
-    response = Ignite.Controller.send_resp(conn)
     :gen_tcp.send(client_socket, response)
     :gen_tcp.close(client_socket)
+  end
+
+  defp bad_request_conn do
+    %Ignite.Conn{
+      status: 400,
+      resp_body: "Bad Request",
+      resp_headers: %{"content-type" => "text/plain"},
+      halted: true
+    }
   end
 end

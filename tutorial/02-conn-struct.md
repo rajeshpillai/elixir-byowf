@@ -92,15 +92,17 @@ alias Ignite.Conn
 `:gen_tcp.recv(socket, 0)` reads the next chunk of data from the TCP socket.
 The `0` means "read whatever is available" (as opposed to a fixed number of bytes).
 
-Because we set `packet: :http_bin` on the socket in Step 1, Erlang's built-in
-HTTP parser automatically breaks the raw bytes into structured tuples:
+Because we set `packet: :http` on the socket in Step 1, Erlang's built-in
+HTTP parser automatically breaks the raw bytes into structured tuples. With
+`:http`, header names come as atoms (or charlists for unknown headers) and
+**values come as charlists** (use `:http_bin` instead if you want binaries):
 
 ```
 Raw HTTP bytes                    Erlang's :gen_tcp.recv/2 returns
 ─────────────────────────────     ──────────────────────────────────────────────
-GET /hello HTTP/1.1\r\n      ──▶ {:ok, {:http_request, :GET, {:abs_path, "/hello"}, ...}}
-Host: localhost:4000\r\n     ──▶ {:ok, {:http_header, _, :Host, _, "localhost:4000"}}
-Accept: text/html\r\n        ──▶ {:ok, {:http_header, _, :"Accept", _, "text/html"}}
+GET /hello HTTP/1.1\r\n      ──▶ {:ok, {:http_request, :GET, {:abs_path, ~c"/hello"}, ...}}
+Host: localhost:4000\r\n     ──▶ {:ok, {:http_header, _, :Host, _, ~c"localhost:4000"}}
+Accept: text/html\r\n        ──▶ {:ok, {:http_header, _, :"Accept", _, ~c"text/html"}}
 \r\n  (blank line)           ──▶ {:ok, :http_eoh}   ← end of headers signal
 ```
 
@@ -133,14 +135,18 @@ defp read_headers(socket, acc \\ %{}) do
 
     {:ok, {:http_header, _, name, _, value}} ->
       key = name |> to_string() |> String.downcase()
-      read_headers(socket, Map.put(acc, key, value))  # Add to acc, keep going
+      read_headers(socket, Map.put(acc, key, to_string(value)))  # normalize + keep going
   end
 end
 ```
 
-The `name` from Erlang's HTTP parser might be an atom (`:Host`) or a string,
+The `name` from Erlang's HTTP parser might be an atom (`:Host`) or a charlist,
 so we normalize it: convert to string, then lowercase. This ensures headers
-are always accessed as `"host"`, `"content-type"`, etc.
+are always accessed as `"host"`, `"content-type"`, etc. We also `to_string/1`
+the **value** — under `packet: :http` it arrives as a charlist, and converting
+to a binary keeps lookups consistent (so a pattern match like
+`"application/x-www-form-urlencoded" <> _` works, and `String.split/2` on a
+header value doesn't blow up).
 
 The `\\` gives `acc` a default value of `%{}` (empty map), so callers don't
 need to pass it.
@@ -254,7 +260,7 @@ and the application layer (Elixir data structures).
   ─────────────────────────────────────────
   Parser         Ignite.Parser.parse/1        ← this step!
   ─────────────────────────────────────────
-  Erlang HTTP    {:http_request, :GET, ...}   ← :gen_tcp + packet: :http_bin
+  Erlang HTTP    {:http_request, :GET, ...}   ← :gen_tcp + packet: :http
   ─────────────────────────────────────────
   TCP            raw bytes on the wire        ← Step 1
   ─────────────────────────────────────────

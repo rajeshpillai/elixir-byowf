@@ -97,6 +97,11 @@ defmodule Ignite.Adapters.Cowboy do
     # Read the body if present (POST/PUT/PATCH)
     {body_params, _req} = read_cowboy_body(req)
 
+    # Cowboy keeps the query string separate from req.path. Decode it so query
+    # params are available in conn.params (body params win on collisions).
+    query_params = URI.decode_query(Map.get(req, :qs, ""))
+    params = Map.merge(query_params, body_params)
+
     # Convert Cowboy headers (list of tuples) to a map
     headers =
       req.headers
@@ -135,7 +140,8 @@ defmodule Ignite.Adapters.Cowboy do
       method: req.method,
       path: req.path,
       headers: headers,
-      params: body_params,
+      params: params,
+      query_params: query_params,
       cookies: cookies,
       session: session,
       private: %{flash: flash, peer_ip: peer_ip}

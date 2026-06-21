@@ -96,6 +96,20 @@ end
 This runs forever, waiting for connections. The BEAM VM optimizes this
 so it doesn't use extra stack space (tail-call optimization).
 
+The catch: tail-call optimization only applies when the recursive call is the
+**very last** thing the function does. `loop_acceptor(socket)` above is in tail
+position, so it loops in constant stack space. But add any work *after* it —
+
+```elixir
+# ⚠️ NOT tail-recursive — the call is no longer last
+loop_acceptor(socket)
+Logger.info("accepted a connection")  # runs after the recursive call returns
+```
+
+— and each call must now keep a stack frame waiting to run that next line. Over
+millions of connections the stack grows until the process crashes. Keep the
+self-call last.
+
 ```
 loop_acceptor(socket)
     │

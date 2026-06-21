@@ -231,7 +231,7 @@ end
 
 **`mask_token/1`** — XORs the real token with a random mask. Each call produces a different output, but `valid_token?/2` can still verify it.
 
-**`valid_token?/2`** — Splits the submitted token in half, XORs the halves, and uses `Plug.Crypto.secure_compare/2` (constant-time comparison) to check against the session token. Constant-time comparison prevents timing attacks.
+**`valid_token?/2`** — Splits the submitted token in half, XORs the halves, and uses `Plug.Crypto.secure_compare/2` (constant-time comparison) to check against the session token. Why constant-time? A naive `==` on binaries bails out at the **first** differing byte, so a guess with a correct first byte takes measurably longer to reject than one that's wrong immediately. An attacker who can time responses could exploit that difference to recover the token one byte at a time. `secure_compare/2` always scans every byte, so its running time reveals nothing about *where* the mismatch was.
 
 **`csrf_token_tag/1`** — Convenience helper that returns a ready-to-use hidden input tag.
 

@@ -42,12 +42,13 @@ defmodule MyApp.HooksDemoLive do
     events_html = if assigns.hook_events == [] do
       "<em>No hook events yet — click the buttons above</em>"
     else
+      # hook_events come from the client via pushEvent — escape each one.
       assigns.hook_events
-      |> Enum.map(fn e -> "<li>#{e}</li>" end)
+      |> Enum.map(fn e -> "<li>#{Ignite.HTML.escape(e)}</li>" end)
       |> Enum.join("\n")
     end
 
-    ~L"""
+    ~F"""
     <div id="hooks-demo" style="max-width: 600px; margin: 0 auto;">
       <h1>JS Hooks Demo</h1>
       <p style="color: #888; font-size: 14px;">
@@ -94,7 +95,7 @@ defmodule MyApp.HooksDemoLive do
         <h3 style="margin-top: 0;">Hook Events Log</h3>
         <p style="font-size: 14px; color: #666;">Events received from JS hooks via <code>pushEvent()</code></p>
         <ul style="margin: 8px 0; padding-left: 20px;">
-          <%= events_html %>
+          <%= raw(events_html) %>
         </ul>
       </div>
 

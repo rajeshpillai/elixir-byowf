@@ -38,7 +38,9 @@ defmodule Ignite.Upload do
   """
   def random_file(prefix \\ "upload") do
     dir = upload_dir()
-    random = :rand.uniform(999_999_999) |> Integer.to_string()
+    # Use crypto-strong randomness so temp file names are unpredictable — a
+    # predictable name could let a local attacker pre-create or guess the path.
+    random = 16 |> :crypto.strong_rand_bytes() |> Base.url_encode64(padding: false)
     timestamp = System.system_time(:millisecond) |> Integer.to_string()
     filename = "#{prefix}-#{timestamp}-#{random}"
     path = Path.join(dir, filename)

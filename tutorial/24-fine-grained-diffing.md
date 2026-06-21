@@ -165,6 +165,17 @@ end
 > location metadata). If you get a compile error, check your Elixir version's
 > `EEx.Engine` docs.
 
+> **⚠️ Security: `~L` does not escape HTML.** Look at `handle_expr/3` above — it
+> wraps each dynamic in `to_string/1` and nothing else. That means
+> `<%= @user_input %>` is injected into the page **verbatim**, so a value like
+> `<script>steal()</script>` runs in the browser (a cross-site scripting / XSS
+> hole). `~L` is fine for values *you* control (counts, system stats), but
+> **never render user- or client-supplied data through `~L`**. Step 42 adds the
+> `~F` sigil, which auto-escapes by default (with `raw/1` to opt out of escaping
+> for trusted HTML) — that is why every sample LiveView in this project uses
+> `~F`. When you must build an HTML string by hand, escape interpolated values
+> with `Ignite.HTML.escape/1` first.
+
 **How the callbacks fire** for `<h1>Count: <%= assigns.count %></h1>`:
 
 ```

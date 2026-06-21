@@ -196,7 +196,15 @@ defmodule Ignite.Controller do
       # Renders templates/profile.html.eex with @name and @id available
   """
   def render(conn, template_name, assigns \\ []) do
-    template_path = Path.join("templates", "#{template_name}.html.eex")
+    name = to_string(template_name)
+
+    # Guard against directory traversal: a template name is meant to be a flat
+    # name like "profile", never a path. Reject separators and "..".
+    if String.contains?(name, ["/", "\\", ".."]) do
+      raise ArgumentError, "invalid template name: #{inspect(template_name)}"
+    end
+
+    template_path = Path.join("templates", "#{name}.html.eex")
     content = EEx.eval_file(template_path, assigns: Enum.into(assigns, %{}))
     html(conn, content)
   end
@@ -211,10 +219,17 @@ defmodule Ignite.Controller do
       conn.resp_headers
       |> Map.put("content-length", Integer.to_string(byte_size(conn.resp_body)))
       |> Map.put("connection", "close")
-      |> Enum.map(fn {k, v} -> "#{k}: #{v}\r\n" end)
+      |> Enum.map(fn {k, v} -> "#{strip_crlf(k)}: #{strip_crlf(v)}\r\n" end)
       |> Enum.join()
 
     status_line <> headers <> "\r\n" <> conn.resp_body
+  end
+
+  # Strip CR/LF from header keys/values to prevent HTTP response splitting /
+  # header injection — a value containing "\r\n" could otherwise inject extra
+  # headers or a forged response body.
+  defp strip_crlf(value) do
+    value |> to_string() |> String.replace(["\r", "\n"], "")
   end
 
   defp status_text(200), do: "OK"

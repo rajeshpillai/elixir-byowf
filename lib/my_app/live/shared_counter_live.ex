@@ -40,7 +40,7 @@ defmodule MyApp.SharedCounterLive do
 
   @impl true
   def render(assigns) do
-    ~L"""
+    ~F"""
     <div id="shared-counter" style="max-width: 500px; margin: 0 auto; text-align: center;">
       <h1>Shared Counter</h1>
       <p style="color: #888; font-size: 14px;">
